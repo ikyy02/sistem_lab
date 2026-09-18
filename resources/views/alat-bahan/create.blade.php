@@ -66,6 +66,7 @@
                         <option value="">— Pilih Jenis —</option>
                         <option value="alat"  {{ old('jenis') == 'alat'  ? 'selected' : '' }}>🔧 Alat</option>
                         <option value="bahan" {{ old('jenis') == 'bahan' ? 'selected' : '' }}>🧪 Bahan</option>
+                        <option value="ruangan" {{ old('jenis') == 'ruangan' ? 'selected' : '' }}>🏢 Ruangan</option>
                     </select>
                     @error('jenis')
                         <div class="invalid-feedback d-flex align-items-center gap-1 mt-1" style="font-size:0.78rem;">

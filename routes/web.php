@@ -17,3 +17,6 @@ Route::get('/', function () {
 // Resource CRUD Alat & Bahan
 // Menggunakan tabel alat_bahans yang sudah ada di database sistem_lab
 Route::resource('alat-bahan', AlatBahanController::class);
+
+// Halaman katalog inventaris — alias tampilan index yang sama dengan filter jenis
+Route::get('katalog', [AlatBahanController::class, 'index'])->name('katalog');

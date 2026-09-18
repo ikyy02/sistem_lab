@@ -8,14 +8,23 @@ use Illuminate\Http\Request;
 class AlatBahanController extends Controller
 {
     /**
-     * Tampilkan daftar alat dan bahan dari tabel alat_bahans.
-     * Variabel $data diteruskan ke view alat-bahan.index.
+     * Tampilkan daftar katalog inventaris (alat, bahan, ruangan) dari tabel alat_bahans.
+     * Filter `?jenis=` dipakai untuk menyaring data berdasarkan kolom jenis.
+     * Variabel $data dan $jenis diteruskan ke view alat-bahan.index.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $data = AlatBahan::latest()->paginate(10);
+        $jenis = $request->query('jenis');
 
-        return view('alat-bahan.index', compact('data'));
+        $data = AlatBahan::query()
+            ->when(in_array($jenis, AlatBahan::JENIS), function ($query) use ($jenis) {
+                return $query->where('jenis', $jenis);
+            })
+            ->latest()
+            ->paginate(10)
+            ->withQueryString();
+
+        return view('alat-bahan.index', compact('data', 'jenis'));
     }
 
     /**
@@ -34,7 +43,7 @@ class AlatBahanController extends Controller
     {
         $request->validate([
             'nama'       => 'required|string|max:255',
-            'jenis'      => 'required|in:alat,bahan',
+            'jenis'      => 'required|in:' . implode(',', AlatBahan::JENIS),
             'satuan'     => 'required|string|max:255',
             'stok'       => 'required|integer|min:0',
             'kondisi'    => 'nullable|string|max:255',
@@ -66,7 +75,7 @@ class AlatBahanController extends Controller
     {
         $request->validate([
             'nama'       => 'required|string|max:255',
-            'jenis'      => 'required|in:alat,bahan',
+            'jenis'      => 'required|in:' . implode(',', AlatBahan::JENIS),
             'satuan'     => 'required|string|max:255',
             'stok'       => 'required|integer|min:0',
             'kondisi'    => 'nullable|string|max:255',
