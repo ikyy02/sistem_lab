@@ -370,6 +370,12 @@
                     <span>Katalog</span>
                 </a>
             </li>
+            <li class="nav-item">
+                <a href="{{ route('mahasiswa.index') }}" class="nav-link {{ request()->is('mahasiswa*') ? 'active' : '' }}">
+                    <i class="bi bi-person-lines-fill"></i>
+                    <span>Data Mahasiswa</span>
+                </a>
+            </li>
         </ul>
 
         <div class="sidebar-section-label mt-2">Transaksi</div>
