@@ -7,6 +7,11 @@ use Illuminate\Database\Eloquent\Model;
 class AlatBahan extends Model
 {
     /**
+     * Nilai yang diterima kolom `jenis`.
+     */
+    public const JENIS = ['alat', 'bahan', 'ruangan'];
+
+    /**
      * Tabel yang digunakan — sesuai tabel yang sudah ada di database sistem_lab.
      */
     protected $table = 'alat_bahans';

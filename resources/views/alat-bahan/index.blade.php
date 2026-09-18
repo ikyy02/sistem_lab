@@ -18,7 +18,7 @@
     </a>
 </div>
 
-<!-- Filter Bar (UI only — filter backend belum tersedia) -->
+<!-- Filter Bar (GET — filter jenis aktif) -->
 <div class="card-modern p-3 mb-4">
     <div class="row g-2 align-items-center">
         <div class="col-12 col-md-6 col-lg-4">
@@ -26,15 +26,18 @@
                 <span class="input-group-text bg-white border-end-0" style="border-color:#e2e8f0; color:#94a3b8;">
                     <i class="bi bi-search"></i>
                 </span>
-                <input type="text" class="form-control border-start-0 ps-0" placeholder="Cari nama alat atau bahan..." style="border-color:#e2e8f0; font-size:0.85rem;" disabled>
+                <input type="text" class="form-control border-start-0 ps-0" placeholder="Cari nama alat, bahan, atau ruangan..." style="border-color:#e2e8f0; font-size:0.85rem;" disabled>
             </div>
         </div>
         <div class="col-6 col-md-3 col-lg-2">
-            <select class="form-select" style="font-size:0.85rem; border-color:#e2e8f0; border-radius:10px; color:#64748b;" disabled>
-                <option>Semua Jenis</option>
-                <option>Alat</option>
-                <option>Bahan</option>
-            </select>
+            <form action="{{ route('alat-bahan.index') }}" method="GET">
+                <select name="jenis" class="form-select" onchange="this.form.submit()" style="font-size:0.85rem; border-color:#e2e8f0; border-radius:10px; color:#64748b;">
+                    <option value="" {{ $jenis === null || $jenis === '' ? 'selected' : '' }}>Semua</option>
+                    <option value="alat" {{ $jenis === 'alat' ? 'selected' : '' }}>Alat</option>
+                    <option value="bahan" {{ $jenis === 'bahan' ? 'selected' : '' }}>Bahan</option>
+                    <option value="ruangan" {{ $jenis === 'ruangan' ? 'selected' : '' }}>Ruangan</option>
+                </select>
+            </form>
         </div>
         <div class="col-6 col-md-3 col-lg-2">
             <select class="form-select" style="font-size:0.85rem; border-color:#e2e8f0; border-radius:10px; color:#64748b;" disabled>
@@ -44,9 +47,24 @@
             </select>
         </div>
         <div class="col-12 col-lg-4 d-flex justify-content-lg-end">
-            <span class="badge d-flex align-items-center gap-1 px-3 py-2" style="background:#f1f5f9; color:#64748b; font-size:0.75rem; border-radius:8px; font-weight:500;">
-                <i class="bi bi-info-circle"></i> Filter belum tersedia
-            </span>
+            @php
+                $filterLabel = match ($jenis) {
+                    'alat'    => 'Alat',
+                    'bahan'   => 'Bahan',
+                    'ruangan' => 'Ruangan',
+                    default   => 'Semua',
+                };
+            @endphp
+            <div class="d-flex align-items-center gap-2 flex-wrap justify-content-lg-end">
+                <span class="badge d-flex align-items-center gap-1 px-3 py-2" style="background:#f1f5f9; color:#64748b; font-size:0.75rem; border-radius:8px; font-weight:500;">
+                    <i class="bi bi-filter-left"></i> Menampilkan: {{ $filterLabel }}
+                </span>
+                @if(in_array($jenis, \App\Models\AlatBahan::JENIS))
+                    <a href="{{ route('alat-bahan.index') }}" class="badge text-decoration-none d-inline-flex align-items-center gap-1 px-3 py-2" style="background:#fff1f2; color:#e11d48; font-size:0.75rem; border-radius:8px; font-weight:500;" title="Reset filter">
+                        <i class="bi bi-x-circle"></i> Reset
+                    </a>
+                @endif
+            </div>
         </div>
     </div>
 </div>
@@ -81,9 +99,13 @@
                             <span class="badge rounded-pill d-inline-flex align-items-center gap-1" style="background:#f0fdf4; color:#16a34a; font-size:0.73rem; font-weight:600; padding:5px 12px;">
                                 <i class="bi bi-tools" style="font-size:0.65rem;"></i> Alat
                             </span>
-                        @else
+                        @elseif($item->jenis == 'bahan')
                             <span class="badge rounded-pill d-inline-flex align-items-center gap-1" style="background:#eff6ff; color:#2563eb; font-size:0.73rem; font-weight:600; padding:5px 12px;">
                                 <i class="bi bi-droplet" style="font-size:0.65rem;"></i> Bahan
+                            </span>
+                        @else
+                            <span class="badge rounded-pill d-inline-flex align-items-center gap-1" style="background:#f5f3ff; color:#7c3aed; font-size:0.73rem; font-weight:600; padding:5px 12px;">
+                                <i class="bi bi-door-open" style="font-size:0.65rem;"></i> Ruangan
                             </span>
                         @endif
                     </td>
