@@ -390,6 +390,24 @@
                     <span>Dashboard</span>
                 </a>
             </li>
+            <li class="nav-item">
+                <a href="{{ route('alat-bahan.index') }}" class="nav-link {{ request()->is('alat-bahan*') ? 'active' : '' }}">
+                    <i class="bi bi-boxes"></i>
+                    <span>Alat &amp; Bahan</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{{ route('katalog') }}" class="nav-link {{ request()->is('katalog') ? 'active' : '' }}">
+                    <i class="bi bi-collection"></i>
+                    <span>Katalog</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{{ route('mahasiswa.index') }}" class="nav-link {{ request()->is('mahasiswa*') ? 'active' : '' }}">
+                    <i class="bi bi-person-lines-fill"></i>
+                    <span>Data Mahasiswa</span>
+                </a>
+            </li>
         </ul>
 
         <div class="sidebar-section-label mt-2">Transaksi</div>

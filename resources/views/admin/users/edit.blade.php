@@ -101,10 +101,9 @@
                     </div>
                     <div class="col-md-6">
                         <label class="form-label fw-semibold mb-1" style="font-size:0.84rem; color:#374151;">
-                            No. HP
-                            <span class="ms-1" style="font-size:0.75rem; color:#94a3b8; font-weight:400;">(opsional)</span>
+                            No. HP <span class="text-danger">*</span>
                         </label>
-                        <input type="text" name="no_hp" value="{{ old('no_hp', $user->no_hp) }}"
+                        <input type="text" name="no_hp" value="{{ old('no_hp', $user->no_hp) }}" required
                                class="form-control @error('no_hp') is-invalid @enderror"
                                placeholder="08xxxxxxxxxx"
                                style="border-radius:10px; border-color:#e2e8f0; font-size:0.87rem; padding:10px 14px;">

@@ -79,7 +79,7 @@ class UserController extends Controller
                 Rule::requiredIf(in_array($request->role, ['staf_prodi', 'laboran'])),
                 'nullable', 'string', 'max:20',
             ],
-            'no_hp'    => ['nullable', 'string', 'max:20'],
+            'no_hp'    => ['required', 'string', 'max:20'],
             'status'   => ['required', Rule::in(['aktif', 'nonaktif'])],
         ], $this->messages());
 
@@ -140,7 +140,7 @@ class UserController extends Controller
                 Rule::requiredIf(in_array($request->role, ['staf_prodi', 'laboran'])),
                 'nullable', 'string', 'max:20',
             ],
-            'no_hp'    => ['nullable', 'string', 'max:20'],
+            'no_hp'    => ['required', 'string', 'max:20'],
             'status'   => ['required', Rule::in(['aktif', 'nonaktif'])],
         ], $this->messages());
 
@@ -204,6 +204,7 @@ class UserController extends Controller
             'nim.required'       => 'NIM wajib diisi untuk Mahasiswa.',
             'nidn.required'      => 'NIDN wajib diisi untuk Dosen.',
             'nip.required'       => 'NIP wajib diisi untuk Staf Prodi / Laboran.',
+            'no_hp.required'     => 'No HP wajib diisi.',
             'status.required'    => 'Status wajib dipilih.',
         ];
     }

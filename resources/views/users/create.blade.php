@@ -109,11 +109,11 @@
                     </div>
                     <div class="col-md-6">
                         <label class="form-label fw-semibold mb-1" style="font-size:0.84rem; color:#374151;">
-                            No HP
-                            <span class="ms-1" style="font-size:0.75rem; color:#94a3b8; font-weight:400;">(opsional)</span>
+                            No HP <span class="text-danger">*</span>
                         </label>
                         <input type="text"
                                name="no_hp"
+                               required
                                class="form-control @error('no_hp') is-invalid @enderror"
                                value="{{ old('no_hp') }}"
                                placeholder="08xxxxxxxxxx"

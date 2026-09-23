@@ -5,6 +5,8 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\AdminUserController;
+use App\Http\Controllers\AlatBahanController;
+use App\Http\Controllers\MahasiswaController;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Root → redirect
@@ -64,4 +66,13 @@ Route::middleware(['auth', 'check.status'])->group(function () {
         Route::put('/{user}',       [UserController::class, 'update'])->name('update');
         Route::delete('/{user}',    [UserController::class, 'destroy'])->name('destroy');
     });
+
+    // ── CRUD Alat & Bahan (dari project teman - SILAB) ────────────────────────
+    Route::resource('alat-bahan', AlatBahanController::class);
+
+    // Halaman katalog inventaris — alias tampilan index dengan filter jenis
+    Route::get('katalog', [AlatBahanController::class, 'index'])->name('katalog');
+
+    // ── CRUD Data Mahasiswa (dari project teman - SILAB) ───────────────────────
+    Route::resource('mahasiswa', MahasiswaController::class);
 });

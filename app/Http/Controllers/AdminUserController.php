@@ -67,7 +67,7 @@ class AdminUserController extends Controller
                 User::ROLE_STAF_PRODI,
                 User::ROLE_LABORAN,
             ])],
-            'no_hp'    => 'nullable|string|max:20',
+            'no_hp'    => 'required|string|max:20',
             'status'   => ['required', Rule::in([User::STATUS_AKTIF, User::STATUS_NONAKTIF])],
         ]);
 
@@ -83,7 +83,7 @@ class AdminUserController extends Controller
                 'email'    => $validated['email'],
                 'password' => Hash::make($validated['password']),
                 'role'     => $validated['role'],
-                'no_hp'    => $validated['no_hp'] ?? null,
+                'no_hp'    => $validated['no_hp'],
                 'status'   => $validated['status'],
             ]);
 
@@ -151,7 +151,7 @@ class AdminUserController extends Controller
                 User::ROLE_STAF_PRODI,
                 User::ROLE_LABORAN,
             ])],
-            'no_hp'    => 'nullable|string|max:20',
+            'no_hp'    => 'required|string|max:20',
             'status'   => ['required', Rule::in([User::STATUS_AKTIF, User::STATUS_NONAKTIF])],
         ]);
 
@@ -166,7 +166,7 @@ class AdminUserController extends Controller
                 'username' => $validated['username'],
                 'email'    => $validated['email'],
                 'role'     => $validated['role'],
-                'no_hp'    => $validated['no_hp'] ?? null,
+                'no_hp'    => $validated['no_hp'],
                 'status'   => $validated['status'],
             ]);
 
