@@ -48,6 +48,7 @@
                            class="form-control @error('nim') is-invalid @enderror"
                            value="{{ old('nim', $mahasiswa->nim) }}"
                            placeholder="Contoh: 2210101001"
+                           maxlength="20"
                            style="border-radius:10px; border-color:#e2e8f0; font-size:0.87rem; padding:10px 14px;">
                     @error('nim')
                         <div class="invalid-feedback d-flex align-items-center gap-1 mt-1" style="font-size:0.78rem;">
@@ -66,6 +67,7 @@
                            class="form-control @error('nama') is-invalid @enderror"
                            value="{{ old('nama', $mahasiswa->nama) }}"
                            placeholder="Nama lengkap mahasiswa"
+                           maxlength="255"
                            style="border-radius:10px; border-color:#e2e8f0; font-size:0.87rem; padding:10px 14px;">
                     @error('nama')
                         <div class="invalid-feedback d-flex align-items-center gap-1 mt-1" style="font-size:0.78rem;">
@@ -84,6 +86,7 @@
                            class="form-control @error('program_studi') is-invalid @enderror"
                            value="{{ old('program_studi', $mahasiswa->program_studi) }}"
                            placeholder="Contoh: Teknik Informatika"
+                           maxlength="255"
                            style="border-radius:10px; border-color:#e2e8f0; font-size:0.87rem; padding:10px 14px;">
                     @error('program_studi')
                         <div class="invalid-feedback d-flex align-items-center gap-1 mt-1" style="font-size:0.78rem;">
@@ -101,13 +104,15 @@
                            name="email"
                            class="form-control @error('email') is-invalid @enderror"
                            value="{{ old('email', $mahasiswa->email) }}"
-                           placeholder="nama@email.com"
+                           placeholder="nama@mhs.politala.ac.id"
+                           maxlength="255"
                            style="border-radius:10px; border-color:#e2e8f0; font-size:0.87rem; padding:10px 14px;">
                     @error('email')
                         <div class="invalid-feedback d-flex align-items-center gap-1 mt-1" style="font-size:0.78rem;">
                             <i class="bi bi-exclamation-circle-fill"></i> {{ $message }}
                         </div>
                     @enderror
+                    <div class="form-text" style="font-size:0.75rem; color:#94a3b8;">Gunakan email institusi berformat nama@mhs.politala.ac.id.</div>
                 </div>
 
                 <!-- No. WhatsApp -->
@@ -120,12 +125,14 @@
                            class="form-control @error('no_whatsapp') is-invalid @enderror"
                            value="{{ old('no_whatsapp', $mahasiswa->no_whatsapp) }}"
                            placeholder="Contoh: 081234567890"
+                           maxlength="20" inputmode="tel"
                            style="border-radius:10px; border-color:#e2e8f0; font-size:0.87rem; padding:10px 14px;">
                     @error('no_whatsapp')
                         <div class="invalid-feedback d-flex align-items-center gap-1 mt-1" style="font-size:0.78rem;">
                             <i class="bi bi-exclamation-circle-fill"></i> {{ $message }}
                         </div>
                     @enderror
+                    <div class="form-text" style="font-size:0.75rem; color:#94a3b8;">Format 08xxxxxxxxxx (boleh juga diawali +62 atau 62).</div>
                 </div>
 
                 <!-- Divider -->

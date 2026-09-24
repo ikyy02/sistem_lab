@@ -2,22 +2,72 @@
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\MahasiswaImportException;
+use App\Http\Requests\MahasiswaRequest;
 use App\Models\Mahasiswa;
+use App\Services\MahasiswaImportService;
+use App\Services\MahasiswaTemplateService;
 use Illuminate\Http\Request;
+use PhpOffice\PhpSpreadsheet\IOFactory;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class MahasiswaController extends Controller
 {
+    /** Pilihan jumlah data per halaman. */
+    public const PER_PAGE_OPTIONS = [10, 25, 50, 100];
+
+    /** Kolom yang boleh dipakai untuk sorting: kunci = nilai query string, isi = label di dropdown. */
+    public const SORT_OPTIONS = [
+        'nim' => 'NIM',
+        'nama' => 'Nama Mahasiswa',
+        'program_studi' => 'Program Studi',
+    ];
+
+    /** Parameter query string yang dipertahankan setelah hapus data. */
+    private const LIST_PARAMS = ['search', 'sort', 'direction', 'per_page', 'page'];
+
     /**
-     * Tampilkan daftar data mahasiswa dari tabel mahasiswas.
+     * Tampilkan daftar mahasiswa dengan pencarian, sorting, dan pagination.
      * Variabel $data diteruskan ke view mahasiswa.index.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $data = Mahasiswa::query()
-            ->latest()
-            ->paginate(10);
+        $search = mb_substr(trim($this->queryString($request, 'search')), 0, 100);
 
-        return view('mahasiswa.index', compact('data'));
+        // Nilai dari query string selalu di-whitelist agar tidak bisa dipakai untuk mengurutkan kolom sembarang.
+        $sort = $this->queryString($request, 'sort');
+        $sort = isset(self::SORT_OPTIONS[$sort]) ? $sort : 'nim';
+
+        $direction = strtolower($this->queryString($request, 'direction')) === 'desc' ? 'desc' : 'asc';
+
+        $perPage = (int) $this->queryString($request, 'per_page');
+        $perPage = in_array($perPage, self::PER_PAGE_OPTIONS, true) ? $perPage : self::PER_PAGE_OPTIONS[0];
+
+        $data = Mahasiswa::query()
+            ->search($search)
+            ->orderBy($sort, $direction)
+            ->orderBy('id') // pembeda tetap: urutan konsisten antar halaman meski nilai kolom sort sama
+            ->paginate($perPage)
+            ->withQueryString();
+
+        // Halaman yang diminta sudah tidak ada (mis. per_page diubah atau data terakhir dihapus).
+        if ($data->currentPage() > $data->lastPage()) {
+            return redirect()->route('mahasiswa.index', array_merge(
+                $request->query(),
+                ['page' => $data->lastPage()]
+            ));
+        }
+
+        return view('mahasiswa.index', [
+            'data' => $data,
+            'search' => $search,
+            'sort' => $sort,
+            'direction' => $direction,
+            'perPage' => $perPage,
+            'sortOptions' => self::SORT_OPTIONS,
+            'perPageOptions' => self::PER_PAGE_OPTIONS,
+            'isFiltered' => $request->hasAny(['search', 'sort', 'direction', 'per_page']),
+        ]);
     }
 
     /**
@@ -30,21 +80,11 @@ class MahasiswaController extends Controller
 
     /**
      * Simpan data baru ke tabel mahasiswas.
-     * Validasi sesuai struktur kolom database.
+     * Validasi & normalisasi ada di MahasiswaRequest (dipakai juga oleh import Excel).
      */
-    public function store(Request $request)
+    public function store(MahasiswaRequest $request)
     {
-        $request->validate([
-            'nim'           => 'required|string|max:20|unique:mahasiswas,nim',
-            'nama'          => 'required|string|max:255',
-            'program_studi' => 'required|string|max:255',
-            'email'         => 'required|email|max:255|unique:mahasiswas,email',
-            'no_whatsapp'   => 'required|string|max:20',
-        ]);
-
-        Mahasiswa::create($request->only([
-            'nim', 'nama', 'program_studi', 'email', 'no_whatsapp',
-        ]));
+        Mahasiswa::create($request->validated());
 
         return redirect()
             ->route('mahasiswa.index')
@@ -72,19 +112,9 @@ class MahasiswaController extends Controller
     /**
      * Perbarui data di tabel mahasiswas.
      */
-    public function update(Request $request, Mahasiswa $mahasiswa)
+    public function update(MahasiswaRequest $request, Mahasiswa $mahasiswa)
     {
-        $request->validate([
-            'nim'           => 'required|string|max:20|unique:mahasiswas,nim,' . $mahasiswa->id,
-            'nama'          => 'required|string|max:255',
-            'program_studi' => 'required|string|max:255',
-            'email'         => 'required|email|max:255|unique:mahasiswas,email,' . $mahasiswa->id,
-            'no_whatsapp'   => 'required|string|max:20',
-        ]);
-
-        $mahasiswa->update($request->only([
-            'nim', 'nama', 'program_studi', 'email', 'no_whatsapp',
-        ]));
+        $mahasiswa->update($request->validated());
 
         return redirect()
             ->route('mahasiswa.index')
@@ -93,13 +123,98 @@ class MahasiswaController extends Controller
 
     /**
      * Hapus data dari tabel mahasiswas.
+     * Pencarian/sorting/halaman yang sedang dibuka dipertahankan (dikirim lewat query string form).
      */
-    public function destroy(Mahasiswa $mahasiswa)
+    public function destroy(Request $request, Mahasiswa $mahasiswa)
     {
         $mahasiswa->delete();
 
         return redirect()
-            ->route('mahasiswa.index')
+            ->route('mahasiswa.index', $request->only(self::LIST_PARAMS))
             ->with('success', 'Data mahasiswa berhasil dihapus.');
+    }
+
+    /**
+     * Unduh template Excel untuk import mahasiswa.
+     */
+    public function template(MahasiswaTemplateService $template)
+    {
+        if ($missing = $this->spreadsheetLibraryMissing()) {
+            return $missing;
+        }
+
+        $spreadsheet = $template->build();
+
+        return response()->streamDownload(function () use ($spreadsheet) {
+            (new Xlsx($spreadsheet))->save('php://output');
+            $spreadsheet->disconnectWorksheets();
+        }, 'template_import_mahasiswa.xlsx', [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ]);
+    }
+
+    /**
+     * Import data mahasiswa dari file Excel.
+     * Semua-atau-tidak-sama-sekali: bila ada satu baris bermasalah, tidak ada yang disimpan.
+     */
+    public function import(Request $request, MahasiswaImportService $importer)
+    {
+        $request->validate([
+            'file' => ['required', 'file', 'extensions:xlsx,xls', 'max:2048'],
+        ], [
+            'file.required' => 'Pilih file Excel terlebih dahulu.',
+            'file.uploaded' => 'File gagal diunggah. Pastikan ukuran file tidak lebih dari 2 MB.',
+            'file.file' => 'File tidak valid.',
+            'file.extensions' => 'File harus berformat .xlsx atau .xls.',
+            'file.max' => 'Ukuran file maksimal 2 MB.',
+        ]);
+
+        if ($missing = $this->spreadsheetLibraryMissing()) {
+            return $missing;
+        }
+
+        try {
+            $result = $importer->import($request->file('file'));
+        } catch (MahasiswaImportException $e) {
+            return redirect()
+                ->route('mahasiswa.index')
+                ->with('error', $e->getMessage());
+        }
+
+        if (! $result['success']) {
+            return redirect()
+                ->route('mahasiswa.index')
+                ->with('import_report', $result);
+        }
+
+        return redirect()
+            ->route('mahasiswa.index')
+            ->with('success', "Import berhasil: {$result['inserted']} data mahasiswa ditambahkan.");
+    }
+
+    /**
+     * Ambil parameter query string sebagai string ('' bila tidak ada / bukan string,
+     * mis. ?sort[]=x), supaya input aneh tidak menyebabkan error.
+     */
+    private function queryString(Request $request, string $key): string
+    {
+        $value = $request->query($key);
+
+        return is_string($value) ? $value : '';
+    }
+
+    /**
+     * Pastikan library PhpSpreadsheet sudah dipasang (composer require phpoffice/phpspreadsheet).
+     * Bila belum, tampilkan pesan yang jelas alih-alih error 500.
+     */
+    private function spreadsheetLibraryMissing()
+    {
+        if (class_exists(IOFactory::class)) {
+            return null;
+        }
+
+        return redirect()
+            ->route('mahasiswa.index')
+            ->with('error', 'Library Excel belum terpasang. Jalankan perintah: composer require phpoffice/phpspreadsheet');
     }
 }
