@@ -22,5 +22,11 @@ Route::resource('alat-bahan', AlatBahanController::class);
 // Halaman katalog inventaris — alias tampilan index yang sama dengan filter jenis
 Route::get('katalog', [AlatBahanController::class, 'index'])->name('katalog');
 
+// Import & template Excel Data Mahasiswa.
+// PENTING: harus dideklarasikan SEBELUM Route::resource, karena GET mahasiswa/template
+// akan tertangkap oleh rute mahasiswa/{mahasiswa} (show) bila dideklarasikan sesudahnya.
+Route::get('mahasiswa/template', [MahasiswaController::class, 'template'])->name('mahasiswa.template');
+Route::post('mahasiswa/import', [MahasiswaController::class, 'import'])->name('mahasiswa.import');
+
 // Resource CRUD Data Mahasiswa
 Route::resource('mahasiswa', MahasiswaController::class);
