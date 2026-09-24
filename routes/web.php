@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AlatBahanController;
+use App\Http\Controllers\DosenController;
 use App\Http\Controllers\MahasiswaController;
 
 /*
@@ -24,3 +25,6 @@ Route::get('katalog', [AlatBahanController::class, 'index'])->name('katalog');
 
 // Resource CRUD Data Mahasiswa
 Route::resource('mahasiswa', MahasiswaController::class);
+
+// Resource CRUD Data Dosen
+Route::resource('dosen', DosenController::class);

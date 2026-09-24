@@ -397,10 +397,18 @@
         <div class="sidebar-section-label mt-2">Administrasi</div>
         <ul class="nav flex-column">
             <li class="nav-item">
-                <a href="#" class="nav-link disabled-link">
+                <div class="nav-link disabled-link">
                     <i class="bi bi-people"></i>
                     <span>Pengguna</span>
-                </a>
+                </div>
+                <ul class="nav flex-column" style="padding-left:14px;">
+                    <li class="nav-item">
+                        <a href="{{ route('dosen.index') }}" class="nav-link {{ request()->is('dosen*') ? 'active' : '' }}">
+                            <i class="bi bi-person-badge"></i>
+                            <span>Dosen</span>
+                        </a>
+                    </li>
+                </ul>
             </li>
             <li class="nav-item">
                 <a href="#" class="nav-link disabled-link">
