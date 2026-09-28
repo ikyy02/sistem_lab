@@ -22,5 +22,6 @@ class Dosen extends Model
         'program_studi',
         'email',
         'no_whatsapp',
+        'password',
     ];
 }

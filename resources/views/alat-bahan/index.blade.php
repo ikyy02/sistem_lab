@@ -5,6 +5,10 @@
 @section('page-subtitle', 'Kelola inventaris alat dan bahan laboratorium komputer bisnis.')
 
 @section('content')
+@php
+    $isAdmin = (\App\Services\AuthService::user()['role'] ?? null) === \App\Support\Role::LABORAN;
+    $indexUrl = $isAdmin && ! request()->routeIs('katalog') ? route('alat-bahan.index') : route('katalog');
+@endphp
 
 <!-- Page Header -->
 <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
@@ -12,10 +16,12 @@
         <h2 class="fw-bold mb-1" style="font-size:1.3rem; color:#1e293b;">Kelola Alat &amp; Bahan</h2>
         <p class="mb-0" style="font-size:0.83rem; color:#64748b;">Kelola inventaris alat dan bahan laboratorium komputer bisnis.</p>
     </div>
+    @if($isAdmin)
     <a href="{{ route('alat-bahan.create') }}" class="btn d-flex align-items-center gap-2" style="background:#16a34a;color:#fff;border-radius:10px;font-size:0.85rem;font-weight:600;padding:9px 18px;white-space:nowrap;">
         <i class="bi bi-plus-circle-fill"></i>
         Tambah Data
     </a>
+    @endif
 </div>
 
 <!-- Filter Bar (GET — filter jenis aktif) -->
@@ -30,7 +36,7 @@
             </div>
         </div>
         <div class="col-6 col-md-3 col-lg-2">
-            <form action="{{ route('alat-bahan.index') }}" method="GET">
+            <form action="{{ $indexUrl }}" method="GET">
                 <select name="jenis" class="form-select" onchange="this.form.submit()" style="font-size:0.85rem; border-color:#e2e8f0; border-radius:10px; color:#64748b;">
                     <option value="" {{ $jenis === null || $jenis === '' ? 'selected' : '' }}>Semua</option>
                     <option value="alat" {{ $jenis === 'alat' ? 'selected' : '' }}>Alat</option>
@@ -60,7 +66,7 @@
                     <i class="bi bi-filter-left"></i> Menampilkan: {{ $filterLabel }}
                 </span>
                 @if(in_array($jenis, \App\Models\AlatBahan::JENIS))
-                    <a href="{{ route('alat-bahan.index') }}" class="badge text-decoration-none d-inline-flex align-items-center gap-1 px-3 py-2" style="background:#fff1f2; color:#e11d48; font-size:0.75rem; border-radius:8px; font-weight:500;" title="Reset filter">
+                    <a href="{{ $indexUrl }}" class="badge text-decoration-none d-inline-flex align-items-center gap-1 px-3 py-2" style="background:#fff1f2; color:#e11d48; font-size:0.75rem; border-radius:8px; font-weight:500;" title="Reset filter">
                         <i class="bi bi-x-circle"></i> Reset
                     </a>
                 @endif
@@ -82,7 +88,7 @@
                     <th class="py-3 fw-semibold border-0">Stok</th>
                     <th class="py-3 fw-semibold border-0">Kondisi</th>
                     <th class="py-3 fw-semibold border-0">Keterangan</th>
-                    <th class="py-3 pe-4 fw-semibold border-0 text-end">Aksi</th>
+                    @if($isAdmin)<th class="py-3 pe-4 fw-semibold border-0 text-end">Aksi</th>@endif
                 </tr>
             </thead>
             <tbody>
@@ -144,6 +150,7 @@
                         </span>
                     </td>
 
+                    @if($isAdmin)
                     <td class="py-3 pe-4 align-middle text-end">
                         <div class="d-flex align-items-center justify-content-end gap-2">
                             <a href="{{ route('alat-bahan.edit', $item) }}"
@@ -163,6 +170,7 @@
                             </form>
                         </div>
                     </td>
+                    @endif
                 </tr>
             @empty
                 <tr>
@@ -175,9 +183,9 @@
                             </div>
                             <div class="fw-semibold mb-1" style="font-size:0.95rem; color:#475569;">Belum ada data</div>
                             <div class="mb-4" style="font-size:0.83rem; color:#94a3b8;">Belum ada alat atau bahan yang tersedia.</div>
-                            <a href="{{ route('alat-bahan.create') }}" class="btn d-inline-flex align-items-center gap-2" style="background:#16a34a;color:#fff;border-radius:10px;font-size:0.83rem;font-weight:600;padding:9px 20px;">
+                            @if($isAdmin)<a href="{{ route('alat-bahan.create') }}" class="btn d-inline-flex align-items-center gap-2" style="background:#16a34a;color:#fff;border-radius:10px;font-size:0.83rem;font-weight:600;padding:9px 20px;">
                                 <i class="bi bi-plus-circle-fill"></i> Tambah Data
-                            </a>
+                            </a>@endif
                         </div>
                     </td>
                 </tr>

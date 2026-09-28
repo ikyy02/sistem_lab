@@ -318,7 +318,7 @@ class MahasiswaImportService
         $now = now();
 
         $payload = array_map(
-            fn (array $data) => $data + ['created_at' => $now, 'updated_at' => $now],
+            fn (array $data) => $data + ['password' => $data['nim'], 'created_at' => $now, 'updated_at' => $now],
             array_values($rows)
         );
 
