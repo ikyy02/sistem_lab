@@ -4,38 +4,41 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Masuk — SILAB</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
     @include('layouts._theme')
     <style>
-        body { min-height: 100vh; display: flex; }
-        .login-aside { flex: 1.1; background: var(--primary); color: #fff; padding: 56px; display: flex; flex-direction: column; justify-content: space-between; border-bottom: 6px solid var(--accent); }
-        .login-aside h2 { font-weight: 800; font-size: 2rem; line-height: 1.25; max-width: 460px; }
-        .login-aside p { color: #c7d2f0; max-width: 440px; font-size: .95rem; }
+        body { min-height: 100vh; display: flex; background: #fff; }
+        .login-aside { flex: 1.15; background: var(--ink); color: #fff; padding: 60px; display: flex; flex-direction: column; justify-content: space-between; position: relative; overflow: hidden; }
+        .login-aside::before { content: ''; position: absolute; right: -120px; top: -120px; width: 340px; height: 340px; border-radius: 50%; border: 1px solid var(--ink-line); }
+        .login-aside::after { content: ''; position: absolute; right: -60px; top: -60px; width: 220px; height: 220px; border-radius: 50%; border: 1px solid rgba(173,138,62,.35); }
+        .gold-rule { width: 46px; height: 3px; background: var(--gold); border-radius: 2px; margin: 22px 0 18px; }
+        .login-aside h2 { font-family: 'Fraunces', serif; font-weight: 600; font-size: 2.15rem; line-height: 1.28; max-width: 460px; position: relative; }
+        .login-aside p { color: #9BA5B2; max-width: 420px; font-size: .95rem; position: relative; }
         .login-main { flex: 1; display: flex; align-items: center; justify-content: center; padding: 32px; }
         .login-card { width: 100%; max-width: 400px; }
-        .brand-mark { width: 46px; height: 46px; background: #fff; color: var(--primary); border-radius: 11px; display: inline-flex; align-items: center; justify-content: center; font-size: 1.3rem; }
         @media (max-width: 991.98px) { .login-aside { display: none; } }
     </style>
 </head>
 <body>
     <section class="login-aside">
         <div class="d-flex align-items-center gap-3">
-            <span class="brand-mark"><i class="bi bi-buildings"></i></span>
-            <div><div class="fw-bold" style="letter-spacing:.05em">SILAB</div><div style="font-size:.75rem;color:#c7d2f0">Politeknik Negeri Tanah Laut</div></div>
+            <span class="sidebar-brand-icon"><i class="bi bi-award"></i></span>
+            <div><div class="fw-semibold text-white" style="font-family:'Fraunces',serif;letter-spacing:.02em;">SILAB</div><div style="font-size:.75rem;color:#8891A0">Politeknik Negeri Tanah Laut</div></div>
         </div>
         <div>
-            <h2>Sistem Informasi Laboratorium Jurusan Komputer dan Bisnis</h2>
-            <p>Pengelolaan alat, bahan, ruangan, serta peminjaman laboratorium dalam satu sistem terpadu.</p>
+            <div class="gold-rule"></div>
+            <h2>Laboratorium Jurusan Komputer &amp; Bisnis</h2>
+            <p>Pengelolaan alat, bahan, dan ruangan laboratorium dalam satu sistem yang tertata dan dapat dipercaya.</p>
         </div>
-        <div style="font-size:.75rem;color:#9fb0e0">&copy; {{ date('Y') }} Jurusan Komputer dan Bisnis</div>
+        <div style="font-size:.75rem;color:#6B7684;position:relative;">&copy; {{ date('Y') }} Jurusan Komputer dan Bisnis</div>
     </section>
 
     <section class="login-main">
         <form method="POST" action="{{ route('login.attempt') }}" class="login-card">
             @csrf
-            <h1 class="fw-bold mb-1" style="font-size:1.6rem">Masuk</h1>
+            <h1 class="mb-1" style="font-family:'Fraunces',serif;font-weight:600;font-size:1.7rem;">Masuk</h1>
             <p class="mb-4" style="color:var(--text-muted);font-size:.88rem">Gunakan email dan password akun Anda.</p>
 
             @error('email')

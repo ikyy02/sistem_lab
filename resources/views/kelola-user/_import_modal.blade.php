@@ -7,7 +7,7 @@
 
             <div class="modal-header" style="border-bottom:1px solid #e2e8f0; background:#fafafa; border-radius:14px 14px 0 0;">
                 <div class="d-flex align-items-center gap-3">
-                    <div style="width:38px;height:38px;background:#f0fdf4;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#16a34a;flex-shrink:0;">
+                    <div style="width:38px;height:38px;background:#D9EAFD;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#9AA6B2;flex-shrink:0;">
                         <i class="bi bi-file-earmark-excel-fill"></i>
                     </div>
                     <div>
@@ -21,7 +21,7 @@
             <div class="modal-body p-4">
                 <ol class="ps-3 mb-4" style="font-size:0.84rem; color:#475569; line-height:1.7;">
                     <li>
-                        <a href="{{ route('mahasiswa.template') }}" style="color:#16a34a; font-weight:600; text-decoration:none;">Unduh template Excel</a>.
+                        <a href="{{ route('mahasiswa.template') }}" style="color:#9AA6B2; font-weight:600; text-decoration:none;">Unduh template Excel</a>.
                     </li>
                     <li>Isi data mulai dari baris ke-2 (NIM, Nama, Program Studi, No WhatsApp, Email).</li>
                     <li>Pilih file yang sudah diisi di bawah ini, lalu klik <strong>Import</strong>.</li>
@@ -52,7 +52,7 @@
                     Batal
                 </button>
                 <button type="submit" id="importSubmit" class="btn d-flex align-items-center gap-2"
-                        style="background:#16a34a; color:#fff; border-radius:10px; font-size:0.85rem; font-weight:600; padding:9px 22px;">
+                        style="background:#9AA6B2; color:#fff; border-radius:10px; font-size:0.85rem; font-weight:600; padding:9px 22px;">
                     <i class="bi bi-upload"></i> Import
                 </button>
             </div>

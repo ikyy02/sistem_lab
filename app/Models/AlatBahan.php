@@ -27,6 +27,7 @@ class AlatBahan extends Model
         'stok',
         'kondisi',
         'keterangan',
+        'gambar',
     ];
 
     /**
@@ -35,4 +36,12 @@ class AlatBahan extends Model
     protected $casts = [
         'stok' => 'integer',
     ];
+
+    public const GAMBAR_DIR = 'uploads/inventaris';
+
+    /** URL publik gambar (null jika belum ada). */
+    public function getGambarUrlAttribute(): ?string
+    {
+        return $this->gambar ? asset(self::GAMBAR_DIR . '/' . $this->gambar) : null;
+    }
 }

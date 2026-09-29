@@ -17,7 +17,7 @@
         <p class="mb-0" style="font-size:0.83rem; color:#64748b;">Kelola inventaris alat dan bahan laboratorium komputer bisnis.</p>
     </div>
     @if($isAdmin)
-    <a href="{{ route('alat-bahan.create') }}" class="btn d-flex align-items-center gap-2" style="background:#16a34a;color:#fff;border-radius:10px;font-size:0.85rem;font-weight:600;padding:9px 18px;white-space:nowrap;">
+    <a href="{{ route('alat-bahan.create') }}" class="btn d-flex align-items-center gap-2" style="background:#9AA6B2;color:#fff;border-radius:10px;font-size:0.85rem;font-weight:600;padding:9px 18px;white-space:nowrap;">
         <i class="bi bi-plus-circle-fill"></i>
         Tambah Data
     </a>
@@ -82,6 +82,7 @@
             <thead style="background:#f8fafc; color:#64748b; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.04em;">
                 <tr>
                     <th class="ps-4 py-3 fw-semibold border-0" style="width:48px;">#</th>
+                    <th class="py-3 fw-semibold border-0" style="width:64px;">Gambar</th>
                     <th class="py-3 fw-semibold border-0">Nama</th>
                     <th class="py-3 fw-semibold border-0">Jenis</th>
                     <th class="py-3 fw-semibold border-0">Satuan</th>
@@ -97,12 +98,20 @@
                     <td class="ps-4 py-3 align-middle text-muted" style="font-size:0.78rem;">{{ $loop->iteration }}</td>
 
                     <td class="py-3 align-middle">
+                        @if($item->gambar_url)
+                            <img src="{{ $item->gambar_url }}" alt="{{ $item->nama }}" class="thumb" loading="lazy" onclick="previewImage(this.src, this.alt)">
+                        @else
+                            <span class="thumb-empty"><i class="bi bi-image"></i></span>
+                        @endif
+                    </td>
+
+                    <td class="py-3 align-middle">
                         <span class="fw-semibold" style="color:#1e293b;">{{ $item->nama }}</span>
                     </td>
 
                     <td class="py-3 align-middle">
                         @if($item->jenis == 'alat')
-                            <span class="badge rounded-pill d-inline-flex align-items-center gap-1" style="background:#f0fdf4; color:#16a34a; font-size:0.73rem; font-weight:600; padding:5px 12px;">
+                            <span class="badge rounded-pill d-inline-flex align-items-center gap-1" style="background:#D9EAFD; color:#9AA6B2; font-size:0.73rem; font-weight:600; padding:5px 12px;">
                                 <i class="bi bi-tools" style="font-size:0.65rem;"></i> Alat
                             </span>
                         @elseif($item->jenis == 'bahan')
@@ -128,7 +137,7 @@
                                 {{ $item->stok }}
                             </span>
                         @else
-                            <span class="badge rounded-pill" style="background:#f0fdf4; color:#16a34a; font-size:0.73rem; font-weight:600; padding:5px 12px;">
+                            <span class="badge rounded-pill" style="background:#D9EAFD; color:#9AA6B2; font-size:0.73rem; font-weight:600; padding:5px 12px;">
                                 {{ $item->stok }}
                             </span>
                         @endif
@@ -174,7 +183,7 @@
                 </tr>
             @empty
                 <tr>
-                    <td colspan="8">
+                    <td colspan="9">
                         <div class="text-center py-5" style="color:#94a3b8;">
                             <div class="mb-3">
                                 <span style="display:inline-flex;align-items:center;justify-content:center;width:64px;height:64px;background:#f1f5f9;border-radius:50%;">
@@ -183,7 +192,7 @@
                             </div>
                             <div class="fw-semibold mb-1" style="font-size:0.95rem; color:#475569;">Belum ada data</div>
                             <div class="mb-4" style="font-size:0.83rem; color:#94a3b8;">Belum ada alat atau bahan yang tersedia.</div>
-                            @if($isAdmin)<a href="{{ route('alat-bahan.create') }}" class="btn d-inline-flex align-items-center gap-2" style="background:#16a34a;color:#fff;border-radius:10px;font-size:0.83rem;font-weight:600;padding:9px 20px;">
+                            @if($isAdmin)<a href="{{ route('alat-bahan.create') }}" class="btn d-inline-flex align-items-center gap-2" style="background:#9AA6B2;color:#fff;border-radius:10px;font-size:0.83rem;font-weight:600;padding:9px 20px;">
                                 <i class="bi bi-plus-circle-fill"></i> Tambah Data
                             </a>@endif
                         </div>
@@ -206,6 +215,7 @@
     @endif
 </div>
 
+@include('inventaris._preview')
 @endsection
 
 @push('styles')
@@ -224,8 +234,8 @@
         font-weight: 500;
     }
     .pagination-modern .page-item.active .page-link {
-        background: #16a34a;
-        border-color: #16a34a;
+        background: #9AA6B2;
+        border-color: #9AA6B2;
         color: #fff;
     }
     .pagination-modern .page-item .page-link:hover {

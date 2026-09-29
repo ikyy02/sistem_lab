@@ -2,7 +2,9 @@
 
 use App\Http\Controllers\AlatBahanController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\InventarisController;
 use App\Http\Controllers\MahasiswaController;
+use App\Http\Controllers\SatuanController;
 use App\Http\Controllers\UserManagementController;
 use App\Services\AuthService;
 use App\Support\Role;
@@ -30,7 +32,24 @@ Route::middleware('silab.auth')->group(function () {
 
     // Khusus Laboran/Admin
     Route::middleware('silab.role:' . Role::LABORAN)->group(function () {
-        Route::resource('alat-bahan', AlatBahanController::class);
+
+        // Kelola Inventaris (Alat, Bahan, Ruangan — satu menu, 3 kategori terpisah)
+        Route::get('inventaris', [InventarisController::class, 'index'])->name('inventaris.index');
+        Route::post('inventaris/{kategori}', [InventarisController::class, 'store'])
+            ->whereIn('kategori', array_keys(InventarisController::KATEGORI))->name('inventaris.store');
+        Route::put('inventaris/{kategori}/{id}', [InventarisController::class, 'update'])
+            ->whereIn('kategori', array_keys(InventarisController::KATEGORI))->whereNumber('id')->name('inventaris.update');
+        Route::delete('inventaris/{kategori}/{id}', [InventarisController::class, 'destroy'])
+            ->whereIn('kategori', array_keys(InventarisController::KATEGORI))->whereNumber('id')->name('inventaris.destroy');
+        Route::get('inventaris/{kategori}/template', [InventarisController::class, 'template'])
+            ->whereIn('kategori', array_keys(InventarisController::KATEGORI))->name('inventaris.template');
+        Route::post('inventaris/{kategori}/import', [InventarisController::class, 'import'])
+            ->whereIn('kategori', array_keys(InventarisController::KATEGORI))->name('inventaris.import');
+
+        // Satuan: CRUD lewat modal pada halaman Alat/Bahan (tanpa menu/tabel terpisah)
+        Route::post('satuan', [SatuanController::class, 'store'])->name('satuan.store');
+        Route::put('satuan/{id}', [SatuanController::class, 'update'])->whereNumber('id')->name('satuan.update');
+        Route::delete('satuan/{id}', [SatuanController::class, 'destroy'])->whereNumber('id')->name('satuan.destroy');
 
         // Kelola Data User (satu menu, 4 kategori)
         Route::get('kelola-user', [UserManagementController::class, 'index'])->name('kelola-user.index');

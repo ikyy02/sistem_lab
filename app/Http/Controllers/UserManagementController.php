@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\MahasiswaRequest;
 use App\Services\AuthService;
+use App\Support\Options;
 use App\Support\Role;
+use Illuminate\Validation\Rule;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -28,7 +30,7 @@ class UserManagementController extends Controller
         $wa = ['name' => 'no_whatsapp', 'label' => 'WhatsApp', 'type' => 'text', 'placeholder' => '08xxxxxxxxxx', 'required' => true];
         $email = fn ($ph = 'nama@domain.ac.id') => ['name' => 'email', 'label' => 'Email', 'type' => 'email', 'placeholder' => $ph, 'required' => true];
         $nama = ['name' => 'nama', 'label' => 'Nama', 'type' => 'text', 'placeholder' => 'Nama lengkap', 'required' => true];
-        $prodi = ['name' => 'program_studi', 'label' => 'Prodi', 'type' => 'text', 'placeholder' => 'Contoh: Teknik Informatika', 'required' => true];
+        $prodi = ['name' => 'program_studi', 'label' => 'Prodi', 'type' => 'select', 'options' => Options::PRODI, 'placeholder' => 'Pilih Prodi', 'required' => true];
 
         return match ($kategori) {
             Role::MAHASISWA => [
@@ -38,7 +40,7 @@ class UserManagementController extends Controller
                 'fields' => [
                     ['name' => 'nim', 'label' => 'NIM', 'type' => 'text', 'placeholder' => 'Contoh: 2210101001', 'required' => true],
                     $nama,
-                    ['name' => 'kelas', 'label' => 'Kelas', 'type' => 'text', 'placeholder' => 'Contoh: 3A', 'required' => true],
+                    ['name' => 'kelas', 'label' => 'Kelas', 'type' => 'select', 'options' => Options::kelas(), 'placeholder' => 'Pilih Kelas', 'required' => true],
                     $prodi,
                     $email('nim@' . MahasiswaRequest::EMAIL_DOMAIN),
                     $wa,
@@ -50,7 +52,7 @@ class UserManagementController extends Controller
                 'default_sort' => 'nama',
                 'fields' => [
                     ['name' => 'nidn', 'label' => 'NIDN', 'type' => 'text', 'placeholder' => 'NIDN', 'required' => true],
-                    ['name' => 'nip', 'label' => 'NIP', 'type' => 'text', 'placeholder' => 'NIP (opsional)', 'required' => false],
+                    ['name' => 'nip', 'label' => 'NIP', 'type' => 'text', 'placeholder' => 'NIP', 'required' => false],
                     $nama, $prodi, $email(), $wa,
                 ],
             ],
@@ -207,6 +209,12 @@ class UserManagementController extends Controller
             $rules['nim'][] = "unique:{$table},nim" . ($id ? ",{$id}" : '');
         }
         $rules['email'][] = $emailUnique;
+        if (isset($rules['program_studi'])) {
+            $rules['program_studi'] = array_merge((array) $rules['program_studi'], [Rule::in(Options::PRODI)]);
+        }
+        if (isset($rules['kelas'])) {
+            $rules['kelas'] = array_merge((array) $rules['kelas'], [Rule::in(Options::kelas())]);
+        }
         $rules['password'] = [$id ? 'nullable' : 'required', 'string', 'min:4', 'max:100'];
 
         $validator = Validator::make($input, $rules, MahasiswaRequest::errorMessages() + [
@@ -214,6 +222,8 @@ class UserManagementController extends Controller
             'nidn.unique' => 'NIDN sudah terdaftar.',
             'nip.unique' => 'NIP sudah terdaftar.',
             'password.min' => 'Password minimal :min karakter.',
+            'program_studi.in' => 'Pilih Prodi dari daftar.',
+            'kelas.in' => 'Pilih Kelas dari daftar.',
         ], MahasiswaRequest::attributeNames() + ['kelas' => 'Kelas', 'nidn' => 'NIDN', 'nip' => 'NIP', 'password' => 'Password']);
 
         if ($validator->fails()) {

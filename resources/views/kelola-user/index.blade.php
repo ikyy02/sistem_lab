@@ -18,7 +18,7 @@
 
 <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
     <div>
-        <h2 class="fw-bold mb-1" style="font-size:1.3rem;">Kelola Data User</h2>
+        <h2 class="font-display fw-semibold mb-1" style="font-size:1.5rem;">Kelola Data User</h2>
         <p class="mb-0" style="font-size:.83rem;color:var(--text-muted);">Data setiap kategori dikelola secara terpisah.</p>
     </div>
     <div class="d-flex flex-wrap gap-2">
@@ -37,8 +37,8 @@
     @foreach($labels as $key => $text)
         <li class="nav-item">
             <a href="{{ route('kelola-user.index', ['kategori' => $key]) }}"
-               class="nav-link px-4 {{ $kategori === $key ? 'active' : '' }}"
-               style="{{ $kategori === $key ? 'background:var(--primary);font-weight:600;' : 'background:#fff;border:1px solid var(--border-color);color:#3d475a;font-weight:500;' }} border-radius:8px;font-size:.87rem;">
+               class="nav-link px-4 {{ $kategori === $key ? 'active-tab' : '' }}"
+               style="{{ $kategori === $key ? '' : 'background:#fff;border:1px solid var(--border-color);color:#3d475a;font-weight:500;' }} border-radius:8px;font-size:.87rem;">
                 {{ $text }}
             </a>
         </li>
@@ -195,8 +195,17 @@
                     @foreach($fields as $f)
                         <div class="col-12 {{ in_array($f['name'], ['nama', 'email', 'program_studi']) ? '' : 'col-md-6' }}">
                             <label class="form-label" for="f_{{ $f['name'] }}">{{ $f['label'] }} @if($f['required'])<span class="text-danger">*</span>@endif</label>
-                            <input type="{{ $f['type'] }}" id="f_{{ $f['name'] }}" name="{{ $f['name'] }}" value="{{ old($f['name']) }}"
-                                   class="form-control @error($f['name']) is-invalid @enderror" placeholder="{{ $f['placeholder'] }}">
+                            @if(($f['type'] ?? '') === 'select')
+                                <select id="f_{{ $f['name'] }}" name="{{ $f['name'] }}" class="form-select @error($f['name']) is-invalid @enderror">
+                                    <option value="">{{ $f['placeholder'] }}</option>
+                                    @foreach($f['options'] as $opt)
+                                        <option value="{{ $opt }}" @selected(old($f['name']) === $opt)>{{ $opt }}</option>
+                                    @endforeach
+                                </select>
+                            @else
+                                <input type="{{ $f['type'] }}" id="f_{{ $f['name'] }}" name="{{ $f['name'] }}" value="{{ old($f['name']) }}"
+                                       class="form-control @error($f['name']) is-invalid @enderror" placeholder="{{ $f['placeholder'] }}">
+                            @endif
                             @error($f['name'])<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
                     @endforeach
@@ -246,7 +255,14 @@
 
         if (!keepOld) {
             const item = edit ? JSON.parse(btn.dataset.item) : {};
-            userFields.forEach(n => { document.getElementById('f_' + n).value = item[n] ?? ''; });
+            userFields.forEach(n => {
+                const el = document.getElementById('f_' + n);
+                const v = item[n] ?? '';
+                if (el.tagName === 'SELECT' && v !== '' && ![...el.options].some(o => o.value === v)) {
+                    el.add(new Option(v, v));
+                }
+                el.value = v;
+            });
             document.getElementById('f_password').value = '';
             form.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
             form.querySelectorAll('.invalid-feedback').forEach(el => el.remove());

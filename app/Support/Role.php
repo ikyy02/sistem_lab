@@ -36,6 +36,6 @@ class Role
     /** Halaman tujuan setelah login (dashboard belum dibuat pada tahap ini). */
     public static function home(string $role): string
     {
-        return $role === self::LABORAN ? route('alat-bahan.index') : route('katalog');
+        return $role === self::LABORAN ? route('inventaris.index', ['kategori' => 'alat']) : route('katalog');
     }
 }

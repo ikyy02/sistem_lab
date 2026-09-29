@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title', 'SILAB') — Laboratorium Komputer Bisnis</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
     @include('layouts._theme')
@@ -42,8 +42,8 @@
             </li>
             @if($isAdmin)
             <li class="nav-item">
-                <a href="{{ route('alat-bahan.index') }}" class="nav-link {{ request()->is('alat-bahan*') ? 'active' : '' }}">
-                    <i class="bi bi-boxes"></i><span>Alat &amp; Bahan</span>
+                <a href="{{ route('inventaris.index') }}" class="nav-link {{ request()->is('inventaris*') ? 'active' : '' }}">
+                    <i class="bi bi-boxes"></i><span>Kelola Inventaris</span>
                 </a>
             </li>
             @endif
@@ -85,7 +85,7 @@
         <button class="topbar-toggle" onclick="toggleSidebar()" aria-label="Toggle sidebar"><i class="bi bi-list"></i></button>
 
         <div class="topbar-title">
-            <h1>@yield('page-title', 'SILAB')</h1>
+            <h1 class="font-display">@yield('page-title', 'SILAB')</h1>
             <p>@yield('page-subtitle', 'Sistem Informasi Laboratorium Jurusan Komputer dan Bisnis')</p>
         </div>
 
