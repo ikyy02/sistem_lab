@@ -277,7 +277,7 @@ class MahasiswaKelolaTest extends TestCase
         $this->delete(route('mahasiswa.destroy', ['mahasiswa' => $m, 'search' => 'abc', 'sort' => 'nama', 'per_page' => 25]))
             ->assertRedirect(route('mahasiswa.index', ['search' => 'abc', 'sort' => 'nama', 'per_page' => 25]));
 
-        $this->assertDatabaseMissing('mahasiswas', ['id' => $m->id]);
+        $this->assertDatabaseMissing('mahasiswas', ['nim' => $m->nim]);
     }
 
     // ------------------------------------------------------------------ template

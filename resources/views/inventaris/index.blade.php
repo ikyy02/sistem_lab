@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('title', 'Kelola ' . $labels[$kategori])
-@section('page-title', 'Kelola Inventaris')
+@section('page-title', 'Kelola Katalog')
 @section('page-subtitle', 'Alat, Bahan, dan Ruangan laboratorium.')
 
 @section('content')
@@ -15,6 +15,7 @@
     $sortLabels = collect($config['columns'])->filter(fn ($c) => $c[1])->map(fn ($c) => $c[0]);
     $modalQuery = request()->only(['search', 'sort', 'direction', 'per_page', 'page', 'kategori']);
     $fieldNames = array_column($fields, 'name');
+    $conversionFields = ['per_unit', 'harga_total', 'unit_dasar_harga'];
     $colspan = count($config['columns']) + 3;
 @endphp
 
@@ -24,9 +25,6 @@
         <p class="mb-0" style="font-size:.83rem;color:var(--text-muted);">Lokasi barang dituliskan pada kolom Keterangan.</p>
     </div>
     <div class="d-flex flex-wrap gap-2">
-        @unless($isRoom)
-            <button type="button" class="btn btn-outline-silab d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#satuanModal"><i class="bi bi-rulers"></i> Kelola Satuan</button>
-        @endunless
         <button type="button" class="btn btn-outline-silab d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#importModal"><i class="bi bi-file-earmark-arrow-up"></i> Import</button>
         <button type="button" class="btn btn-primary d-flex align-items-center gap-2" onclick="openItemModal('create')"><i class="bi bi-plus-lg"></i> Tambah {{ $label }}</button>
     </div>
@@ -127,7 +125,7 @@
             <tbody>
             @forelse($data as $item)
                 @php
-                    $payload = collect($fieldNames)->mapWithKeys(fn ($n) => [$n => $item->{$n}])->all() + ['gambar_url' => $item->gambar_url];
+                    $payload = collect(array_merge($fieldNames, $isRoom ? [] : $conversionFields))->mapWithKeys(fn ($n) => [$n => $item->{$n}])->all() + ['gambar_url' => $item->gambar_url];
                     $bad = in_array($item->kondisi, ['Rusak', 'Hilang', 'Kadaluarsa', 'Tidak Tersedia'], true);
                 @endphp
                 <tr>
@@ -145,7 +143,7 @@
                             @if($col === 'nama') <span class="fw-semibold">{{ $item->nama }}</span>
                             @elseif($col === 'kondisi')
                                 @if($item->kondisi)
-                                    <span class="badge rounded-pill" style="font-weight:600;padding:5px 12px;{{ $bad ? 'background:#fef2f2;color:#b42318;' : 'background:#ecfdf3;color:#146c43;' }}">{{ $item->kondisi }}</span>
+                                    <span class="badge-status {{ $bad ? 'badge-status-bad' : 'badge-status-ok' }}">{{ $item->kondisi }}</span>
                                 @else — @endif
                             @elseif($col === 'keterangan')
                                 <span class="d-inline-block text-truncate align-middle" style="max-width:240px;color:var(--text-muted);" title="{{ $item->keterangan }}">{{ $item->keterangan ?? '—' }}</span>
@@ -172,10 +170,8 @@
             </tbody>
         </table>
     </div>
-    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 px-4 py-3" style="border-top:1px solid var(--border-color);background:#fbfaf9;">
-        <div style="font-size:.8rem;color:var(--text-muted);">
-            {{ $data->total() > 0 ? 'Menampilkan ' . $data->firstItem() . '–' . $data->lastItem() . ' dari ' . $data->total() . ' data ' . $label : '0 data' }}
-        </div>
+    <div class="table-footer">
+        <div>{{ $data->total() > 0 ? 'Menampilkan ' . $data->firstItem() . '–' . $data->lastItem() . ' dari ' . $data->total() . ' data ' . $label : '0 data' }}</div>
         {{ $data->links('pagination.silab') }}
     </div>
 </div>
@@ -197,7 +193,7 @@
                 <div class="row g-3">
                     @foreach($fields as $f)
                         <div class="col-12 {{ in_array($f['name'], ['stok', 'satuan', 'kondisi']) ? 'col-md-6' : '' }}">
-                            <label class="form-label" for="f_{{ $f['name'] }}">{{ $f['label'] }}@if($f['name'] !== 'keterangan') <span class="text-danger">*</span>@endif</label>
+                            <label class="form-label" for="f_{{ $f['name'] }}">{{ $f['label'] }}@if($f['name'] !== 'keterangan' && ($f['required'] ?? true)) <span class="text-danger">*</span>@endif</label>
                             @if(in_array($f['type'], ['select', 'satuan']))
                                 <select id="f_{{ $f['name'] }}" name="{{ $f['name'] }}" class="form-select @error($f['name']) is-invalid @enderror">
                                     <option value="">{{ $f['placeholder'] }}</option>
@@ -211,6 +207,30 @@
                             @error($f['name'])<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                         </div>
                     @endforeach
+                    @unless($isRoom)
+                        <div class="col-12"><hr class="my-1" style="border-color:var(--border-color);"></div>
+                        <div class="col-12">
+                            <div class="fw-semibold" style="font-size:.82rem;">Konversi Unit <span class="fw-normal" style="color:var(--text-muted);">(khusus perhitungan TPK/SPK — Katalog tetap memakai satuan asli)</span></div>
+                        </div>
+                        <div class="col-6 col-md-4">
+                            <label class="form-label" for="f_per_unit">Jumlah Satuan Asli per Unit</label>
+                            <input type="number" step="0.01" min="0.01" id="f_per_unit" name="per_unit" value="{{ old('per_unit') }}" class="form-control @error('per_unit') is-invalid @enderror" placeholder="Contoh: 5">
+                            @error('per_unit')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+                        </div>
+                        <div class="col-6 col-md-4">
+                            <label class="form-label" for="f_harga_total">Harga Total (Rp)</label>
+                            <input type="number" step="0.01" min="0" id="f_harga_total" name="harga_total" value="{{ old('harga_total') }}" class="form-control @error('harga_total') is-invalid @enderror" placeholder="Contoh: 500000">
+                            @error('harga_total')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <label class="form-label" for="f_unit_dasar_harga">Jumlah Unit Dasar Harga</label>
+                            <input type="number" step="0.01" min="0.01" id="f_unit_dasar_harga" name="unit_dasar_harga" value="{{ old('unit_dasar_harga') }}" class="form-control @error('unit_dasar_harga') is-invalid @enderror" placeholder="Contoh: 50">
+                            @error('unit_dasar_harga')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+                        </div>
+                        <div class="col-12">
+                            <div id="konversiHasil" class="form-text mb-0">Isi ketiga kolom di atas untuk melihat hasil konversi.</div>
+                        </div>
+                    @endunless
                     <div class="col-12">
                         <label class="form-label" for="f_gambar">Gambar</label>
                         <div class="d-flex align-items-center gap-3">
@@ -260,49 +280,6 @@
     </div>
 </div>
 
-@unless($isRoom)
-<!-- Modal Satuan -->
-<div class="modal fade" id="satuanModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title fw-bold" style="font-size:1rem;">Kelola Satuan</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
-            </div>
-            <div class="modal-body p-4">
-                <form action="{{ route('satuan.store') }}" method="POST" class="d-flex gap-2 mb-3">
-                    @csrf
-                    <input type="hidden" name="kategori" value="{{ $kategori }}">
-                    <input type="text" name="nama" class="form-control" maxlength="50" placeholder="Nama satuan baru" required>
-                    <button type="submit" class="btn btn-primary text-nowrap"><i class="bi bi-plus-lg"></i> Tambah</button>
-                </form>
-                <div style="max-height:320px;overflow-y:auto;">
-                    @forelse($satuans as $s)
-                        <div class="d-flex gap-2 align-items-center mb-2">
-                            <form action="{{ route('satuan.update', $s->id) }}" method="POST" class="d-flex gap-2 flex-grow-1">
-                                @csrf @method('PUT')
-                                <input type="hidden" name="kategori" value="{{ $kategori }}">
-                                <input type="text" name="nama" value="{{ $s->nama }}" class="form-control form-control-sm" maxlength="50" required>
-                                <button type="submit" class="btn btn-edit" title="Simpan perubahan"><i class="bi bi-check-lg"></i></button>
-                            </form>
-                            <span class="badge badge-tab" title="Jumlah data yang memakai" style="min-width:34px;">{{ $satuanUsage[$s->nama] ?? 0 }}</span>
-                            <form action="{{ route('satuan.destroy', $s->id) }}" method="POST" onsubmit="return confirm('Hapus satuan &quot;{{ e($s->nama) }}&quot;?')">
-                                @csrf @method('DELETE')
-                                <input type="hidden" name="kategori" value="{{ $kategori }}">
-                                <button type="submit" class="btn btn-del" title="Hapus"><i class="bi bi-trash"></i></button>
-                            </form>
-                        </div>
-                    @empty
-                        <div class="text-center py-3" style="color:var(--text-muted);">Belum ada satuan.</div>
-                    @endforelse
-                </div>
-                <div class="form-text mt-2">Angka pada lencana = jumlah Alat/Bahan yang memakai satuan. Satuan yang sedang dipakai tidak dapat dihapus.</div>
-            </div>
-        </div>
-    </div>
-</div>
-@endunless
-
 @include('inventaris._preview')
 @endsection
 
@@ -325,6 +302,12 @@
         const prev = document.getElementById('gambarPreview');
         if (!keepOld) {
             const item = edit ? JSON.parse(btn.dataset.item) : {};
+            @unless($isRoom)
+            ['per_unit', 'harga_total', 'unit_dasar_harga'].forEach(n => {
+                const el = document.getElementById('f_' + n);
+                if (el) el.value = item[n] ?? '';
+            });
+            @endunless
             itemFields.forEach(n => {
                 const el = document.getElementById('f_' + n);
                 const v = item[n] ?? '';
@@ -338,8 +321,33 @@
             form.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
             form.querySelectorAll('.invalid-feedback').forEach(el => el.remove());
         }
+        @unless($isRoom)
+        if (typeof hitungKonversi === 'function') hitungKonversi();
+        @endunless
         bootstrap.Modal.getOrCreateInstance(document.getElementById('itemModal')).show();
     }
+
+    @unless($isRoom)
+    function hitungKonversi() {
+        const perUnit = parseFloat(document.getElementById('f_per_unit').value);
+        const hargaTotal = parseFloat(document.getElementById('f_harga_total').value);
+        const unitDasar = parseFloat(document.getElementById('f_unit_dasar_harga').value);
+        const stokInput = parseFloat(document.getElementById('f_stok').value) || 0;
+        const out = document.getElementById('konversiHasil');
+        let parts = [];
+        if (perUnit > 0) {
+            parts.push('Jumlah Unit: ' + (stokInput / perUnit).toFixed(2) + ' unit');
+        }
+        if (hargaTotal >= 0 && unitDasar > 0) {
+            parts.push('Harga per Unit: Rp' + (hargaTotal / unitDasar).toLocaleString('id-ID', {maximumFractionDigits: 2}));
+        }
+        out.textContent = parts.length ? parts.join(' • ') : 'Isi ketiga kolom di atas untuk melihat hasil konversi.';
+    }
+    ['f_per_unit', 'f_harga_total', 'f_unit_dasar_harga', 'f_stok'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('input', hitungKonversi);
+    });
+    @endunless
 
     document.getElementById('f_gambar').addEventListener('change', function () {
         const prev = document.getElementById('gambarPreview');
@@ -349,9 +357,6 @@
     document.addEventListener('DOMContentLoaded', function () {
         @if(session('open_modal'))
             openItemModal('{{ session('open_modal')['mode'] }}', {!! session('open_modal')['id'] ? "'" . (int) session('open_modal')['id'] . "'" : 'null' !!}, true);
-        @endif
-        @if(session('open_satuan') && $kategori !== 'ruangan')
-            bootstrap.Modal.getOrCreateInstance(document.getElementById('satuanModal')).show();
         @endif
         @if($errors->has('file'))
             bootstrap.Modal.getOrCreateInstance(document.getElementById('importModal')).show();

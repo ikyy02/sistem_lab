@@ -22,10 +22,7 @@
         <p class="mb-0" style="font-size:.83rem;color:var(--text-muted);">Data setiap kategori dikelola secara terpisah.</p>
     </div>
     <div class="d-flex flex-wrap gap-2">
-        @if($kategori === 'mahasiswa')
-            <a href="{{ route('mahasiswa.template') }}" class="btn btn-outline-silab d-flex align-items-center gap-2"><i class="bi bi-download"></i> Template Excel</a>
-            <button type="button" class="btn btn-outline-silab d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#importModal"><i class="bi bi-file-earmark-arrow-up"></i> Import Excel</button>
-        @endif
+        <button type="button" class="btn btn-outline-silab d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#importModal"><i class="bi bi-file-earmark-arrow-up"></i> Import</button>
         <button type="button" class="btn btn-primary d-flex align-items-center gap-2" onclick="openUserModal('create')">
             <i class="bi bi-plus-lg"></i> Tambah {{ $label }}
         </button>
@@ -45,9 +42,7 @@
     @endforeach
 </ul>
 
-@if($kategori === 'mahasiswa')
-    @include('kelola-user._import_report')
-@endif
+@include('kelola-user._import_report')
 
 <!-- Toolbar -->
 <form method="GET" action="{{ route('kelola-user.index') }}" class="card-modern p-3 mb-3">
@@ -126,9 +121,8 @@
                         <td>
                             @if($col === 'nama')
                                 <span class="fw-semibold">{{ $item->nama }}</span>
-                            @elseif($col === 'nidn')
-                                <span class="fw-semibold">{{ $item->nidn }}</span>
-                                @if($item->nip)<div style="font-size:.74rem;color:var(--text-muted)">NIP: {{ $item->nip }}</div>@endif
+                            @elseif(in_array($col, ['nuptk_nidn', 'id_pegawai'], true))
+                                <span class="fw-semibold">{{ $item->{$col} }}</span>
                             @elseif($col === 'nim')
                                 <span class="fw-semibold" style="color:var(--primary)">{{ $item->nim }}</span>
                             @else
@@ -139,9 +133,9 @@
                     <td class="text-end pe-4">
                         <div class="d-flex justify-content-end gap-2">
                             <button type="button" class="btn btn-edit d-flex align-items-center gap-1"
-                                    data-id="{{ $item->id }}" data-item="{{ json_encode($payload) }}"
+                                    data-id="{{ $item->getKey() }}" data-item="{{ json_encode($payload) }}"
                                     onclick="openUserModal('edit', this)"><i class="bi bi-pencil"></i> Edit</button>
-                            <form action="{{ route('kelola-user.destroy', ['kategori' => $kategori, 'id' => $item->id] + $listQuery) }}" method="POST"
+                            <form action="{{ route('kelola-user.destroy', ['kategori' => $kategori, 'key' => $item->getKey()] + $listQuery) }}" method="POST"
                                   onsubmit="return confirm('Hapus data {{ $label }} &quot;{{ e($item->nama) }}&quot;? Tindakan ini tidak dapat dibatalkan.')">
                                 @csrf @method('DELETE')
                                 <button type="submit" class="btn btn-del d-flex align-items-center gap-1"><i class="bi bi-trash"></i> Hapus</button>
@@ -165,14 +159,8 @@
         </table>
     </div>
 
-    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 px-4 py-3" style="border-top:1px solid var(--border-color);background:#fafbfd;">
-        <div style="font-size:.8rem;color:var(--text-muted);">
-            @if($data->total() > 0)
-                Menampilkan {{ $data->firstItem() }}–{{ $data->lastItem() }} dari {{ $data->total() }} data {{ $label }}
-            @else
-                0 data
-            @endif
-        </div>
+    <div class="table-footer">
+        <div>{{ $data->total() > 0 ? 'Menampilkan ' . $data->firstItem() . '–' . $data->lastItem() . ' dari ' . $data->total() . ' data ' . $label : '0 data' }}</div>
         {{ $data->links('pagination.silab') }}
     </div>
 </div>
@@ -182,7 +170,7 @@
     <div class="modal-dialog modal-dialog-centered">
         <form method="POST" id="userForm" class="modal-content" autocomplete="off"
               data-store="{{ route('kelola-user.store', $kategori) }}"
-              data-update="{{ route('kelola-user.update', ['kategori' => $kategori, 'id' => '__ID__']) }}"
+              data-update="{{ route('kelola-user.update', ['kategori' => $kategori, 'key' => '__ID__']) }}"
               data-query="{{ json_encode($modalQuery) }}">
             @csrf
             <input type="hidden" name="_method" id="userMethod" value="POST" disabled>
@@ -225,9 +213,7 @@
     </div>
 </div>
 
-@if($kategori === 'mahasiswa')
-    @include('kelola-user._import_modal')
-@endif
+@include('kelola-user._import_modal')
 @endsection
 
 @push('scripts')
@@ -248,7 +234,7 @@
 
         if (edit) {
             const q = new URLSearchParams(JSON.parse(form.dataset.query || '{}'));
-            form.action = form.dataset.update.replace('__ID__', id) + '?' + q.toString();
+            form.action = form.dataset.update.replace('__ID__', encodeURIComponent(id)) + '?' + q.toString();
         } else {
             form.action = form.dataset.store;
         }
@@ -273,7 +259,7 @@
 
     @if($openModal)
     document.addEventListener('DOMContentLoaded', function () {
-        openUserModal('{{ $openModal['mode'] }}', {!! $openModal['id'] ? "'" . (int) $openModal['id'] . "'" : 'null' !!}, true);
+        openUserModal('{{ $openModal['mode'] }}', {!! $openModal['id'] ? json_encode((string) $openModal['id']) : 'null' !!}, true);
     });
     @endif
 </script>

@@ -12,6 +12,10 @@ class Mahasiswa extends Model
      */
     protected $table = 'mahasiswas';
 
+    protected $primaryKey = 'nim';
+    public $incrementing = false;
+    protected $keyType = 'string';
+
     /**
      * Kolom yang boleh diisi secara mass-assignment.
      * Sesuai struktur tabel: nim, nama, program_studi, email, no_whatsapp.

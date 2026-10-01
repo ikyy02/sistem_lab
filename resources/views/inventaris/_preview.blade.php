@@ -18,8 +18,3 @@
         bootstrap.Modal.getOrCreateInstance(document.getElementById('previewModal')).show();
     }
 </script>
-<style>
-    .thumb { width:56px; height:56px; object-fit:cover; border-radius:8px; border:1px solid var(--border-color); cursor:zoom-in; background:#fff; transition:transform .15s, box-shadow .15s; }
-    .thumb:hover { transform:scale(1.06); box-shadow:0 4px 12px rgba(16,24,40,.18); }
-    .thumb-empty { width:56px; height:56px; border-radius:8px; border:1px dashed #d5cbc4; display:inline-flex; align-items:center; justify-content:center; color:#b9aca3; background:#faf8f6; }
-</style>

@@ -11,13 +11,16 @@ class Dosen extends Model
      */
     protected $table = 'dosens';
 
+    protected $primaryKey = 'nuptk_nidn';
+    public $incrementing = false;
+    protected $keyType = 'string';
+
     /**
      * Kolom yang boleh diisi secara mass-assignment.
-     * Sesuai struktur tabel: nidn, nip, nama, program_studi, email, no_whatsapp.
+     * Primary key: nuptk_nidn (identitas NUPTK/NIDN).
      */
     protected $fillable = [
-        'nidn',
-        'nip',
+        'nuptk_nidn',
         'nama',
         'program_studi',
         'email',

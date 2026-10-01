@@ -1,250 +1,105 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 
-@section('title', 'Alat & Bahan')
-@section('page-title', 'Alat & Bahan')
-@section('page-subtitle', 'Kelola inventaris alat dan bahan laboratorium komputer bisnis.')
+@section('title', 'Katalog')
+@section('page-title', 'Katalog')
+@section('page-subtitle', 'Alat, bahan, dan ruangan laboratorium Jurusan Komputer dan Bisnis.')
 
 @section('content')
 @php
     $isAdmin = (\App\Services\AuthService::user()['role'] ?? null) === \App\Support\Role::LABORAN;
-    $indexUrl = $isAdmin && ! request()->routeIs('katalog') ? route('alat-bahan.index') : route('katalog');
+    $jenisLabel = ['alat' => 'Alat', 'bahan' => 'Bahan', 'ruangan' => 'Ruangan'];
+    $jenisIcon = ['alat' => 'bi-tools', 'bahan' => 'bi-droplet', 'ruangan' => 'bi-door-open'];
+    $sortLabel = ['nama' => 'Nama', 'stok' => 'Stok/Kapasitas', 'kondisi' => 'Kondisi'];
 @endphp
 
-<!-- Page Header -->
 <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
     <div>
-        <h2 class="fw-bold mb-1" style="font-size:1.3rem; color:#1e293b;">Kelola Alat &amp; Bahan</h2>
-        <p class="mb-0" style="font-size:0.83rem; color:#64748b;">Kelola inventaris alat dan bahan laboratorium komputer bisnis.</p>
+        <h2 class="font-display fw-semibold mb-1" style="font-size:1.5rem;">Katalog</h2>
+        <p class="mb-0" style="font-size:.83rem;color:var(--text-muted);">Daftar alat, bahan, dan ruangan yang tersedia.</p>
     </div>
     @if($isAdmin)
-    <a href="{{ route('alat-bahan.create') }}" class="btn d-flex align-items-center gap-2" style="background:#9AA6B2;color:#fff;border-radius:10px;font-size:0.85rem;font-weight:600;padding:9px 18px;white-space:nowrap;">
-        <i class="bi bi-plus-circle-fill"></i>
-        Tambah Data
-    </a>
+        <a href="{{ route('inventaris.index') }}" class="btn btn-primary d-flex align-items-center gap-2"><i class="bi bi-box-seam"></i> Kelola Katalog</a>
     @endif
 </div>
 
-<!-- Filter Bar (GET — filter jenis aktif) -->
-<div class="card-modern p-3 mb-4">
-    <div class="row g-2 align-items-center">
-        <div class="col-12 col-md-6 col-lg-4">
-            <div class="input-group" style="border-radius:10px; overflow:hidden;">
-                <span class="input-group-text bg-white border-end-0" style="border-color:#e2e8f0; color:#94a3b8;">
-                    <i class="bi bi-search"></i>
-                </span>
-                <input type="text" class="form-control border-start-0 ps-0" placeholder="Cari nama alat, bahan, atau ruangan..." style="border-color:#e2e8f0; font-size:0.85rem;" disabled>
+<form method="GET" action="{{ route('katalog') }}" class="card-modern p-3 mb-3">
+    <div class="row g-2 align-items-end">
+        <div class="col-12 col-lg-4">
+            <label class="form-label" for="search">Pencarian</label>
+            <div class="input-group">
+                <span class="input-group-text bg-white" style="border-color:var(--border-color);"><i class="bi bi-search"></i></span>
+                <input type="text" id="search" name="search" value="{{ $search }}" maxlength="100" class="form-control" placeholder="Cari nama, satuan, kondisi, keterangan...">
             </div>
         </div>
-        <div class="col-6 col-md-3 col-lg-2">
-            <form action="{{ $indexUrl }}" method="GET">
-                <select name="jenis" class="form-select" onchange="this.form.submit()" style="font-size:0.85rem; border-color:#e2e8f0; border-radius:10px; color:#64748b;">
-                    <option value="" {{ $jenis === null || $jenis === '' ? 'selected' : '' }}>Semua</option>
-                    <option value="alat" {{ $jenis === 'alat' ? 'selected' : '' }}>Alat</option>
-                    <option value="bahan" {{ $jenis === 'bahan' ? 'selected' : '' }}>Bahan</option>
-                    <option value="ruangan" {{ $jenis === 'ruangan' ? 'selected' : '' }}>Ruangan</option>
-                </select>
-            </form>
-        </div>
-        <div class="col-6 col-md-3 col-lg-2">
-            <select class="form-select" style="font-size:0.85rem; border-color:#e2e8f0; border-radius:10px; color:#64748b;" disabled>
-                <option>Semua Kondisi</option>
-                <option>Baik</option>
-                <option>Rusak</option>
+        <div class="col-6 col-lg-2">
+            <label class="form-label" for="jenisSelect">Jenis</label>
+            <select id="jenisSelect" name="jenis" class="form-select">
+                <option value="" @selected(! $jenis)>Semua Jenis</option>
+                @foreach($jenisLabel as $key => $text)<option value="{{ $key }}" @selected($jenis === $key)>{{ $text }}</option>@endforeach
             </select>
         </div>
-        <div class="col-12 col-lg-4 d-flex justify-content-lg-end">
-            @php
-                $filterLabel = match ($jenis) {
-                    'alat'    => 'Alat',
-                    'bahan'   => 'Bahan',
-                    'ruangan' => 'Ruangan',
-                    default   => 'Semua',
-                };
-            @endphp
-            <div class="d-flex align-items-center gap-2 flex-wrap justify-content-lg-end">
-                <span class="badge d-flex align-items-center gap-1 px-3 py-2" style="background:#f1f5f9; color:#64748b; font-size:0.75rem; border-radius:8px; font-weight:500;">
-                    <i class="bi bi-filter-left"></i> Menampilkan: {{ $filterLabel }}
-                </span>
-                @if(in_array($jenis, \App\Models\AlatBahan::JENIS))
-                    <a href="{{ $indexUrl }}" class="badge text-decoration-none d-inline-flex align-items-center gap-1 px-3 py-2" style="background:#fff1f2; color:#e11d48; font-size:0.75rem; border-radius:8px; font-weight:500;" title="Reset filter">
-                        <i class="bi bi-x-circle"></i> Reset
-                    </a>
-                @endif
-            </div>
+        <div class="col-6 col-lg-2">
+            <label class="form-label" for="sort">Urutkan</label>
+            <select id="sort" name="sort" class="form-select">
+                @foreach($sortLabel as $key => $text)<option value="{{ $key }}" @selected($sort === $key)>{{ $text }}</option>@endforeach
+            </select>
+        </div>
+        <div class="col-6 col-lg-1">
+            <label class="form-label" for="per_page">Tampil</label>
+            <select id="per_page" name="per_page" class="form-select">
+                @foreach($perPageOptions as $n)<option value="{{ $n }}" @selected($perPage === $n)>{{ $n }}</option>@endforeach
+            </select>
+        </div>
+        <div class="col-6 col-lg-3 d-flex gap-2">
+            <button type="submit" class="btn btn-primary flex-grow-1">Terapkan</button>
+            <a href="{{ route('katalog') }}" class="btn btn-outline-silab" title="Reset"><i class="bi bi-arrow-counterclockwise"></i></a>
         </div>
     </div>
-</div>
+</form>
 
-<!-- Table Card -->
-<div class="card-modern overflow-hidden">
-    <div class="table-responsive">
-        <table class="table table-hover mb-0" style="font-size:0.85rem;">
-            <thead style="background:#f8fafc; color:#64748b; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.04em;">
-                <tr>
-                    <th class="ps-4 py-3 fw-semibold border-0" style="width:48px;">#</th>
-                    <th class="py-3 fw-semibold border-0" style="width:64px;">Gambar</th>
-                    <th class="py-3 fw-semibold border-0">Nama</th>
-                    <th class="py-3 fw-semibold border-0">Jenis</th>
-                    <th class="py-3 fw-semibold border-0">Satuan</th>
-                    <th class="py-3 fw-semibold border-0">Stok</th>
-                    <th class="py-3 fw-semibold border-0">Kondisi</th>
-                    <th class="py-3 fw-semibold border-0">Keterangan</th>
-                    @if($isAdmin)<th class="py-3 pe-4 fw-semibold border-0 text-end">Aksi</th>@endif
-                </tr>
-            </thead>
-            <tbody>
-            @forelse($data as $item)
-                <tr style="border-top:1px solid #f1f5f9;">
-                    <td class="ps-4 py-3 align-middle text-muted" style="font-size:0.78rem;">{{ $loop->iteration }}</td>
-
-                    <td class="py-3 align-middle">
+@if($data->isEmpty())
+    <div class="card-modern text-center py-5" style="color:var(--text-muted);">
+        <i class="bi bi-inbox fs-1 d-block mb-2" style="color:#c9bdb4;"></i>
+        {{ $search !== '' ? 'Tidak ada data yang cocok dengan “' . $search . '”.' : 'Belum ada data.' }}
+    </div>
+@else
+    <div class="row g-3">
+        @foreach($data as $item)
+            @php $bad = in_array($item->kondisi, ['Rusak', 'Hilang', 'Kadaluarsa', 'Tidak Tersedia'], true); @endphp
+            <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
+                <div class="card-modern h-100 overflow-hidden d-flex flex-column">
+                    <div style="height:150px;background:var(--body-bg);display:flex;align-items:center;justify-content:center;border-bottom:1px solid var(--border-color);">
                         @if($item->gambar_url)
-                            <img src="{{ $item->gambar_url }}" alt="{{ $item->nama }}" class="thumb" loading="lazy" onclick="previewImage(this.src, this.alt)">
+                            <img src="{{ $item->gambar_url }}" alt="{{ $item->nama }}" style="width:100%;height:100%;object-fit:cover;cursor:zoom-in;" loading="lazy" onclick="previewImage(this.src, this.alt)">
                         @else
-                            <span class="thumb-empty"><i class="bi bi-image"></i></span>
+                            <i class="bi {{ $jenisIcon[$item->jenis] ?? 'bi-box' }}" style="font-size:2.2rem;color:var(--muted-blue);"></i>
                         @endif
-                    </td>
-
-                    <td class="py-3 align-middle">
-                        <span class="fw-semibold" style="color:#1e293b;">{{ $item->nama }}</span>
-                    </td>
-
-                    <td class="py-3 align-middle">
-                        @if($item->jenis == 'alat')
-                            <span class="badge rounded-pill d-inline-flex align-items-center gap-1" style="background:#D9EAFD; color:#9AA6B2; font-size:0.73rem; font-weight:600; padding:5px 12px;">
-                                <i class="bi bi-tools" style="font-size:0.65rem;"></i> Alat
-                            </span>
-                        @elseif($item->jenis == 'bahan')
-                            <span class="badge rounded-pill d-inline-flex align-items-center gap-1" style="background:#eff6ff; color:#2563eb; font-size:0.73rem; font-weight:600; padding:5px 12px;">
-                                <i class="bi bi-droplet" style="font-size:0.65rem;"></i> Bahan
-                            </span>
-                        @else
-                            <span class="badge rounded-pill d-inline-flex align-items-center gap-1" style="background:#f5f3ff; color:#7c3aed; font-size:0.73rem; font-weight:600; padding:5px 12px;">
-                                <i class="bi bi-door-open" style="font-size:0.65rem;"></i> Ruangan
-                            </span>
-                        @endif
-                    </td>
-
-                    <td class="py-3 align-middle" style="color:#475569;">{{ $item->satuan }}</td>
-
-                    <td class="py-3 align-middle">
-                        @if($item->stok <= 0)
-                            <span class="badge rounded-pill" style="background:#fff1f2; color:#e11d48; font-size:0.73rem; font-weight:600; padding:5px 12px;">
-                                {{ $item->stok }}
-                            </span>
-                        @elseif($item->stok <= 5)
-                            <span class="badge rounded-pill" style="background:#fefce8; color:#ca8a04; font-size:0.73rem; font-weight:600; padding:5px 12px;">
-                                {{ $item->stok }}
-                            </span>
-                        @else
-                            <span class="badge rounded-pill" style="background:#D9EAFD; color:#9AA6B2; font-size:0.73rem; font-weight:600; padding:5px 12px;">
-                                {{ $item->stok }}
-                            </span>
-                        @endif
-                    </td>
-
-                    <td class="py-3 align-middle">
+                    </div>
+                    <div class="p-3 d-flex flex-column flex-grow-1">
+                        <div class="d-flex align-items-start justify-content-between gap-2 mb-1">
+                            <span class="fw-semibold" style="font-size:.95rem;">{{ $item->nama }}</span>
+                            <span class="badge badge-tab text-nowrap" style="font-weight:600;padding:4px 10px;font-size:.7rem;">{{ $jenisLabel[$item->jenis] ?? $item->jenis }}</span>
+                        </div>
+                        <div class="d-flex align-items-center gap-2 mb-2" style="font-size:.82rem;color:var(--text-muted);">
+                            <span>{{ $item->jenis === 'ruangan' ? 'Kapasitas: ' . $item->stok : $item->stok . ' ' . ($item->satuan ?: '') }}</span>
+                        </div>
                         @if($item->kondisi)
-                            <span class="badge rounded-pill" style="background:#f8fafc; color:#475569; font-size:0.73rem; font-weight:500; padding:5px 12px; border:1px solid #e2e8f0;">
-                                {{ $item->kondisi }}
-                            </span>
-                        @else
-                            <span style="color:#cbd5e1;">—</span>
+                            <span class="badge-status {{ $bad ? 'badge-status-bad' : 'badge-status-ok' }} align-self-start mb-2">{{ $item->kondisi }}</span>
                         @endif
-                    </td>
-
-                    <td class="py-3 align-middle" style="color:#64748b; max-width:180px;">
-                        <span class="d-inline-block text-truncate" style="max-width:160px;" title="{{ $item->keterangan }}">
-                            {{ $item->keterangan ?? '—' }}
-                        </span>
-                    </td>
-
-                    @if($isAdmin)
-                    <td class="py-3 pe-4 align-middle text-end">
-                        <div class="d-flex align-items-center justify-content-end gap-2">
-                            <a href="{{ route('alat-bahan.edit', $item) }}"
-                               class="btn btn-sm d-flex align-items-center gap-1"
-                               style="background:#fefce8; color:#ca8a04; border:1px solid #fde68a; border-radius:8px; font-size:0.78rem; font-weight:600; padding:5px 12px; white-space:nowrap;">
-                                <i class="bi bi-pencil" style="font-size:0.7rem;"></i> Edit
-                            </a>
-                            <form action="{{ route('alat-bahan.destroy', $item) }}" method="POST" class="d-inline"
-                                  onsubmit="return confirm('Yakin ingin menghapus data \'{{ addslashes($item->nama) }}\'?')">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit"
-                                        class="btn btn-sm d-flex align-items-center gap-1"
-                                        style="background:#fff1f2; color:#e11d48; border:1px solid #fecdd3; border-radius:8px; font-size:0.78rem; font-weight:600; padding:5px 12px; white-space:nowrap;">
-                                    <i class="bi bi-trash" style="font-size:0.7rem;"></i> Hapus
-                                </button>
-                            </form>
-                        </div>
-                    </td>
-                    @endif
-                </tr>
-            @empty
-                <tr>
-                    <td colspan="9">
-                        <div class="text-center py-5" style="color:#94a3b8;">
-                            <div class="mb-3">
-                                <span style="display:inline-flex;align-items:center;justify-content:center;width:64px;height:64px;background:#f1f5f9;border-radius:50%;">
-                                    <i class="bi bi-inbox fs-2" style="color:#cbd5e1;"></i>
-                                </span>
-                            </div>
-                            <div class="fw-semibold mb-1" style="font-size:0.95rem; color:#475569;">Belum ada data</div>
-                            <div class="mb-4" style="font-size:0.83rem; color:#94a3b8;">Belum ada alat atau bahan yang tersedia.</div>
-                            @if($isAdmin)<a href="{{ route('alat-bahan.create') }}" class="btn d-inline-flex align-items-center gap-2" style="background:#9AA6B2;color:#fff;border-radius:10px;font-size:0.83rem;font-weight:600;padding:9px 20px;">
-                                <i class="bi bi-plus-circle-fill"></i> Tambah Data
-                            </a>@endif
-                        </div>
-                    </td>
-                </tr>
-            @endforelse
-            </tbody>
-        </table>
+                        <p class="mb-0 mt-auto" style="font-size:.8rem;color:var(--text-muted);line-height:1.5;" title="{{ $item->keterangan }}">
+                            {{ $item->keterangan ? \Illuminate\Support\Str::limit($item->keterangan, 90) : '—' }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        @endforeach
     </div>
 
-    @if($data->hasPages())
-    <div class="d-flex align-items-center justify-content-between px-4 py-3" style="border-top:1px solid #f1f5f9; background:#fafafa;">
-        <p class="mb-0" style="font-size:0.78rem; color:#94a3b8;">
-            Menampilkan {{ $data->firstItem() }}–{{ $data->lastItem() }} dari {{ $data->total() }} data
-        </p>
-        <div class="pagination-modern">
-            {{ $data->links() }}
-        </div>
+    <div class="table-footer mt-3" style="border:1px solid var(--border-color);border-radius:10px;background:var(--card-bg);">
+        <div>{{ $data->total() > 0 ? 'Menampilkan ' . $data->firstItem() . '–' . $data->lastItem() . ' dari ' . $data->total() . ' data' : '0 data' }}</div>
+        {{ $data->links('pagination.silab') }}
     </div>
-    @endif
-</div>
+@endif
 
 @include('inventaris._preview')
 @endsection
-
-@push('styles')
-<style>
-    /* Override Bootstrap pagination */
-    .pagination-modern .pagination {
-        margin: 0;
-        gap: 4px;
-    }
-    .pagination-modern .page-item .page-link {
-        border-radius: 8px !important;
-        border: 1px solid #e2e8f0;
-        color: #475569;
-        font-size: 0.8rem;
-        padding: 5px 11px;
-        font-weight: 500;
-    }
-    .pagination-modern .page-item.active .page-link {
-        background: #9AA6B2;
-        border-color: #9AA6B2;
-        color: #fff;
-    }
-    .pagination-modern .page-item .page-link:hover {
-        background: #f1f5f9;
-        color: #1e293b;
-    }
-    .pagination-modern .page-item.disabled .page-link {
-        color: #cbd5e1;
-        background: transparent;
-    }
-</style>
-@endpush

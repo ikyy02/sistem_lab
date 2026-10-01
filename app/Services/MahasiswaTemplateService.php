@@ -37,6 +37,15 @@ class MahasiswaTemplateService
         return $spreadsheet;
     }
 
+    /** Template CSV: hanya judul kolom (aturan pengisian sama seperti template Excel). */
+    public function buildCsv(): \PhpOffice\PhpSpreadsheet\Writer\Csv
+    {
+        $spreadsheet = new Spreadsheet();
+        $spreadsheet->getActiveSheet()->fromArray([array_keys(MahasiswaImportService::COLUMNS)], null, 'A1');
+
+        return (new \PhpOffice\PhpSpreadsheet\Writer\Csv($spreadsheet))->setUseBOM(true);
+    }
+
     private function buildDataSheet(Spreadsheet $spreadsheet): void
     {
         $sheet = $spreadsheet->getActiveSheet();

@@ -14,7 +14,7 @@ use Illuminate\Http\Request;
  */
 class AuthService
 {
-    /** @return array{role: string, id: int, nama: string, email: string}|null */
+    /** @return array{role: string, key: string, nama: string, email: string}|null */
     public function attempt(string $email, string $password): ?array
     {
         $email = mb_strtolower(trim($email));
@@ -23,7 +23,7 @@ class AuthService
             $user = $model::query()->whereRaw('LOWER(email) = ?', [$email])->first();
 
             if ($user && $this->passwordMatches($password, (string) $user->password)) {
-                return ['role' => $role, 'id' => $user->id, 'nama' => $user->nama, 'email' => $user->email];
+                return ['role' => $role, 'key' => (string) $user->getKey(), 'nama' => $user->nama, 'email' => $user->email];
             }
         }
 

@@ -38,11 +38,11 @@ class MahasiswaRequest extends FormRequest
      */
     public function rules(): array
     {
-        $ignoreId = $this->route('mahasiswa')?->id;
+        $ignoreId = $this->route('mahasiswa')?->getKey();
 
         $rules = self::baseRules();
-        $rules['nim'][] = Rule::unique('mahasiswas', 'nim')->ignore($ignoreId);
-        $rules['email'][] = Rule::unique('mahasiswas', 'email')->ignore($ignoreId);
+        $rules['nim'][] = Rule::unique('mahasiswas', 'nim')->ignore($ignoreId, 'nim');
+        $rules['email'][] = Rule::unique('mahasiswas', 'email')->ignore($ignoreId, 'nim');
 
         return $rules;
     }

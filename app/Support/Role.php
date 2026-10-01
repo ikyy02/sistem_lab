@@ -33,7 +33,7 @@ class Role
         self::LABORAN => 'Laboran/Admin',
     ];
 
-    /** Halaman tujuan setelah login (dashboard belum dibuat pada tahap ini). */
+    /** Halaman tujuan setelah login. */
     public static function home(string $role): string
     {
         return $role === self::LABORAN ? route('inventaris.index', ['kategori' => 'alat']) : route('katalog');

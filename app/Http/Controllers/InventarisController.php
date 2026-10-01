@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\AlatBahan;
-use App\Models\Satuan;
 use App\Services\InventarisImportService;
 use App\Support\Options;
 use Illuminate\Http\Request;
@@ -26,7 +25,7 @@ class InventarisController extends Controller
     {
         $room = $kategori === 'ruangan';
         $nama = ['name' => 'nama', 'label' => 'Nama', 'type' => 'text', 'placeholder' => 'Nama ' . strtolower(self::KATEGORI[$kategori])];
-        $kondisi = ['name' => 'kondisi', 'label' => $room ? 'Status' : 'Kondisi', 'type' => 'select', 'options' => Options::KONDISI[$kategori], 'placeholder' => 'Pilih ' . ($room ? 'Status' : 'Kondisi')];
+        $kondisi = ['name' => 'kondisi', 'label' => $room ? 'Status' : 'Kondisi', 'type' => 'select', 'options' => Options::kondisi($kategori), 'placeholder' => 'Pilih ' . ($room ? 'Status' : 'Kondisi')];
         $ket = ['name' => 'keterangan', 'label' => 'Keterangan', 'type' => 'textarea', 'placeholder' => 'Contoh: Disimpan di Laboratorium Komputer 1, ruangan laboran.'];
 
         if ($room) {
@@ -38,11 +37,12 @@ class InventarisController extends Controller
         }
 
         return [
-            'columns' => ['nama' => ['Nama', true], 'satuan' => ['Satuan', true], 'stok' => ['Stok', true], 'kondisi' => ['Kondisi', true], 'keterangan' => ['Keterangan', false]],
-            'search' => ['nama', 'satuan', 'kondisi', 'keterangan'],
+            'columns' => ['nama' => ['Nama', true], 'kategori' => ['Kategori', true], 'satuan' => ['Satuan', true], 'stok' => ['Stok', true], 'kondisi' => ['Kondisi', true], 'keterangan' => ['Keterangan', false]],
+            'search' => ['nama', 'kategori', 'satuan', 'kondisi', 'keterangan'],
             'fields' => [
                 $nama,
-                ['name' => 'satuan', 'label' => 'Satuan', 'type' => 'satuan', 'options' => Satuan::orderBy('nama')->pluck('nama')->all(), 'placeholder' => 'Pilih Satuan'],
+                ['name' => 'kategori', 'label' => 'Kategori', 'type' => 'select', 'options' => Options::kategori(), 'placeholder' => 'Pilih Kategori', 'required' => false],
+                ['name' => 'satuan', 'label' => 'Satuan', 'type' => 'select', 'options' => Options::satuan(), 'placeholder' => 'Pilih Satuan'],
                 ['name' => 'stok', 'label' => 'Stok', 'type' => 'number', 'placeholder' => 'Jumlah stok'],
                 $kondisi, $ket,
             ],
@@ -79,8 +79,7 @@ class InventarisController extends Controller
         return view('inventaris.index', [
             'kategori' => $kategori, 'labels' => self::KATEGORI, 'config' => $config, 'data' => $data,
             'search' => $search, 'sort' => $sort, 'direction' => $direction, 'perPage' => $perPage,
-            'perPageOptions' => self::PER_PAGE, 'satuans' => Satuan::orderBy('nama')->get(),
-            'satuanUsage' => AlatBahan::where('jenis', '!=', 'ruangan')->selectRaw('satuan, COUNT(*) c')->groupBy('satuan')->pluck('c', 'satuan'),
+            'perPageOptions' => self::PER_PAGE,
         ]);
     }
 
@@ -159,19 +158,24 @@ class InventarisController extends Controller
     private function validator(Request $request, string $kategori, ?int $id)
     {
         $room = $kategori === 'ruangan';
-        $input = $request->only(['nama', 'satuan', 'stok', 'kondisi', 'keterangan']);
+        $input = $request->only(['nama', 'kategori', 'satuan', 'stok', 'kondisi', 'keterangan', 'per_unit', 'harga_total', 'unit_dasar_harga']);
         $input['nama'] = trim(preg_replace('/\s+/u', ' ', (string) ($input['nama'] ?? '')));
 
         $rules = [
             'nama' => ['bail', 'required', 'string', 'max:255',
                 Rule::unique('alat_bahans', 'nama')->where('jenis', $kategori)->ignore($id)],
             'stok' => ['bail', 'required', 'integer', 'min:' . ($room ? 1 : 0), 'max:9999999'],
-            'kondisi' => ['required', Rule::in(Options::KONDISI[$kategori])],
+            'kondisi' => ['required', Rule::in(Options::kondisi($kategori))],
             'keterangan' => ['nullable', 'string', 'max:2000'],
             'gambar' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
         ];
         if (! $room) {
-            $rules['satuan'] = ['required', Rule::in(Satuan::pluck('nama')->all())];
+            $rules['satuan'] = ['required', Rule::in(Options::satuan())];
+            $rules['kategori'] = ['nullable', Rule::in(Options::kategori())];
+            // Konversi unit (khusus TPK/SPK) -> data katalog tetap pakai satuan asli.
+            $rules['per_unit'] = ['nullable', 'numeric', 'min:0.01'];
+            $rules['harga_total'] = ['nullable', 'numeric', 'min:0', 'required_with:unit_dasar_harga'];
+            $rules['unit_dasar_harga'] = ['nullable', 'numeric', 'min:0.01', 'required_with:harga_total'];
         }
 
         $label = $room ? 'Kapasitas' : 'Stok';
@@ -182,18 +186,33 @@ class InventarisController extends Controller
             'min' => ':attribute minimal :min.',
             'kondisi.in' => 'Pilih ' . ($room ? 'Status' : 'Kondisi') . ' dari daftar.',
             'satuan.in' => 'Pilih Satuan dari daftar.',
+            'kategori.in' => 'Pilih Kategori dari daftar.',
             'gambar.image' => 'File harus berupa gambar.',
             'gambar.mimes' => 'Gambar harus berformat JPG, PNG, atau WEBP.',
             'gambar.max' => 'Ukuran gambar maksimal 2 MB.',
-        ], ['nama' => 'Nama', 'stok' => $label, 'kondisi' => $room ? 'Status' : 'Kondisi', 'satuan' => 'Satuan', 'keterangan' => 'Keterangan', 'gambar' => 'Gambar']);
+            'per_unit.min' => 'Jumlah satuan asli per unit harus lebih dari 0.',
+            'unit_dasar_harga.min' => 'Jumlah unit dasar harga harus lebih dari 0.',
+            'harga_total.required_with' => 'Harga Total wajib diisi jika Jumlah Unit Dasar Harga diisi.',
+            'unit_dasar_harga.required_with' => 'Jumlah Unit Dasar Harga wajib diisi jika Harga Total diisi.',
+        ], [
+            'nama' => 'Nama', 'stok' => $label, 'kondisi' => $room ? 'Status' : 'Kondisi', 'satuan' => 'Satuan', 'kategori' => 'Kategori',
+            'keterangan' => 'Keterangan', 'gambar' => 'Gambar', 'per_unit' => 'Jumlah Satuan Asli per Unit',
+            'harga_total' => 'Harga Total', 'unit_dasar_harga' => 'Jumlah Unit Dasar Harga',
+        ]);
     }
 
     private function payload(array $data, string $kategori): array
     {
         unset($data['gambar']);
         $data['jenis'] = $kategori;
-        $data['satuan'] = $kategori === 'ruangan' ? '' : $data['satuan'];
+        $data['kategori'] = ($data['kategori'] ?? '') !== '' ? $data['kategori'] : null;
         $data['keterangan'] = ($data['keterangan'] ?? '') !== '' ? $data['keterangan'] : null;
+
+        if ($kategori === 'ruangan') {
+            $data['satuan'] = '';
+            $data['kategori'] = null;
+            $data['per_unit'] = $data['harga_total'] = $data['unit_dasar_harga'] = null;
+        }
 
         return $data;
     }

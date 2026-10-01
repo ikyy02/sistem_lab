@@ -17,10 +17,16 @@ class MahasiswaController extends Controller
     /**
      * Unduh template Excel untuk import mahasiswa.
      */
-    public function template(MahasiswaTemplateService $template)
+    public function template(Request $request, MahasiswaTemplateService $template)
     {
         if ($missing = $this->spreadsheetLibraryMissing()) {
             return $missing;
+        }
+
+        if ($request->query('format') === 'csv') {
+            $writer = $template->buildCsv();
+
+            return response()->streamDownload(fn () => $writer->save('php://output'), 'template-mahasiswa.csv');
         }
 
         $spreadsheet = $template->build();
@@ -28,7 +34,7 @@ class MahasiswaController extends Controller
         return response()->streamDownload(function () use ($spreadsheet) {
             (new Xlsx($spreadsheet))->save('php://output');
             $spreadsheet->disconnectWorksheets();
-        }, 'template_import_mahasiswa.xlsx', [
+        }, 'template-mahasiswa.xlsx', [
             'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         ]);
     }
@@ -40,12 +46,12 @@ class MahasiswaController extends Controller
     public function import(Request $request, MahasiswaImportService $importer)
     {
         $request->validate([
-            'file' => ['required', 'file', 'extensions:xlsx,xls', 'max:2048'],
+            'file' => ['required', 'file', 'extensions:xlsx,xls,csv', 'max:2048'],
         ], [
-            'file.required' => 'Pilih file Excel terlebih dahulu.',
+            'file.required' => 'Pilih file Excel atau CSV terlebih dahulu.',
             'file.uploaded' => 'File gagal diunggah. Pastikan ukuran file tidak lebih dari 2 MB.',
             'file.file' => 'File tidak valid.',
-            'file.extensions' => 'File harus berformat .xlsx atau .xls.',
+            'file.extensions' => 'File harus berformat .xlsx, .xls, atau .csv.',
             'file.max' => 'Ukuran file maksimal 2 MB.',
         ]);
 

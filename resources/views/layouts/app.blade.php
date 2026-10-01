@@ -36,6 +36,11 @@
         <div class="sidebar-section-label">Menu Utama</div>
         <ul class="nav flex-column">
             <li class="nav-item">
+                <a href="{{ route('dashboard') }}" class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">
+                    <i class="bi bi-speedometer2"></i><span>Beranda</span>
+                </a>
+            </li>
+            <li class="nav-item">
                 <a href="{{ route('katalog') }}" class="nav-link {{ request()->routeIs('katalog') ? 'active' : '' }}">
                     <i class="bi bi-collection"></i><span>Katalog</span>
                 </a>
@@ -43,7 +48,7 @@
             @if($isAdmin)
             <li class="nav-item">
                 <a href="{{ route('inventaris.index') }}" class="nav-link {{ request()->is('inventaris*') ? 'active' : '' }}">
-                    <i class="bi bi-boxes"></i><span>Kelola Inventaris</span>
+                    <i class="bi bi-boxes"></i><span>Kelola Katalog</span>
                 </a>
             </li>
             @endif
@@ -63,7 +68,11 @@
                     <i class="bi bi-people"></i><span>Kelola Data User</span>
                 </a>
             </li>
-            <li class="nav-item"><a href="#" class="nav-link disabled-link"><i class="bi bi-bar-chart-line"></i><span>Laporan</span></a></li>
+            <li class="nav-item">
+                <a href="{{ route('master-data.index') }}" class="nav-link {{ request()->is('master-data*') ? 'active' : '' }}">
+                    <i class="bi bi-diagram-3"></i><span>Kelola Data Master</span>
+                </a>
+            </li>
         </ul>
         @endif
     </div>

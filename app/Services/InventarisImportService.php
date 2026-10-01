@@ -48,7 +48,7 @@ class InventarisImportService
 
         $guide = $book->createSheet()->setTitle('Petunjuk');
         $rows = [['Petunjuk pengisian'], ['Isi data pada sheet "Data" mulai baris ke-2. Jangan ubah judul kolom.'],
-            ['Kondisi harus salah satu dari: ' . implode(', ', Options::KONDISI[$kategori])]];
+            ['Kondisi harus salah satu dari: ' . implode(', ', Options::kondisi($kategori))]];
         if ($kategori === 'ruangan') {
             $rows[] = ['Kapasitas: angka bulat (jumlah orang).'];
         } else {
@@ -86,7 +86,7 @@ class InventarisImportService
         }
 
         $satuan = Satuan::pluck('nama')->mapWithKeys(fn ($n) => [mb_strtolower($n) => $n])->all();
-        $kondisi = collect(Options::KONDISI[$kategori])->mapWithKeys(fn ($n) => [mb_strtolower($n) => $n])->all();
+        $kondisi = collect(Options::kondisi($kategori))->mapWithKeys(fn ($n) => [mb_strtolower($n) => $n])->all();
         $existing = AlatBahan::where('jenis', $kategori)->pluck('nama')->map(fn ($n) => mb_strtolower(trim($n)))->flip()->all();
 
         $valid = [];
@@ -121,7 +121,7 @@ class InventarisImportService
 
             $k = $kondisi[mb_strtolower($get('kondisi'))] ?? null;
             if (! $k) {
-                $msg[] = 'Kondisi harus salah satu dari: ' . implode(', ', Options::KONDISI[$kategori]) . '.';
+                $msg[] = 'Kondisi harus salah satu dari: ' . implode(', ', Options::kondisi($kategori)) . '.';
             }
 
             $sat = '';
