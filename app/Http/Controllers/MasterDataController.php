@@ -3,31 +3,21 @@
 namespace App\Http\Controllers;
 
 use App\Models\AlatBahan;
-use App\Models\Dosen;
 use App\Models\Kelas;
 use App\Models\Mahasiswa;
-use App\Models\MasterOption;
-use App\Models\Prodi;
 use App\Models\Satuan;
-use App\Models\StaffProdi;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 /**
- * Kelola Data Master: satu menu untuk Satuan, Kelas, Prodi, Kategori, Jenis, Status, Kondisi.
- * Ruangan (CRUD sendiri) dan Role (statis) tidak termasuk. Jenis = struktur sistem (alat/bahan/ruangan), hanya-baca.
+ * Kelola Data Master: Satuan dan Kelas (sumber dropdown). Pilihan statis (Kondisi, Status, Jenis, Prodi), Ruangan, dan Role tidak dikelola di sini.
  * Mengubah nama master otomatis memperbarui data yang memakainya; master yang masih dipakai tidak dapat dihapus.
  */
 class MasterDataController extends Controller
 {
-    public const KATEGORI = [
-        'satuan' => 'Satuan', 'kelas' => 'Kelas', 'prodi' => 'Prodi', 'kategori' => 'Kategori',
-        'jenis' => 'Jenis', 'status' => 'Status', 'kondisi' => 'Kondisi',
-    ];
+    public const KATEGORI = ['satuan' => 'Satuan', 'kelas' => 'Kelas'];
     public const PER_PAGE = [10, 25, 50, 100];
-    public const JENIS = ['alat' => 'Alat', 'bahan' => 'Bahan', 'ruangan' => 'Ruangan'];
-    public const GRUP_KONDISI = ['alat' => 'Alat', 'bahan' => 'Bahan'];
 
     /** Konfigurasi tiap tab: model, batas panjang, hitung pemakaian, dan sinkronisasi nama ke data yang memakainya. */
     private function tab(string $k): array
@@ -41,23 +31,7 @@ class MasterDataController extends Controller
             'kelas' => ['model' => Kelas::class, 'max' => 20,
                 'used' => fn ($r) => Mahasiswa::where('kelas', $r->nama)->count(),
                 'rename' => fn ($r, $n) => Mahasiswa::where('kelas', $r->nama)->update(['kelas' => $n])],
-            'prodi' => ['model' => Prodi::class, 'max' => 255,
-                'used' => fn ($r) => Mahasiswa::where('program_studi', $r->nama)->count() + Dosen::where('program_studi', $r->nama)->count() + StaffProdi::where('program_studi', $r->nama)->count(),
-                'rename' => function ($r, $n) {
-                    foreach ([Mahasiswa::class, Dosen::class, StaffProdi::class] as $m) {
-                        $m::where('program_studi', $r->nama)->update(['program_studi' => $n]);
-                    }
-                }],
-            'kategori' => ['model' => MasterOption::class, 'tipe' => 'kategori', 'max' => 100,
-                'used' => fn ($r) => AlatBahan::where('kategori', $r->nama)->count(),
-                'rename' => fn ($r, $n) => AlatBahan::where('kategori', $r->nama)->update(['kategori' => $n])],
-            'status' => ['model' => MasterOption::class, 'tipe' => 'status', 'grup' => 'ruangan', 'max' => 100,
-                'used' => fn ($r) => AlatBahan::where('jenis', 'ruangan')->where('kondisi', $r->nama)->count(),
-                'rename' => fn ($r, $n) => AlatBahan::where('jenis', 'ruangan')->where('kondisi', $r->nama)->update(['kondisi' => $n])],
-            'kondisi' => ['model' => MasterOption::class, 'tipe' => 'kondisi', 'grups' => self::GRUP_KONDISI, 'max' => 100,
-                'used' => fn ($r) => AlatBahan::where('jenis', $r->grup)->where('kondisi', $r->nama)->count(),
-                'rename' => fn ($r, $n) => AlatBahan::where('jenis', $r->grup)->where('kondisi', $r->nama)->update(['kondisi' => $n])],
-            default => ['readonly' => true],
+            default => abort(404),
         };
     }
 
@@ -83,21 +57,16 @@ class MasterDataController extends Controller
         $perPage = (int) $request->query('per_page');
         $perPage = in_array($perPage, self::PER_PAGE, true) ? $perPage : self::PER_PAGE[0];
 
-        if ($kategori === 'jenis') {
-            $data = collect(self::JENIS)->map(fn ($nama, $key) => (object) ['nama' => $nama, 'used' => AlatBahan::where('jenis', $key)->count()])->values();
-            $data = new \Illuminate\Pagination\LengthAwarePaginator($data, $data->count(), 100, 1, ['path' => $request->url()]);
-        } else {
-            $query = $this->query($kategori, $cfg);
-            foreach (array_slice(preg_split('/\s+/u', $search, -1, PREG_SPLIT_NO_EMPTY) ?: [], 0, 5) as $word) {
-                $query->whereRaw("nama LIKE ? ESCAPE '!'", ['%' . str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $word) . '%']);
-            }
-            $query->orderBy(...($kategori === 'kondisi' ? ['grup'] : ['nama']));
-            $data = $query->orderBy('nama')->paginate($perPage)->withQueryString();
-            if ($data->currentPage() > $data->lastPage()) {
-                return redirect()->route('master-data.index', array_merge($request->query(), ['page' => $data->lastPage()]));
-            }
-            $data->getCollection()->each(fn ($r) => $r->used = $cfg['used']($r));
+        $query = $this->query($kategori, $cfg);
+        foreach (array_slice(preg_split('/\s+/u', $search, -1, PREG_SPLIT_NO_EMPTY) ?: [], 0, 5) as $word) {
+            $query->whereRaw("nama LIKE ? ESCAPE '!'", ['%' . str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $word) . '%']);
         }
+        $query->orderBy(...($kategori === 'kondisi' ? ['grup'] : ['nama']));
+        $data = $query->orderBy('nama')->paginate($perPage)->withQueryString();
+        if ($data->currentPage() > $data->lastPage()) {
+            return redirect()->route('master-data.index', array_merge($request->query(), ['page' => $data->lastPage()]));
+        }
+        $data->getCollection()->each(fn ($r) => $r->used = $cfg['used']($r));
 
         return view('master-data.index', [
             'kategori' => $kategori, 'labels' => self::KATEGORI, 'cfg' => $cfg, 'data' => $data,
@@ -108,9 +77,7 @@ class MasterDataController extends Controller
     public function store(Request $request, string $kategori)
     {
         $cfg = $this->tab($kategori);
-        abort_if(isset($cfg['readonly']), 404);
-
-        $v = $this->validated($request, $kategori, $cfg, null);
+                $v = $this->validated($request, $kategori, $cfg, null);
         if ($v instanceof \Illuminate\Http\RedirectResponse) {
             return $v;
         }
@@ -122,9 +89,7 @@ class MasterDataController extends Controller
     public function update(Request $request, string $kategori, int $id)
     {
         $cfg = $this->tab($kategori);
-        abort_if(isset($cfg['readonly']), 404);
-
-        $record = $this->query($kategori, $cfg)->findOrFail($id);
+                $record = $this->query($kategori, $cfg)->findOrFail($id);
         $v = $this->validated($request, $kategori, $cfg, $record);
         if ($v instanceof \Illuminate\Http\RedirectResponse) {
             return $v;
@@ -142,9 +107,7 @@ class MasterDataController extends Controller
     public function destroy(Request $request, string $kategori, int $id)
     {
         $cfg = $this->tab($kategori);
-        abort_if(isset($cfg['readonly']), 404);
-
-        $record = $this->query($kategori, $cfg)->findOrFail($id);
+                $record = $this->query($kategori, $cfg)->findOrFail($id);
         $used = $cfg['used']($record);
         if ($used > 0) {
             return $this->back($kategori, self::KATEGORI[$kategori] . ' "' . $record->nama . '" masih dipakai ' . $used . ' data dan tidak dapat dihapus.', 'error', $request);

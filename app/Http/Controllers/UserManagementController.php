@@ -31,7 +31,7 @@ class UserManagementController extends Controller
         $wa = ['name' => 'no_whatsapp', 'label' => 'WhatsApp', 'type' => 'text', 'placeholder' => '08xxxxxxxxxx', 'required' => true];
         $email = fn ($ph = 'nama@domain.ac.id') => ['name' => 'email', 'label' => 'Email', 'type' => 'email', 'placeholder' => $ph, 'required' => true];
         $nama = ['name' => 'nama', 'label' => 'Nama', 'type' => 'text', 'placeholder' => 'Nama lengkap', 'required' => true];
-        $idPegawai = ['name' => 'id_pegawai', 'label' => 'ID Pegawai', 'type' => 'text', 'placeholder' => 'ID Pegawai', 'required' => true];
+        $idPegawai = ['name' => 'id_pegawai', 'label' => 'ID Pegawai/NIP', 'type' => 'text', 'placeholder' => 'ID Pegawai/NIP', 'required' => true];
         $prodi = ['name' => 'program_studi', 'label' => 'Prodi', 'type' => 'select', 'options' => Options::prodi(), 'placeholder' => 'Pilih Prodi', 'required' => true];
 
         return match ($kategori) {
@@ -58,13 +58,13 @@ class UserManagementController extends Controller
                 ],
             ],
             Role::STAFF => [
-                'columns' => ['id_pegawai' => ['ID Pegawai', true], 'nama' => ['Nama', true], 'program_studi' => ['Prodi', true], 'email' => ['Email', true], 'no_whatsapp' => ['WhatsApp', false]],
+                'columns' => ['id_pegawai' => ['ID Pegawai/NIP', true], 'nama' => ['Nama', true], 'program_studi' => ['Prodi', true], 'email' => ['Email', true], 'no_whatsapp' => ['WhatsApp', false]],
                 'search' => ['id_pegawai', 'nama', 'program_studi', 'email', 'no_whatsapp'],
                 'default_sort' => 'nama',
                 'fields' => [$idPegawai, $nama, $prodi, $email(), $wa],
             ],
             default => [
-                'columns' => ['id_pegawai' => ['ID Pegawai', true], 'nama' => ['Nama', true], 'email' => ['Email', true], 'no_whatsapp' => ['WhatsApp', false]],
+                'columns' => ['id_pegawai' => ['ID Pegawai/NIP', true], 'nama' => ['Nama', true], 'email' => ['Email', true], 'no_whatsapp' => ['WhatsApp', false]],
                 'search' => ['id_pegawai', 'nama', 'email', 'no_whatsapp'],
                 'default_sort' => 'nama',
                 'fields' => [$idPegawai, $nama, $email(), $wa],
@@ -260,12 +260,12 @@ class UserManagementController extends Controller
             'no_whatsapp.regex' => 'Nomor WhatsApp tidak valid. Gunakan format 08xxxxxxxxxx.',
             'nuptk_nidn.unique' => 'NUPTK/NIDN sudah terdaftar.',
             'nuptk_nidn.regex' => 'NUPTK/NIDN hanya boleh berisi huruf dan angka.',
-            'id_pegawai.unique' => 'ID Pegawai sudah terdaftar.',
+            'id_pegawai.unique' => 'ID Pegawai/NIP sudah terdaftar.',
             'id_pegawai.regex' => 'ID Pegawai hanya boleh berisi huruf, angka, titik, strip, atau garis bawah.',
             'password.min' => 'Password minimal :min karakter.',
             'program_studi.in' => 'Pilih Prodi dari daftar.',
             'kelas.in' => 'Pilih Kelas dari daftar.',
-        ], MahasiswaRequest::attributeNames() + ['kelas' => 'Kelas', 'nuptk_nidn' => 'NUPTK/NIDN', 'id_pegawai' => 'ID Pegawai', 'password' => 'Password']);
+        ], MahasiswaRequest::attributeNames() + ['kelas' => 'Kelas', 'nuptk_nidn' => 'NUPTK/NIDN', 'id_pegawai' => 'ID Pegawai/NIP', 'password' => 'Password']);
 
         if ($validator->fails()) {
             return $validator;

@@ -22,7 +22,6 @@ class AlatBahan extends Model
      */
     protected $fillable = [
         'nama',
-        'kategori',
         'jenis',
         'satuan',
         'stok',

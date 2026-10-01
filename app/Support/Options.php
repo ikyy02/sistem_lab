@@ -3,7 +3,6 @@
 namespace App\Support;
 
 use App\Models\Kelas;
-use App\Models\MasterOption;
 use App\Models\Prodi;
 use App\Models\Satuan;
 
@@ -13,6 +12,13 @@ use App\Models\Satuan;
  */
 class Options
 {
+    /** Pilihan tetap (statis) Kondisi Alat/Bahan dan Status Ruangan. */
+    public const KONDISI = [
+        'alat' => ['Baik', 'Rusak', 'Hilang'],
+        'bahan' => ['Baik', 'Rusak', 'Kadaluarsa'],
+        'ruangan' => ['Tersedia', 'Tidak Tersedia'],
+    ];
+
     public static function prodi(): array
     {
         return Prodi::orderBy('nama')->pluck('nama')->all();
@@ -28,14 +34,8 @@ class Options
         return Satuan::orderBy('nama')->pluck('nama')->all();
     }
 
-    public static function kategori(): array
-    {
-        return MasterOption::values('kategori');
-    }
-
-    /** Kondisi Alat/Bahan, atau Status Ruangan, sesuai jenis. */
     public static function kondisi(string $jenis): array
     {
-        return $jenis === 'ruangan' ? MasterOption::values('status', 'ruangan') : MasterOption::values('kondisi', $jenis);
+        return self::KONDISI[$jenis] ?? [];
     }
 }

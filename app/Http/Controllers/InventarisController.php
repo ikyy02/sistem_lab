@@ -37,11 +37,10 @@ class InventarisController extends Controller
         }
 
         return [
-            'columns' => ['nama' => ['Nama', true], 'kategori' => ['Kategori', true], 'satuan' => ['Satuan', true], 'stok' => ['Stok', true], 'kondisi' => ['Kondisi', true], 'keterangan' => ['Keterangan', false]],
-            'search' => ['nama', 'kategori', 'satuan', 'kondisi', 'keterangan'],
+            'columns' => ['nama' => ['Nama', true], 'satuan' => ['Satuan', true], 'stok' => ['Stok', true], 'kondisi' => ['Kondisi', true], 'keterangan' => ['Keterangan', false]],
+            'search' => ['nama', 'satuan', 'kondisi', 'keterangan'],
             'fields' => [
                 $nama,
-                ['name' => 'kategori', 'label' => 'Kategori', 'type' => 'select', 'options' => Options::kategori(), 'placeholder' => 'Pilih Kategori', 'required' => false],
                 ['name' => 'satuan', 'label' => 'Satuan', 'type' => 'select', 'options' => Options::satuan(), 'placeholder' => 'Pilih Satuan'],
                 ['name' => 'stok', 'label' => 'Stok', 'type' => 'number', 'placeholder' => 'Jumlah stok'],
                 $kondisi, $ket,
@@ -158,7 +157,7 @@ class InventarisController extends Controller
     private function validator(Request $request, string $kategori, ?int $id)
     {
         $room = $kategori === 'ruangan';
-        $input = $request->only(['nama', 'kategori', 'satuan', 'stok', 'kondisi', 'keterangan', 'per_unit', 'harga_total', 'unit_dasar_harga']);
+        $input = $request->only(['nama', 'satuan', 'stok', 'kondisi', 'keterangan', 'per_unit', 'harga_total', 'unit_dasar_harga']);
         $input['nama'] = trim(preg_replace('/\s+/u', ' ', (string) ($input['nama'] ?? '')));
 
         $rules = [
@@ -171,7 +170,6 @@ class InventarisController extends Controller
         ];
         if (! $room) {
             $rules['satuan'] = ['required', Rule::in(Options::satuan())];
-            $rules['kategori'] = ['nullable', Rule::in(Options::kategori())];
             // Konversi unit (khusus TPK/SPK) -> data katalog tetap pakai satuan asli.
             $rules['per_unit'] = ['nullable', 'numeric', 'min:0.01'];
             $rules['harga_total'] = ['nullable', 'numeric', 'min:0', 'required_with:unit_dasar_harga'];
@@ -186,7 +184,6 @@ class InventarisController extends Controller
             'min' => ':attribute minimal :min.',
             'kondisi.in' => 'Pilih ' . ($room ? 'Status' : 'Kondisi') . ' dari daftar.',
             'satuan.in' => 'Pilih Satuan dari daftar.',
-            'kategori.in' => 'Pilih Kategori dari daftar.',
             'gambar.image' => 'File harus berupa gambar.',
             'gambar.mimes' => 'Gambar harus berformat JPG, PNG, atau WEBP.',
             'gambar.max' => 'Ukuran gambar maksimal 2 MB.',
@@ -195,7 +192,7 @@ class InventarisController extends Controller
             'harga_total.required_with' => 'Harga Total wajib diisi jika Jumlah Unit Dasar Harga diisi.',
             'unit_dasar_harga.required_with' => 'Jumlah Unit Dasar Harga wajib diisi jika Harga Total diisi.',
         ], [
-            'nama' => 'Nama', 'stok' => $label, 'kondisi' => $room ? 'Status' : 'Kondisi', 'satuan' => 'Satuan', 'kategori' => 'Kategori',
+            'nama' => 'Nama', 'stok' => $label, 'kondisi' => $room ? 'Status' : 'Kondisi', 'satuan' => 'Satuan',
             'keterangan' => 'Keterangan', 'gambar' => 'Gambar', 'per_unit' => 'Jumlah Satuan Asli per Unit',
             'harga_total' => 'Harga Total', 'unit_dasar_harga' => 'Jumlah Unit Dasar Harga',
         ]);
@@ -205,12 +202,10 @@ class InventarisController extends Controller
     {
         unset($data['gambar']);
         $data['jenis'] = $kategori;
-        $data['kategori'] = ($data['kategori'] ?? '') !== '' ? $data['kategori'] : null;
         $data['keterangan'] = ($data['keterangan'] ?? '') !== '' ? $data['keterangan'] : null;
 
         if ($kategori === 'ruangan') {
             $data['satuan'] = '';
-            $data['kategori'] = null;
             $data['per_unit'] = $data['harga_total'] = $data['unit_dasar_harga'] = null;
         }
 
