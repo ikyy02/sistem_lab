@@ -47,7 +47,7 @@
             </li>
             @if($isAdmin)
             <li class="nav-item">
-                <a href="{{ route('inventaris.index') }}" class="nav-link {{ request()->is('inventaris*') ? 'active' : '' }}">
+                <a href="{{ route('kelola-katalog.index') }}" class="nav-link {{ request()->is('kelola-katalog*') ? 'active' : '' }}">
                     <i class="bi bi-boxes"></i><span>Kelola Katalog</span>
                 </a>
             </li>

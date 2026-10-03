@@ -3,7 +3,7 @@
 use App\Http\Controllers\AlatBahanController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\InventarisController;
+use App\Http\Controllers\KelolaKatalogController;
 use App\Http\Controllers\MasterDataController;
 use App\Http\Controllers\MahasiswaController;
 use App\Http\Controllers\UserManagementController;
@@ -29,26 +29,22 @@ Route::middleware('silab.auth')->group(function () {
     Route::get('/', fn () => redirect()->route('dashboard'));
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-    // Katalog inventaris: dapat dilihat semua role (hanya-baca untuk selain Laboran/Admin)
+    // Katalog: dapat dilihat semua role (hanya-baca untuk selain Laboran/Admin)
     Route::get('katalog', [AlatBahanController::class, 'index'])->name('katalog');
 
     // Khusus Laboran/Admin
     Route::middleware('silab.role:' . Role::LABORAN)->group(function () {
 
-        // Kelola Inventaris (Alat, Bahan, Ruangan — satu menu, 3 kategori terpisah)
-        Route::get('inventaris', [InventarisController::class, 'index'])->name('inventaris.index');
-        Route::post('inventaris/{kategori}', [InventarisController::class, 'store'])
-            ->whereIn('kategori', array_keys(InventarisController::KATEGORI))->name('inventaris.store');
-        Route::put('inventaris/{kategori}/{id}', [InventarisController::class, 'update'])
-            ->whereIn('kategori', array_keys(InventarisController::KATEGORI))->whereNumber('id')->name('inventaris.update');
-        Route::delete('inventaris/{kategori}/{id}', [InventarisController::class, 'destroy'])
-            ->whereIn('kategori', array_keys(InventarisController::KATEGORI))->whereNumber('id')->name('inventaris.destroy');
-        Route::get('inventaris/{kategori}/template', [InventarisController::class, 'template'])
-            ->whereIn('kategori', array_keys(InventarisController::KATEGORI))->name('inventaris.template');
-        Route::post('inventaris/{kategori}/import', [InventarisController::class, 'import'])
-            ->whereIn('kategori', array_keys(InventarisController::KATEGORI))->name('inventaris.import');
+        // Kelola Katalog (Alat, Bahan, Ruangan — satu menu, 3 tab terpisah)
+        $kat = ['kategori' => array_keys(KelolaKatalogController::KATEGORI)];
+        Route::get('kelola-katalog', [KelolaKatalogController::class, 'index'])->name('kelola-katalog.index');
+        Route::post('kelola-katalog/{kategori}', [KelolaKatalogController::class, 'store'])->whereIn('kategori', $kat['kategori'])->name('kelola-katalog.store');
+        Route::put('kelola-katalog/{kategori}/{id}', [KelolaKatalogController::class, 'update'])->whereIn('kategori', $kat['kategori'])->whereNumber('id')->name('kelola-katalog.update');
+        Route::delete('kelola-katalog/{kategori}/{id}', [KelolaKatalogController::class, 'destroy'])->whereIn('kategori', $kat['kategori'])->whereNumber('id')->name('kelola-katalog.destroy');
+        Route::get('kelola-katalog/{kategori}/template', [KelolaKatalogController::class, 'template'])->whereIn('kategori', $kat['kategori'])->name('kelola-katalog.template');
+        Route::post('kelola-katalog/{kategori}/import', [KelolaKatalogController::class, 'import'])->whereIn('kategori', $kat['kategori'])->name('kelola-katalog.import');
 
-        // Kelola Data Master: Satuan, Kelas, Prodi, Kategori, Jenis, Status, Kondisi (sumber dropdown form terkait)
+        // Kelola Data Master: Satuan dan Kelas
         Route::get('master-data', [MasterDataController::class, 'index'])->name('master-data.index');
         Route::post('master-data/{kategori}', [MasterDataController::class, 'store'])
             ->whereIn('kategori', array_keys(MasterDataController::KATEGORI))->name('master-data.store');

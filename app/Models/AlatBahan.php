@@ -4,73 +4,46 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+/** Katalog Alat/Bahan. Harga = harga untuk 1 satuan. Tanpa kategori, kondisi, unit fisik, atau snapshot. */
 class AlatBahan extends Model
 {
-    /**
-     * Nilai yang diterima kolom `jenis`.
-     */
-    public const JENIS = ['alat', 'bahan', 'ruangan'];
+    public const JENIS = ['alat', 'bahan'];
+    public const GAMBAR_DIR = 'uploads/katalog';
 
-    /**
-     * Tabel yang digunakan — sesuai tabel yang sudah ada di database sistem_lab.
-     */
     protected $table = 'alat_bahans';
+    protected $primaryKey = 'id_katalog';
+    public $timestamps = false;
+    protected $fillable = ['nama', 'jenis', 'id_satuan', 'stok', 'harga', 'id_ruangan', 'gambar', 'keterangan'];
+    protected $casts = ['stok' => 'integer', 'harga' => 'decimal:2'];
 
-    /**
-     * Kolom yang boleh diisi secara mass-assignment.
-     * Sesuai struktur tabel: nama, jenis, satuan, stok, kondisi, keterangan.
-     */
-    protected $fillable = [
-        'nama',
-        'jenis',
-        'satuan',
-        'stok',
-        'kondisi',
-        'keterangan',
-        'gambar',
-        'per_unit',
-        'harga_total',
-        'unit_dasar_harga',
-    ];
+    protected static function booted(): void
+    {
+        // Setelah pernah masuk PEMINJAMAN_DETAIL, jenis tidak boleh diubah.
+        static::updating(function (AlatBahan $m) {
+            if ($m->isDirty('jenis') && $m->pernahDipinjam()) {
+                throw new \DomainException('Jenis katalog tidak dapat diubah karena sudah pernah dipakai pada peminjaman.');
+            }
+        });
+    }
 
-    /**
-     * Cast kolom stok ke integer.
-     */
-    protected $casts = [
-        'stok' => 'integer',
-        'per_unit' => 'decimal:2',
-        'harga_total' => 'decimal:2',
-        'unit_dasar_harga' => 'decimal:2',
-    ];
+    public function satuan()
+    {
+        return $this->belongsTo(Satuan::class, 'id_satuan', 'id_satuan');
+    }
 
-    public const GAMBAR_DIR = 'uploads/inventaris';
+    public function ruangan()
+    {
+        return $this->belongsTo(Ruangan::class, 'id_ruangan', 'id_ruangan');
+    }
 
-    /** URL publik gambar (null jika belum ada). */
     public function getGambarUrlAttribute(): ?string
     {
         return $this->gambar ? asset(self::GAMBAR_DIR . '/' . $this->gambar) : null;
     }
 
-    /**
-     * Jumlah Unit = Jumlah Satuan Asli ÷ Jumlah Satuan Asli per Unit (khusus TPK/SPK).
-     * Null jika pembagi belum diisi/tidak valid -> konversi dianggap belum diatur.
-     */
-    public function getJumlahUnitAttribute(): ?float
+    /** True bila katalog pernah masuk detail peminjaman (jenis tidak boleh diubah). */
+    public function pernahDipinjam(): bool
     {
-        if ($this->per_unit === null || (float) $this->per_unit <= 0) {
-            return null;
-        }
-
-        return round(((float) $this->stok) / (float) $this->per_unit, 2);
-    }
-
-    /** Harga per Unit = Harga Total ÷ Jumlah Unit Dasar Harga (khusus TPK/SPK). */
-    public function getHargaPerUnitAttribute(): ?float
-    {
-        if ($this->harga_total === null || $this->unit_dasar_harga === null || (float) $this->unit_dasar_harga <= 0) {
-            return null;
-        }
-
-        return round((float) $this->harga_total / (float) $this->unit_dasar_harga, 2);
+        return PeminjamanDetail::where('id_katalog', $this->getKey())->exists();
     }
 }

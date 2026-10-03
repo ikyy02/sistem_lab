@@ -2,40 +2,25 @@
 
 namespace App\Support;
 
-use App\Models\Kelas;
 use App\Models\Prodi;
+use App\Models\Ruangan;
 use App\Models\Satuan;
 
-/**
- * Sumber pilihan dropdown. Semua berasal dari Kelola Data Master (database),
- * sehingga perubahan master langsung mengikuti seluruh form terkait.
- */
+/** Sumber pilihan dropdown (id => nama), semuanya dari database. */
 class Options
 {
-    /** Pilihan tetap (statis) Kondisi Alat/Bahan dan Status Ruangan. */
-    public const KONDISI = [
-        'alat' => ['Baik', 'Rusak', 'Hilang'],
-        'bahan' => ['Baik', 'Rusak', 'Kadaluarsa'],
-        'ruangan' => ['Tersedia', 'Tidak Tersedia'],
-    ];
-
     public static function prodi(): array
     {
-        return Prodi::orderBy('nama')->pluck('nama')->all();
-    }
-
-    public static function kelas(): array
-    {
-        return Kelas::orderBy('nama')->pluck('nama')->all();
+        return Prodi::orderBy('nama_prodi')->pluck('nama_prodi', 'id_prodi')->all();
     }
 
     public static function satuan(): array
     {
-        return Satuan::orderBy('nama')->pluck('nama')->all();
+        return Satuan::orderBy('nama_satuan')->pluck('nama_satuan', 'id_satuan')->all();
     }
 
-    public static function kondisi(string $jenis): array
+    public static function ruangan(): array
     {
-        return self::KONDISI[$jenis] ?? [];
+        return Ruangan::orderBy('nama_ruangan')->pluck('nama_ruangan', 'id_ruangan')->all();
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Http\Controllers\UserManagementController;
+use App\Models\Akun;
 use App\Support\Options;
 use App\Support\Role;
 use Illuminate\Http\UploadedFile;
@@ -88,10 +89,8 @@ class UserImportService
         }
 
         $existingEmail = [];
-        foreach (Role::MODELS as $m) {
-            foreach ($m::pluck('email') as $e) {
-                $existingEmail[mb_strtolower($e)] = true;
-            }
+        foreach (Akun::pluck('email') as $e) {
+            $existingEmail[mb_strtolower($e)] = true;
         }
         $existingUnique = [];
         $uniqueCol = (new $model)->getKeyName(); // nuptk_nidn / id_pegawai
@@ -126,11 +125,17 @@ class UserImportService
                 if ($f['required'] && $val === '') {
                     $msg[] = $f['label'] . ' wajib diisi.';
                 }
-                if (($f['type'] ?? '') === 'select' && $val !== '' && ! in_array($val, $f['options'], true)) {
-                    $msg[] = $f['label'] . ' harus salah satu dari: ' . implode(', ', $f['options']) . '.';
+                if (($f['type'] ?? '') === 'select' && $val !== '') {
+                    $id = array_search(mb_strtolower($val), array_map('mb_strtolower', $f['options']), true);
+                    if ($id === false) {
+                        $msg[] = $f['label'] . ' harus salah satu dari: ' . implode(', ', $f['options']) . '.';
+                        $val = '';
+                    } else {
+                        $val = (string) $id;
+                    }
                 }
-                if ($f['name'] === 'email' && $val !== '' && ! filter_var($val, FILTER_VALIDATE_EMAIL)) {
-                    $msg[] = 'Format Email tidak valid.';
+                if ($f['name'] === 'email' && $val !== '' && (! filter_var($val, FILTER_VALIDATE_EMAIL) || mb_strlen($val) > 50)) {
+                    $msg[] = 'Format Email tidak valid (maksimal 50 karakter).';
                 }
                 if ($f['name'] === 'no_whatsapp' && $val !== '' && ! preg_match(UserManagementController::WA_REGEX, $val)) {
                     $msg[] = 'WhatsApp tidak valid. Gunakan format 08xxxxxxxxxx.';
@@ -172,7 +177,7 @@ class UserImportService
                 continue;
             }
 
-            $valid[] = $record + ['password' => $password, 'created_at' => now(), 'updated_at' => now()];
+            $valid[] = $record + ['password' => $password];
         }
 
         if ($total === 0) {
@@ -182,12 +187,15 @@ class UserImportService
             return ['success' => false, 'total' => $total, 'error_count' => count($errors), 'errors' => array_slice($errors, 0, self::MAX_ERRORS)];
         }
 
-        DB::transaction(function () use ($model, $valid) {
-            foreach (array_chunk($valid, 100) as $chunk) {
-                $model::insert($chunk);
+        $akun = app(AkunService::class);
+        DB::transaction(function () use ($akun, $kategori, $valid) {
+            foreach ($valid as $row) {
+                $password = $row['password'];
+                $email = mb_strtolower($row['email']);
+                unset($row['password'], $row['email']);
+                $akun->buat($kategori, $email, $password, $row);
             }
         });
-
         return ['success' => true, 'total' => $total, 'inserted' => count($valid)];
     }
 

@@ -4,65 +4,49 @@ namespace App\Http\Controllers;
 
 use App\Models\AlatBahan;
 use App\Models\Kelas;
-use App\Models\Mahasiswa;
 use App\Models\Satuan;
+use App\Support\Options;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 
 /**
- * Kelola Data Master: Satuan dan Kelas (sumber dropdown). Pilihan statis (Kondisi, Status, Jenis, Prodi), Ruangan, dan Role tidak dikelola di sini.
- * Mengubah nama master otomatis memperbarui data yang memakainya; master yang masih dipakai tidak dapat dihapus.
+ * Kelola Data Master: Satuan dan Kelas (sumber dropdown / jadwal). Prodi dan Ruangan tidak dikelola di sini.
+ * Master yang sudah dipakai data lain tidak dapat dihapus (FK ON DELETE RESTRICT).
  */
 class MasterDataController extends Controller
 {
     public const KATEGORI = ['satuan' => 'Satuan', 'kelas' => 'Kelas'];
     public const PER_PAGE = [10, 25, 50, 100];
 
-    /** Konfigurasi tiap tab: model, batas panjang, hitung pemakaian, dan sinkronisasi nama ke data yang memakainya. */
     private function tab(string $k): array
     {
-        $barang = fn () => AlatBahan::where('jenis', '!=', 'ruangan');
-
         return match ($k) {
-            'satuan' => ['model' => Satuan::class, 'max' => 50,
-                'used' => fn ($r) => $barang()->where('satuan', $r->nama)->count(),
-                'rename' => fn ($r, $n) => $barang()->where('satuan', $r->nama)->update(['satuan' => $n])],
-            'kelas' => ['model' => Kelas::class, 'max' => 20,
-                'used' => fn ($r) => Mahasiswa::where('kelas', $r->nama)->count(),
-                'rename' => fn ($r, $n) => Mahasiswa::where('kelas', $r->nama)->update(['kelas' => $n])],
+            'satuan' => ['model' => Satuan::class, 'pk' => 'id_satuan', 'name' => 'nama_satuan', 'max' => 50,
+                'select' => 'id_satuan as id, nama_satuan as nama',
+                'used' => fn ($r) => AlatBahan::where('id_satuan', $r->id)->count()],
+            'kelas' => ['model' => Kelas::class, 'pk' => 'id_kelas', 'name' => 'nama_kelas', 'max' => 100,
+                'select' => 'id_kelas as id, nama_kelas as nama, id_prodi as grup',
+                'grups' => Options::prodi(), 'grup_label' => 'Prodi',
+                'used' => fn ($r) => \App\Models\Jadwal::where('id_kelas', $r->id)->count()],
             default => abort(404),
         };
-    }
-
-    private function query(string $k, array $cfg)
-    {
-        $q = $cfg['model']::query();
-        if (isset($cfg['tipe'])) {
-            $q->where('tipe', $cfg['tipe']);
-            if (isset($cfg['grup'])) {
-                $q->where('grup', $cfg['grup']);
-            }
-        }
-
-        return $q;
     }
 
     public function index(Request $request)
     {
         $kategori = array_key_exists((string) $request->query('kategori'), self::KATEGORI) ? $request->query('kategori') : 'satuan';
         $cfg = $this->tab($kategori);
-
         $search = mb_substr(trim((string) $request->query('search', '')), 0, 100);
         $perPage = (int) $request->query('per_page');
         $perPage = in_array($perPage, self::PER_PAGE, true) ? $perPage : self::PER_PAGE[0];
 
-        $query = $this->query($kategori, $cfg);
+        $query = $cfg['model']::query()->selectRaw($cfg['select']);
         foreach (array_slice(preg_split('/\s+/u', $search, -1, PREG_SPLIT_NO_EMPTY) ?: [], 0, 5) as $word) {
-            $query->whereRaw("nama LIKE ? ESCAPE '!'", ['%' . str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $word) . '%']);
+            $query->whereRaw("{$cfg['name']} LIKE ? ESCAPE '!'", ['%' . str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $word) . '%']);
         }
-        $query->orderBy(...($kategori === 'kondisi' ? ['grup'] : ['nama']));
-        $data = $query->orderBy('nama')->paginate($perPage)->withQueryString();
+        $data = $query->orderBy($cfg['name'])->orderBy($cfg['pk'])->paginate($perPage)->withQueryString();
         if ($data->currentPage() > $data->lastPage()) {
             return redirect()->route('master-data.index', array_merge($request->query(), ['page' => $data->lastPage()]));
         }
@@ -77,7 +61,7 @@ class MasterDataController extends Controller
     public function store(Request $request, string $kategori)
     {
         $cfg = $this->tab($kategori);
-                $v = $this->validated($request, $kategori, $cfg, null);
+        $v = $this->validated($request, $kategori, $cfg, null);
         if ($v instanceof \Illuminate\Http\RedirectResponse) {
             return $v;
         }
@@ -89,17 +73,12 @@ class MasterDataController extends Controller
     public function update(Request $request, string $kategori, int $id)
     {
         $cfg = $this->tab($kategori);
-                $record = $this->query($kategori, $cfg)->findOrFail($id);
+        $record = $cfg['model']::findOrFail($id);
         $v = $this->validated($request, $kategori, $cfg, $record);
         if ($v instanceof \Illuminate\Http\RedirectResponse) {
             return $v;
         }
-
-        DB::transaction(function () use ($cfg, $record, $v, $kategori) {
-            // Kondisi: pindah grup (Alat/Bahan) dilarang jika sudah dipakai, agar data tidak yatim.
-            $cfg['rename']($record, $v['nama']);
-            $record->update($v);
-        });
+        $record->update($v); // tabel lain memakai id sehingga otomatis mengikuti perubahan nama
 
         return $this->back($kategori, self::KATEGORI[$kategori] . ' berhasil diperbarui.', 'success', $request);
     }
@@ -107,55 +86,47 @@ class MasterDataController extends Controller
     public function destroy(Request $request, string $kategori, int $id)
     {
         $cfg = $this->tab($kategori);
-                $record = $this->query($kategori, $cfg)->findOrFail($id);
-        $used = $cfg['used']($record);
-        if ($used > 0) {
-            return $this->back($kategori, self::KATEGORI[$kategori] . ' "' . $record->nama . '" masih dipakai ' . $used . ' data dan tidak dapat dihapus.', 'error', $request);
+        $record = $cfg['model']::findOrFail($id);
+        $nama = $record->{$cfg['name']};
+        try {
+            $record->delete(); // ON DELETE RESTRICT bila sudah direferensikan
+        } catch (QueryException $e) {
+            return $this->back($kategori, self::KATEGORI[$kategori] . ' "' . $nama . '" masih dipakai data lain dan tidak dapat dihapus.', 'error', $request);
         }
-        $record->delete();
 
         return $this->back($kategori, self::KATEGORI[$kategori] . ' berhasil dihapus.', 'success', $request);
     }
 
-    /** @return array<string,string>|\Illuminate\Http\RedirectResponse */
+    /** @return array<string,mixed>|\Illuminate\Http\RedirectResponse */
     private function validated(Request $request, string $kategori, array $cfg, $record)
     {
         $label = self::KATEGORI[$kategori];
         $nama = trim(preg_replace('/\s+/u', ' ', (string) $request->input('nama')));
         $input = ['nama' => $nama, 'grup' => $request->input('grup')];
-
-        $model = new $cfg['model'];
-        $unique = Rule::unique($model->getTable(), 'nama')->ignore($record?->id);
-        if (isset($cfg['tipe'])) {
-            $grup = isset($cfg['grups']) ? (string) $request->input('grup') : ($cfg['grup'] ?? '');
-            $unique->where('tipe', $cfg['tipe'])->where('grup', $grup);
+        $table = (new $cfg['model'])->getTable();
+        $unique = Rule::unique($table, $cfg['name'])->ignore($record?->getKey(), $cfg['pk']);
+        if ($kategori === 'kelas') {
+            $unique->where('id_prodi', (int) $request->input('grup')); // UNIQUE(id_prodi, nama_kelas)
         }
-
         $rules = ['nama' => ['required', 'string', 'max:' . $cfg['max'], $unique]];
         if (isset($cfg['grups'])) {
-            $rules['grup'] = ['required', Rule::in(array_keys($cfg['grups']))];
+            $rules['grup'] = ['required', Rule::exists('prodis', 'id_prodi')];
         }
-
-        $validator = \Illuminate\Support\Facades\Validator::make($input, $rules, [
+        $validator = Validator::make($input, $rules, [
             'nama.required' => $label . ' wajib diisi.',
             'nama.unique' => $label . ' sudah ada.',
             'nama.max' => $label . ' maksimal :max karakter.',
-            'grup.required' => 'Berlaku untuk wajib dipilih.',
-            'grup.in' => 'Pilih Berlaku untuk dari daftar.',
+            'grup.required' => 'Prodi wajib dipilih.',
+            'grup.exists' => 'Pilih Prodi dari daftar.',
         ]);
-
         if ($validator->fails()) {
             return redirect()->route('master-data.index', $request->only(['search', 'per_page', 'page']) + ['kategori' => $kategori])
                 ->withErrors($validator)->withInput()
-                ->with('open_modal', ['mode' => $record ? 'edit' : 'create', 'id' => $record?->id]);
+                ->with('open_modal', ['mode' => $record ? 'edit' : 'create', 'id' => $record?->getKey()]);
         }
-
-        $data = ['nama' => $nama];
-        if (isset($cfg['tipe'])) {
-            $data += ['tipe' => $cfg['tipe'], 'grup' => isset($cfg['grups']) ? $input['grup'] : ($cfg['grup'] ?? '')];
-        }
-        if ($record && isset($cfg['grups']) && $record->grup !== $data['grup'] && $cfg['used']($record) > 0) {
-            return $this->back($kategori, 'Kondisi yang sudah dipakai tidak dapat dipindah ke jenis lain.', 'error', $request);
+        $data = [$cfg['name'] => $nama];
+        if (isset($cfg['grups'])) {
+            $data['id_prodi'] = (int) $input['grup'];
         }
 
         return $data;

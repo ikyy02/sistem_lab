@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\MahasiswaRequest;
+use App\Services\AkunService;
 use App\Services\AuthService;
 use App\Services\UserImportService;
 use App\Support\Options;
@@ -14,7 +15,7 @@ use Illuminate\Support\Facades\Validator;
 
 /**
  * Kelola Data User: satu menu, empat kategori dengan tabel/kolom/form masing-masing.
- * Password disimpan apa adanya (belum di-hash) pada tahap ini; lihat AuthService.
+ * Akun (email, password apa adanya, role) dan profil dibuat/diubah/dihapus atomik lewat AkunService.
  */
 class UserManagementController extends Controller
 {
@@ -28,29 +29,28 @@ class UserManagementController extends Controller
      */
     public static function config(string $kategori): array
     {
-        $wa = ['name' => 'no_whatsapp', 'label' => 'WhatsApp', 'type' => 'text', 'placeholder' => '08xxxxxxxxxx', 'required' => true];
+        $wa = ['name' => 'no_whatsapp', 'label' => 'WhatsApp', 'type' => 'text', 'placeholder' => '08xxxxxxxxxx', 'required' => false];
         $email = fn ($ph = 'nama@domain.ac.id') => ['name' => 'email', 'label' => 'Email', 'type' => 'email', 'placeholder' => $ph, 'required' => true];
         $nama = ['name' => 'nama', 'label' => 'Nama', 'type' => 'text', 'placeholder' => 'Nama lengkap', 'required' => true];
         $idPegawai = ['name' => 'id_pegawai', 'label' => 'ID Pegawai/NIP', 'type' => 'text', 'placeholder' => 'ID Pegawai/NIP', 'required' => true];
-        $prodi = ['name' => 'program_studi', 'label' => 'Prodi', 'type' => 'select', 'options' => Options::prodi(), 'placeholder' => 'Pilih Prodi', 'required' => true];
+        $prodi = ['name' => 'id_prodi', 'label' => 'Prodi', 'type' => 'select', 'options' => Options::prodi(), 'placeholder' => 'Pilih Prodi', 'required' => true];
 
         return match ($kategori) {
             Role::MAHASISWA => [
-                'columns' => ['nim' => ['NIM', true], 'nama' => ['Nama', true], 'kelas' => ['Kelas', true], 'program_studi' => ['Prodi', true], 'email' => ['Email', true], 'no_whatsapp' => ['WhatsApp', false]],
-                'search' => ['nim', 'nama', 'kelas', 'program_studi', 'email', 'no_whatsapp'],
+                'columns' => ['nim' => ['NIM', true], 'nama' => ['Nama', true], 'nama_prodi' => ['Prodi', true], 'email' => ['Email', true], 'no_whatsapp' => ['WhatsApp', false]],
+                'search' => ['mahasiswas.nim', 'mahasiswas.nama', 'prodis.nama_prodi', 'mahasiswas.email', 'mahasiswas.no_whatsapp'],
                 'default_sort' => 'nim',
                 'fields' => [
                     ['name' => 'nim', 'label' => 'NIM', 'type' => 'text', 'placeholder' => 'Contoh: 2210101001', 'required' => true],
                     $nama,
-                    ['name' => 'kelas', 'label' => 'Kelas', 'type' => 'select', 'options' => Options::kelas(), 'placeholder' => 'Pilih Kelas', 'required' => true],
                     $prodi,
                     $email('nim@' . MahasiswaRequest::EMAIL_DOMAIN),
                     $wa,
                 ],
             ],
             Role::DOSEN => [
-                'columns' => ['nuptk_nidn' => ['NUPTK/NIDN', true], 'nama' => ['Nama', true], 'program_studi' => ['Prodi', true], 'email' => ['Email', true], 'no_whatsapp' => ['WhatsApp', false]],
-                'search' => ['nuptk_nidn', 'nama', 'program_studi', 'email', 'no_whatsapp'],
+                'columns' => ['nuptk_nidn' => ['NUPTK/NIDN', true], 'nama' => ['Nama', true], 'nama_prodi' => ['Prodi', true], 'email' => ['Email', true], 'no_whatsapp' => ['WhatsApp', false]],
+                'search' => ['dosens.nuptk_nidn', 'dosens.nama', 'prodis.nama_prodi', 'dosens.email', 'dosens.no_whatsapp'],
                 'default_sort' => 'nama',
                 'fields' => [
                     ['name' => 'nuptk_nidn', 'label' => 'NUPTK/NIDN', 'type' => 'text', 'placeholder' => 'NUPTK atau NIDN', 'required' => true],
@@ -58,14 +58,14 @@ class UserManagementController extends Controller
                 ],
             ],
             Role::STAFF => [
-                'columns' => ['id_pegawai' => ['ID Pegawai/NIP', true], 'nama' => ['Nama', true], 'program_studi' => ['Prodi', true], 'email' => ['Email', true], 'no_whatsapp' => ['WhatsApp', false]],
-                'search' => ['id_pegawai', 'nama', 'program_studi', 'email', 'no_whatsapp'],
+                'columns' => ['id_pegawai' => ['ID Pegawai/NIP', true], 'nama' => ['Nama', true], 'nama_prodi' => ['Prodi', true], 'email' => ['Email', true], 'no_whatsapp' => ['WhatsApp', false]],
+                'search' => ['staff_prodis.id_pegawai', 'staff_prodis.nama', 'prodis.nama_prodi', 'staff_prodis.email', 'staff_prodis.no_whatsapp'],
                 'default_sort' => 'nama',
                 'fields' => [$idPegawai, $nama, $prodi, $email(), $wa],
             ],
             default => [
                 'columns' => ['id_pegawai' => ['ID Pegawai/NIP', true], 'nama' => ['Nama', true], 'email' => ['Email', true], 'no_whatsapp' => ['WhatsApp', false]],
-                'search' => ['id_pegawai', 'nama', 'email', 'no_whatsapp'],
+                'search' => ['laborans.id_pegawai', 'laborans.nama', 'laborans.email', 'laborans.no_whatsapp'],
                 'default_sort' => 'nama',
                 'fields' => [$idPegawai, $nama, $email(), $wa],
             ],
@@ -77,18 +77,19 @@ class UserManagementController extends Controller
         $kategori = $this->kategori($request->query('kategori'));
         $config = self::config($kategori);
         $model = Role::MODELS[$kategori];
-
+        $table = (new $model)->getTable();
         $search = mb_substr(trim($this->str($request->query('search'))), 0, 100);
-
         $sortable = array_keys(array_filter($config['columns'], fn ($c) => $c[1]));
         $sort = $this->str($request->query('sort'));
         $sort = in_array($sort, $sortable, true) ? $sort : $config['default_sort'];
         $direction = strtolower($this->str($request->query('direction'))) === 'desc' ? 'desc' : 'asc';
-
         $perPage = (int) $this->str($request->query('per_page'));
         $perPage = in_array($perPage, self::PER_PAGE_OPTIONS, true) ? $perPage : self::PER_PAGE_OPTIONS[0];
 
-        $query = $model::query();
+        $query = $model::query()->select($table . '.*');
+        if ($kategori !== Role::LABORAN) {
+            $query->join('prodis', 'prodis.id_prodi', '=', $table . '.id_prodi')->addSelect('prodis.nama_prodi');
+        }
         $words = preg_split('/\s+/u', $search, -1, PREG_SPLIT_NO_EMPTY) ?: [];
         foreach (array_slice($words, 0, 5) as $word) {
             $like = '%' . str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $word) . '%';
@@ -98,9 +99,8 @@ class UserManagementController extends Controller
                 }
             });
         }
-
-        $data = $query->orderBy($sort, $direction)->orderBy((new $model)->getKeyName())->paginate($perPage)->withQueryString();
-
+        $sortColumn = $sort === 'nama_prodi' ? 'prodis.nama_prodi' : $table . '.' . $sort;
+        $data = $query->orderBy($sortColumn, $direction)->orderBy($table . '.' . (new $model)->getKeyName())->paginate($perPage)->withQueryString();
         if ($data->currentPage() > $data->lastPage()) {
             return redirect()->route('kelola-user.index', array_merge($request->query(), ['page' => $data->lastPage()]));
         }
@@ -119,41 +119,39 @@ class UserManagementController extends Controller
         ]);
     }
 
-    public function store(Request $request, string $kategori)
+    public function store(Request $request, string $kategori, AkunService $akun)
     {
-        $model = Role::MODELS[$kategori];
         $data = $this->validated($request, $kategori, null);
-
-        if (! $data instanceof \Illuminate\Contracts\Validation\Validator) {
-            $model::create($data);
-
-            return redirect()->route('kelola-user.index', ['kategori' => $kategori])
-                ->with('success', 'Data ' . Role::LABELS[$kategori] . ' berhasil ditambahkan.');
+        if ($data instanceof \Illuminate\Contracts\Validation\Validator) {
+            return $this->fail($data, $kategori, 'create', null);
         }
+        $password = $data['password'];
+        $email = $data['email'];
+        unset($data['password'], $data['email']);
+        $akun->buat($kategori, $email, $password, $data);
 
-        return $this->fail($data, $kategori, 'create', null);
+        return redirect()->route('kelola-user.index', ['kategori' => $kategori])
+            ->with('success', 'Data ' . Role::LABELS[$kategori] . ' berhasil ditambahkan.');
     }
 
-    public function update(Request $request, string $kategori, string $key)
+    public function update(Request $request, string $kategori, string $key, AkunService $akun)
     {
         $record = Role::MODELS[$kategori]::findOrFail($key);
-        $id = $key;
-        $data = $this->validated($request, $kategori, $id);
-
-        if (! $data instanceof \Illuminate\Contracts\Validation\Validator) {
-            $record->update($data);
-
-            // Jika akun yang sedang login diubah, sinkronkan identitas di sesi (primary key bisa ikut berubah).
-            $me = AuthService::user();
-            if ($me && $me['role'] === $kategori && $me['key'] === $key) {
-                session()->put('silab_user', ['key' => (string) $record->getKey(), 'nama' => $record->nama, 'email' => $record->email] + $me);
-            }
-
-            return redirect()->route('kelola-user.index', $request->only(['kategori', 'search', 'sort', 'direction', 'per_page', 'page']) + ['kategori' => $kategori])
-                ->with('success', 'Data ' . Role::LABELS[$kategori] . ' berhasil diperbarui.');
+        $data = $this->validated($request, $kategori, $key);
+        if ($data instanceof \Illuminate\Contracts\Validation\Validator) {
+            return $this->fail($data, $kategori, 'edit', $key);
+        }
+        $password = $data['password'] ?? null;
+        unset($data['password']);
+        $record = $akun->ubah($record, $kategori, $data, $password);
+        // Jika akun yang sedang login diubah, sinkronkan identitas di sesi (PK/email bisa ikut berubah).
+        $me = AuthService::user();
+        if ($me && $me['role'] === $kategori && $me['key'] === $key) {
+            session()->put('silab_user', ['key' => (string) $record->getKey(), 'nama' => $record->nama, 'email' => $record->email] + $me);
         }
 
-        return $this->fail($data, $kategori, 'edit', $id);
+        return redirect()->route('kelola-user.index', $request->only(['kategori', 'search', 'sort', 'direction', 'per_page', 'page']) + ['kategori' => $kategori])
+            ->with('success', 'Data ' . Role::LABELS[$kategori] . ' berhasil diperbarui.');
     }
 
     /** Template Excel/CSV untuk Dosen, Staff Prodi, Laboran/Admin (Mahasiswa: lihat MahasiswaController). */
@@ -183,14 +181,17 @@ class UserManagementController extends Controller
             : $back->with('import_report_' . $kategori, $result);
     }
 
-    public function destroy(Request $request, string $kategori, string $key)
+    public function destroy(Request $request, string $kategori, string $key, AkunService $akun)
     {
         $me = AuthService::user();
         if ($me && $me['role'] === $kategori && $me['key'] === $key) {
             return back()->with('error', 'Akun yang sedang Anda gunakan tidak dapat dihapus.');
         }
-
-        Role::MODELS[$kategori]::findOrFail($key)->delete();
+        try {
+            $akun->hapus(Role::MODELS[$kategori]::findOrFail($key));
+        } catch (\RuntimeException $e) {
+            return back()->with('error', $e->getMessage());
+        }
 
         return redirect()->route('kelola-user.index', $request->only(['search', 'sort', 'direction', 'per_page', 'page']) + ['kategori' => $kategori])
             ->with('success', 'Data ' . Role::LABELS[$kategori] . ' berhasil dihapus.');
@@ -199,63 +200,35 @@ class UserManagementController extends Controller
     /** @return array<string,mixed>|\Illuminate\Contracts\Validation\Validator */
     private function validated(Request $request, string $kategori, ?string $id)
     {
-        $keyName = (new (Role::MODELS[$kategori]))->getKeyName();
-        $table = (new (Role::MODELS[$kategori]))->getTable();
+        $model = Role::MODELS[$kategori];
+        $keyName = (new $model)->getKeyName();
+        $table = (new $model)->getTable();
         $input = $this->normalize($request, $kategori);
 
-        $emailUnique = function (string $attr, mixed $value, \Closure $fail) use ($kategori, $id) {
-            foreach (Role::MODELS as $role => $model) {
-                $q = $model::query()->whereRaw('LOWER(email) = ?', [mb_strtolower((string) $value)]);
-                if ($role === $kategori && $id) {
-                    $q->where($keyName, '!=', $id);
-                }
-                if ($q->exists()) {
-                    $fail('Email sudah terdaftar di sistem.');
-                    return;
-                }
-            }
-        };
+        // Email unik secara sistem = unik pada tabel akuns (PK). Saat edit, akun milik profil ini dikecualikan.
+        $emailLama = $id ? $model::whereKey($id)->value('email') : null;
+        $emailUnique = Rule::unique('akuns', 'email')->ignore($emailLama, 'email');
 
         $pegawaiRule = ['bail', 'required', 'string', 'max:30', 'regex:/^[A-Za-z0-9._\-]+$/', Rule::unique($table, 'id_pegawai')->ignore($id, 'id_pegawai')];
-
+        $nama = ['bail', 'required', 'string', 'min:2', 'max:100'];
+        $prodi = ['bail', 'required', 'integer', Rule::exists('prodis', 'id_prodi')];
+        $email = ['bail', 'required', 'email', 'max:50', $emailUnique];
+        $wa = ['bail', 'nullable', 'string', 'max:20', 'regex:' . self::WA_REGEX];
         $rules = match ($kategori) {
-            Role::MAHASISWA => MahasiswaRequest::baseRules() + [
-                'kelas' => ['bail', 'required', 'string', 'max:50'],
+            Role::MAHASISWA => [
+                'nim' => ['bail', 'required', 'string', 'max:20', 'regex:/^[A-Za-z0-9]+$/', Rule::unique($table, 'nim')->ignore($id, 'nim')],
+                'nama' => $nama, 'id_prodi' => $prodi,
+                'email' => array_merge($email, ['regex:' . MahasiswaRequest::EMAIL_REGEX]),
+                'no_whatsapp' => $wa,
             ],
             Role::DOSEN => [
                 'nuptk_nidn' => ['bail', 'required', 'string', 'max:30', 'regex:/^[A-Za-z0-9]+$/', Rule::unique($table, 'nuptk_nidn')->ignore($id, 'nuptk_nidn')],
-                'nama' => ['bail', 'required', 'string', 'min:2', 'max:255'],
-                'program_studi' => ['bail', 'required', 'string', 'max:255'],
-                'email' => ['bail', 'required', 'email', 'max:255'],
-                'no_whatsapp' => ['bail', 'required', 'string', 'max:20', 'regex:' . self::WA_REGEX],
+                'nama' => $nama, 'id_prodi' => $prodi, 'email' => $email, 'no_whatsapp' => $wa,
             ],
-            Role::STAFF => [
-                'id_pegawai' => $pegawaiRule,
-                'nama' => ['bail', 'required', 'string', 'min:2', 'max:255'],
-                'program_studi' => ['bail', 'required', 'string', 'max:255'],
-                'email' => ['bail', 'required', 'email', 'max:255'],
-                'no_whatsapp' => ['bail', 'required', 'string', 'max:20', 'regex:' . self::WA_REGEX],
-            ],
-            default => [
-                'id_pegawai' => $pegawaiRule,
-                'nama' => ['bail', 'required', 'string', 'min:2', 'max:255'],
-                'email' => ['bail', 'required', 'email', 'max:255'],
-                'no_whatsapp' => ['bail', 'required', 'string', 'max:20', 'regex:' . self::WA_REGEX],
-            ],
+            Role::STAFF => ['id_pegawai' => $pegawaiRule, 'nama' => $nama, 'id_prodi' => $prodi, 'email' => $email, 'no_whatsapp' => $wa],
+            default => ['id_pegawai' => $pegawaiRule, 'nama' => $nama, 'email' => $email, 'no_whatsapp' => $wa],
         };
-
-        if ($kategori === Role::MAHASISWA) {
-            $rules['nim'][] = Rule::unique($table, 'nim')->ignore($id, 'nim');
-        }
-        $rules['email'][] = $emailUnique;
-        if (isset($rules['program_studi'])) {
-            $rules['program_studi'] = array_merge((array) $rules['program_studi'], [Rule::in(Options::prodi())]);
-        }
-        if (isset($rules['kelas'])) {
-            $rules['kelas'] = array_merge((array) $rules['kelas'], [Rule::in(Options::kelas())]);
-        }
         $rules['password'] = [$id ? 'nullable' : 'required', 'string', 'min:4', 'max:100'];
-
         $validator = Validator::make($input, $rules, MahasiswaRequest::errorMessages() + [
             'no_whatsapp.regex' => 'Nomor WhatsApp tidak valid. Gunakan format 08xxxxxxxxxx.',
             'nuptk_nidn.unique' => 'NUPTK/NIDN sudah terdaftar.',
@@ -263,20 +236,18 @@ class UserManagementController extends Controller
             'id_pegawai.unique' => 'ID Pegawai/NIP sudah terdaftar.',
             'id_pegawai.regex' => 'ID Pegawai hanya boleh berisi huruf, angka, titik, strip, atau garis bawah.',
             'password.min' => 'Password minimal :min karakter.',
-            'program_studi.in' => 'Pilih Prodi dari daftar.',
-            'kelas.in' => 'Pilih Kelas dari daftar.',
-        ], MahasiswaRequest::attributeNames() + ['kelas' => 'Kelas', 'nuptk_nidn' => 'NUPTK/NIDN', 'id_pegawai' => 'ID Pegawai/NIP', 'password' => 'Password']);
-
+            'id_prodi.exists' => 'Pilih Prodi dari daftar.',
+            'id_prodi.integer' => 'Pilih Prodi dari daftar.',
+            'email.unique' => 'Email sudah terdaftar di sistem.',
+        ], MahasiswaRequest::attributeNames() + ['nuptk_nidn' => 'NUPTK/NIDN', 'id_pegawai' => 'ID Pegawai/NIP', 'password' => 'Password']);
         if ($validator->fails()) {
             return $validator;
         }
-
         $data = $validator->validated();
-        // Password kosong saat edit = tidak diubah.
         if (empty($data['password'])) {
             unset($data['password']);
         }
-        // Mahasiswa: email institusi diverifikasi oleh MahasiswaRequest::baseRules().
+
         return $data;
     }
 
@@ -284,8 +255,7 @@ class UserManagementController extends Controller
     {
         $fields = array_column(self::config($kategori)['fields'], 'name');
         $in = $request->only($fields);
-        $base = MahasiswaRequest::normalize($in + ['nim' => null, 'nama' => null, 'program_studi' => null, 'email' => null, 'no_whatsapp' => null]);
-
+        $base = MahasiswaRequest::normalize($in + ['nim' => null, 'nama' => null, 'id_prodi' => null, 'email' => null, 'no_whatsapp' => null]);
         $out = [];
         foreach ($fields as $f) {
             $out[$f] = $base[$f] ?? (is_string($in[$f] ?? null) ? trim(preg_replace('/\s+/u', ' ', $in[$f])) : ($in[$f] ?? null));

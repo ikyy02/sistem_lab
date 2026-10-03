@@ -2,32 +2,29 @@
 
 namespace App\Services;
 
+use App\Models\Akun;
 use App\Support\Role;
 use Illuminate\Http\Request;
 
 /**
  * Autentikasi email + password untuk 4 kategori pengguna.
- *
- * TAHAP INI: password dibandingkan apa adanya (tanpa hash/enkripsi).
- * Tahap berikutnya cukup mengubah passwordMatches() (mis. Hash::check) dan
- * menambahkan Hash::make() saat menyimpan data pada UserManagementController.
  */
 class AuthService
 {
     /** @return array{role: string, key: string, nama: string, email: string}|null */
     public function attempt(string $email, string $password): ?array
     {
-        $email = mb_strtolower(trim($email));
-
-        foreach (Role::MODELS as $role => $model) {
-            $user = $model::query()->whereRaw('LOWER(email) = ?', [$email])->first();
-
-            if ($user && $this->passwordMatches($password, (string) $user->password)) {
-                return ['role' => $role, 'key' => (string) $user->getKey(), 'nama' => $user->nama, 'email' => $user->email];
-            }
+        $akun = Akun::query()->whereRaw('LOWER(email) = ?', [mb_strtolower(trim($email))])->first();
+        if (! $akun || ! hash_equals((string) $akun->password, $password)) {
+            return null;
+        }
+        $model = Role::MODELS[$akun->role] ?? null;
+        $profil = $model ? $model::query()->where('email', $akun->email)->first() : null;
+        if (! $profil) {
+            return null; // setiap role wajib punya profil
         }
 
-        return null;
+        return ['role' => $akun->role, 'key' => (string) $profil->getKey(), 'nama' => $profil->nama, 'email' => $akun->email];
     }
 
     public function login(Request $request, array $identity): void
@@ -46,10 +43,5 @@ class AuthService
     public static function user(): ?array
     {
         return session('silab_user');
-    }
-
-    private function passwordMatches(string $input, string $stored): bool
-    {
-        return $stored !== '' && hash_equals($stored, $input);
     }
 }

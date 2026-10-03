@@ -14,7 +14,7 @@ class Role
 {
     public const MAHASISWA = 'mahasiswa';
     public const DOSEN = 'dosen';
-    public const STAFF = 'staff';
+    public const STAFF = 'staff_prodi';
     public const LABORAN = 'laboran';
 
     public const ALL = [self::MAHASISWA, self::DOSEN, self::STAFF, self::LABORAN];
@@ -36,6 +36,6 @@ class Role
     /** Halaman tujuan setelah login. */
     public static function home(string $role): string
     {
-        return $role === self::LABORAN ? route('inventaris.index', ['kategori' => 'alat']) : route('katalog');
+        return $role === self::LABORAN ? route('kelola-katalog.index', ['kategori' => 'alat']) : route('katalog');
     }
 }

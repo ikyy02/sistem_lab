@@ -4,7 +4,9 @@ namespace App\Services;
 
 use App\Exceptions\MahasiswaImportException;
 use App\Http\Requests\MahasiswaRequest;
+use App\Models\Akun;
 use App\Models\Mahasiswa;
+use App\Models\Prodi;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -173,7 +175,9 @@ class MahasiswaImportService
                 continue; // lewati baris kosong
             }
 
-            $rows[$excelRow] = MahasiswaRequest::normalize($record);
+            // Nama Prodi pada file dicocokkan ke id_prodi saat validasi.
+            $rows[$excelRow] = MahasiswaRequest::normalize($record)
+                + ['program_studi' => trim(preg_replace('/\s+/u', ' ', (string) ($record['program_studi'] ?? '')))];
         }
 
         if ($rows === []) {
@@ -238,7 +242,9 @@ class MahasiswaImportService
 
         // Cek duplikat ke database sekali jalan (bukan satu query per baris).
         $existingNim = $this->existingValues('nim', array_column($rows, 'nim'));
-        $existingEmail = $this->existingValues('email', array_column($rows, 'email'));
+        $existingEmail = $this->existingValues('email', array_column($rows, 'email'), Akun::class);
+
+        $prodiMap = Prodi::pluck('id_prodi', 'nama_prodi')->mapWithKeys(fn ($id, $n) => [mb_strtolower($n) => $id])->all();
 
         $seenNim = [];
         $seenEmail = [];
@@ -246,11 +252,16 @@ class MahasiswaImportService
 
         foreach ($rows as $rowNumber => $data) {
             $problems = [];
+            $namaProdi = (string) ($data['program_studi'] ?? '');
+            $data['id_prodi'] = $prodiMap[mb_strtolower($namaProdi)] ?? '';
+            if ($namaProdi !== '' && $data['id_prodi'] === '') {
+                $problems[] = "Program Studi \"{$namaProdi}\" tidak ada pada data Prodi.";
+            }
 
             // 1. Data wajib, format NIM, format email, nomor WhatsApp, panjang karakter.
             $validator = Validator::make($data, $rules, $messages, $attributes);
             if ($validator->fails()) {
-                $problems = $validator->errors()->all();
+                $problems = array_merge($problems, $validator->errors()->all());
             }
 
             // 2. NIM duplikat (di dalam file & di database).
@@ -301,7 +312,7 @@ class MahasiswaImportService
      *
      * @return array<string, true> kunci = nilai huruf kecil
      */
-    private function existingValues(string $column, array $values): array
+    private function existingValues(string $column, array $values, string $model = Mahasiswa::class): array
     {
         $values = array_values(array_unique(array_filter(
             $values,
@@ -310,7 +321,7 @@ class MahasiswaImportService
 
         $found = [];
         foreach (array_chunk($values, 500) as $chunk) {
-            foreach (Mahasiswa::whereIn($column, $chunk)->pluck($column) as $value) {
+            foreach ($model::whereIn($column, $chunk)->pluck($column) as $value) {
                 $found[mb_strtolower((string) $value)] = true;
             }
         }
@@ -325,17 +336,20 @@ class MahasiswaImportService
      */
     private function insertRows(array $rows): void
     {
-        $now = now();
-
-        $payload = array_map(
-            fn (array $data) => $data + ['password' => $data['nim'], 'created_at' => $now, 'updated_at' => $now],
-            array_values($rows)
-        );
+        $prodiMap = Prodi::pluck('id_prodi', 'nama_prodi')->mapWithKeys(fn ($id, $n) => [mb_strtolower($n) => $id])->all();
 
         try {
-            DB::transaction(function () use ($payload) {
-                foreach (array_chunk($payload, self::INSERT_CHUNK) as $chunk) {
-                    Mahasiswa::insert($chunk);
+            DB::transaction(function () use ($rows, $prodiMap) {
+                foreach ($rows as $data) {
+                    // Password awal = NIM (disimpan apa adanya). Akun dan profil dibuat bersamaan.
+                    Akun::create(['email' => $data['email'], 'password' => $data['nim'], 'role' => 'mahasiswa']);
+                    Mahasiswa::create([
+                        'nim' => $data['nim'],
+                        'nama' => $data['nama'],
+                        'id_prodi' => $prodiMap[mb_strtolower($data['program_studi'])],
+                        'email' => $data['email'],
+                        'no_whatsapp' => ($data['no_whatsapp'] ?? '') !== '' ? $data['no_whatsapp'] : null,
+                    ]);
                 }
             });
         } catch (QueryException $e) {

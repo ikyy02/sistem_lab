@@ -20,7 +20,7 @@ class MahasiswaRequest extends FormRequest
     /** Domain email institusi mahasiswa: nama@mhs.politala.ac.id */
     public const EMAIL_DOMAIN = 'mhs.politala.ac.id';
 
-    private const EMAIL_REGEX = '/^[A-Za-z0-9._%+\-]+@mhs\.politala\.ac\.id$/i';
+    public const EMAIL_REGEX = '/^[A-Za-z0-9._%+\-]+@mhs\.politala\.ac\.id$/i';
 
     /** Nomor seluler Indonesia: 08xx..., 628xx..., atau +628xx... (total 10-14 digit) */
     private const WHATSAPP_REGEX = '/^(?:\+62|62|0)8[1-9][0-9]{7,11}$/';
@@ -42,7 +42,7 @@ class MahasiswaRequest extends FormRequest
 
         $rules = self::baseRules();
         $rules['nim'][] = Rule::unique('mahasiswas', 'nim')->ignore($ignoreId, 'nim');
-        $rules['email'][] = Rule::unique('mahasiswas', 'email')->ignore($ignoreId, 'nim');
+        $rules['email'][] = Rule::unique('akuns', 'email')->ignore($this->route('mahasiswa')?->email, 'email');
 
         return $rules;
     }
@@ -57,10 +57,10 @@ class MahasiswaRequest extends FormRequest
     {
         return [
             'nim' => ['bail', 'required', 'string', 'max:20', 'regex:' . self::NIM_REGEX],
-            'nama' => ['bail', 'required', 'string', 'min:2', 'max:255'],
-            'program_studi' => ['bail', 'required', 'string', 'max:255'],
-            'no_whatsapp' => ['bail', 'required', 'string', 'max:20', 'regex:' . self::WHATSAPP_REGEX],
-            'email' => ['bail', 'required', 'string', 'max:255', 'email', 'regex:' . self::EMAIL_REGEX],
+            'nama' => ['bail', 'required', 'string', 'min:2', 'max:100'],
+            'id_prodi' => ['bail', 'required', 'integer', 'exists:prodis,id_prodi'],
+            'no_whatsapp' => ['bail', 'nullable', 'string', 'max:20', 'regex:' . self::WHATSAPP_REGEX],
+            'email' => ['bail', 'required', 'string', 'max:50', 'email', 'regex:' . self::EMAIL_REGEX],
         ];
     }
 
@@ -81,14 +81,14 @@ class MahasiswaRequest extends FormRequest
 
         $nim = $squish($input['nim'] ?? null);
         $nama = $squish($input['nama'] ?? null);
-        $prodi = $squish($input['program_studi'] ?? null);
+        $prodi = $squish($input['id_prodi'] ?? null);
         $email = $squish($input['email'] ?? null);
         $wa = $squish($input['no_whatsapp'] ?? null);
 
         return [
             'nim' => $nim,
             'nama' => $nama,
-            'program_studi' => $prodi,
+            'id_prodi' => $prodi,
             'email' => is_string($email) ? mb_strtolower($email) : $email,
             'no_whatsapp' => is_string($wa) ? preg_replace('/[\s\-\.\(\)]/', '', $wa) : $wa,
         ];
@@ -97,7 +97,7 @@ class MahasiswaRequest extends FormRequest
     protected function prepareForValidation(): void
     {
         $this->merge(self::normalize($this->only([
-            'nim', 'nama', 'program_studi', 'no_whatsapp', 'email',
+            'nim', 'nama', 'id_prodi', 'no_whatsapp', 'email',
         ])));
     }
 
@@ -135,7 +135,7 @@ class MahasiswaRequest extends FormRequest
         return [
             'nim' => 'NIM',
             'nama' => 'Nama',
-            'program_studi' => 'Program Studi',
+            'id_prodi' => 'Prodi',
             'no_whatsapp' => 'Nomor WhatsApp',
             'email' => 'Email',
         ];

@@ -66,7 +66,7 @@
                 <tr>
                     <th class="ps-4" style="width:56px;">No</th>
                     <th>{{ $label }}</th>
-                    @if($grups)<th>Berlaku untuk</th>@endif
+                    @if($grups)<th>{{ $cfg['grup_label'] ?? 'Berlaku untuk' }}</th>@endif
                     <th style="width:120px;">Dipakai</th>
                     @unless($readonly)<th class="text-end pe-4">Aksi</th>@endunless
                 </tr>
@@ -131,10 +131,10 @@
                     </div>
                     @if($grups)
                     <div class="col-12">
-                        <label class="form-label" for="f_grup">Berlaku untuk <span class="text-danger">*</span></label>
+                        <label class="form-label" for="f_grup">{{ $cfg['grup_label'] ?? 'Berlaku untuk' }} <span class="text-danger">*</span></label>
                         <select id="f_grup" name="grup" class="form-select @error('grup') is-invalid @enderror">
-                            <option value="">Pilih Jenis</option>
-                            @foreach($grups as $val => $text)<option value="{{ $val }}" @selected(old('grup') === $val)>{{ $text }}</option>@endforeach
+                            <option value="">Pilih {{ $cfg['grup_label'] ?? 'Jenis' }}</option>
+                            @foreach($grups as $val => $text)<option value="{{ $val }}" @selected((string) old('grup') === (string) $val)>{{ $text }}</option>@endforeach
                         </select>
                         @error('grup')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                     </div>

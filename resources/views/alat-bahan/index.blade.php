@@ -9,7 +9,7 @@
     $isAdmin = (\App\Services\AuthService::user()['role'] ?? null) === \App\Support\Role::LABORAN;
     $jenisLabel = ['alat' => 'Alat', 'bahan' => 'Bahan', 'ruangan' => 'Ruangan'];
     $jenisIcon = ['alat' => 'bi-tools', 'bahan' => 'bi-droplet', 'ruangan' => 'bi-door-open'];
-    $sortLabel = ['nama' => 'Nama', 'stok' => 'Stok/Kapasitas', 'kondisi' => 'Kondisi'];
+    $sortLabel = $jenis === 'ruangan' ? ['nama' => 'Nama'] : ['nama' => 'Nama', 'stok' => 'Stok', 'harga' => 'Harga'];
 @endphp
 
 <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
@@ -18,7 +18,7 @@
         <p class="mb-0" style="font-size:.83rem;color:var(--text-muted);">Daftar alat, bahan, dan ruangan yang tersedia.</p>
     </div>
     @if($isAdmin)
-        <a href="{{ route('inventaris.index') }}" class="btn btn-primary d-flex align-items-center gap-2"><i class="bi bi-box-seam"></i> Kelola Katalog</a>
+        <a href="{{ route('kelola-katalog.index') }}" class="btn btn-primary d-flex align-items-center gap-2"><i class="bi bi-box-seam"></i> Kelola Katalog</a>
     @endif
 </div>
 
@@ -28,7 +28,7 @@
             <label class="form-label" for="search">Pencarian</label>
             <div class="input-group">
                 <span class="input-group-text bg-white" style="border-color:var(--border-color);"><i class="bi bi-search"></i></span>
-                <input type="text" id="search" name="search" value="{{ $search }}" maxlength="100" class="form-control" placeholder="Cari nama, satuan, kondisi, keterangan...">
+                <input type="text" id="search" name="search" value="{{ $search }}" maxlength="100" class="form-control" placeholder="Cari nama, satuan, ruangan, keterangan...">
             </div>
         </div>
         <div class="col-6 col-lg-2">
@@ -65,27 +65,25 @@
 @else
     <div class="row g-3">
         @foreach($data as $item)
-            @php $bad = in_array($item->kondisi, ['Rusak', 'Hilang', 'Kadaluarsa', 'Tidak Tersedia'], true); @endphp
+            @php $room = $jenis === 'ruangan'; $nama = $room ? $item->nama_ruangan : $item->nama; @endphp
             <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
                 <div class="card-modern h-100 overflow-hidden d-flex flex-column">
                     <div style="height:150px;background:var(--body-bg);display:flex;align-items:center;justify-content:center;border-bottom:1px solid var(--border-color);">
-                        @if($item->gambar_url)
-                            <img src="{{ $item->gambar_url }}" alt="{{ $item->nama }}" style="width:100%;height:100%;object-fit:cover;cursor:zoom-in;" loading="lazy" onclick="previewImage(this.src, this.alt)">
+                        @if(! $room && $item->gambar_url)
+                            <img src="{{ $item->gambar_url }}" alt="{{ $nama }}" style="width:100%;height:100%;object-fit:cover;cursor:zoom-in;" loading="lazy" onclick="previewImage(this.src, this.alt)">
                         @else
-                            <i class="bi {{ $jenisIcon[$item->jenis] ?? 'bi-box' }}" style="font-size:2.2rem;color:var(--muted-blue);"></i>
+                            <i class="bi {{ $room ? $jenisIcon['ruangan'] : ($jenisIcon[$item->jenis] ?? 'bi-box') }}" style="font-size:2.2rem;color:var(--muted-blue);"></i>
                         @endif
                     </div>
                     <div class="p-3 d-flex flex-column flex-grow-1">
                         <div class="d-flex align-items-start justify-content-between gap-2 mb-1">
-                            <span class="fw-semibold" style="font-size:.95rem;">{{ $item->nama }}</span>
-                            <span class="badge badge-tab text-nowrap" style="font-weight:600;padding:4px 10px;font-size:.7rem;">{{ $jenisLabel[$item->jenis] ?? $item->jenis }}</span>
+                            <span class="fw-semibold" style="font-size:.95rem;">{{ $nama }}</span>
+                            <span class="badge badge-tab text-nowrap" style="font-weight:600;padding:4px 10px;font-size:.7rem;">{{ $room ? 'Ruangan' : ($jenisLabel[$item->jenis] ?? $item->jenis) }}</span>
                         </div>
-                        <div class="d-flex align-items-center gap-2 mb-2" style="font-size:.82rem;color:var(--text-muted);">
-                            <span>{{ $item->jenis === 'ruangan' ? 'Kapasitas: ' . $item->stok : $item->stok . ' ' . ($item->satuan ?: '') }}</span>
-                        </div>
-                        @if($item->kondisi)
-                            <span class="badge-status {{ $bad ? 'badge-status-bad' : 'badge-status-ok' }} align-self-start mb-2">{{ $item->kondisi }}</span>
-                        @endif
+                        @unless($room)
+                        <div class="mb-1" style="font-size:.82rem;color:var(--text-muted);">{{ $item->stok }} {{ $item->nama_satuan }} · Rp{{ number_format((float) $item->harga, 2, ',', '.') }} / {{ $item->nama_satuan }}</div>
+                        <div class="mb-2" style="font-size:.8rem;color:var(--text-muted);"><i class="bi bi-geo-alt"></i> {{ $item->nama_ruangan }}</div>
+                        @endunless
                         <p class="mb-0 mt-auto" style="font-size:.8rem;color:var(--text-muted);line-height:1.5;" title="{{ $item->keterangan }}">
                             {{ $item->keterangan ? \Illuminate\Support\Str::limit($item->keterangan, 90) : '—' }}
                         </p>
@@ -101,5 +99,5 @@
     </div>
 @endif
 
-@include('inventaris._preview')
+@include('kelola-katalog._preview')
 @endsection

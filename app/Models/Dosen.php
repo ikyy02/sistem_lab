@@ -6,25 +6,20 @@ use Illuminate\Database\Eloquent\Model;
 
 class Dosen extends Model
 {
-    /**
-     * Tabel yang digunakan — sesuai migrasi create_dosens_table.
-     */
     protected $table = 'dosens';
-
     protected $primaryKey = 'nuptk_nidn';
     public $incrementing = false;
     protected $keyType = 'string';
+    public $timestamps = false;
+    protected $fillable = ['nuptk_nidn', 'nama', 'id_prodi', 'email', 'no_whatsapp'];
 
-    /**
-     * Kolom yang boleh diisi secara mass-assignment.
-     * Primary key: nuptk_nidn (identitas NUPTK/NIDN).
-     */
-    protected $fillable = [
-        'nuptk_nidn',
-        'nama',
-        'program_studi',
-        'email',
-        'no_whatsapp',
-        'password',
-    ];
+    public function akun()
+    {
+        return $this->belongsTo(Akun::class, 'email', 'email');
+    }
+
+    public function prodi()
+    {
+        return $this->belongsTo(Prodi::class, 'id_prodi', 'id_prodi');
+    }
 }

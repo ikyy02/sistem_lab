@@ -181,13 +181,13 @@
             <div class="modal-body p-4">
                 <div class="row g-3">
                     @foreach($fields as $f)
-                        <div class="col-12 {{ in_array($f['name'], ['nama', 'email', 'program_studi']) ? '' : 'col-md-6' }}">
+                        <div class="col-12 {{ in_array($f['name'], ['nama', 'email', 'id_prodi']) ? '' : 'col-md-6' }}">
                             <label class="form-label" for="f_{{ $f['name'] }}">{{ $f['label'] }} @if($f['required'])<span class="text-danger">*</span>@endif</label>
                             @if(($f['type'] ?? '') === 'select')
                                 <select id="f_{{ $f['name'] }}" name="{{ $f['name'] }}" class="form-select @error($f['name']) is-invalid @enderror">
                                     <option value="">{{ $f['placeholder'] }}</option>
-                                    @foreach($f['options'] as $opt)
-                                        <option value="{{ $opt }}" @selected(old($f['name']) === $opt)>{{ $opt }}</option>
+                                    @foreach($f['options'] as $val => $opt)
+                                        <option value="{{ $val }}" @selected((string) old($f['name']) === (string) $val)>{{ $opt }}</option>
                                     @endforeach
                                 </select>
                             @else
@@ -243,10 +243,7 @@
             const item = edit ? JSON.parse(btn.dataset.item) : {};
             userFields.forEach(n => {
                 const el = document.getElementById('f_' + n);
-                const v = item[n] ?? '';
-                if (el.tagName === 'SELECT' && v !== '' && ![...el.options].some(o => o.value === v)) {
-                    el.add(new Option(v, v));
-                }
+                const v = String(item[n] ?? '');
                 el.value = v;
             });
             document.getElementById('f_password').value = '';
