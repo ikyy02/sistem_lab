@@ -8,6 +8,7 @@ use App\Services\KatalogImportService;
 use App\Support\Options;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
@@ -144,6 +145,43 @@ class KelolaKatalogController extends Controller
 
         return redirect()->route('kelola-katalog.index', $request->only(['search', 'sort', 'direction', 'per_page', 'page']) + ['kategori' => $kategori])
             ->with('success', self::KATEGORI[$kategori] . ' berhasil diperbarui.');
+    }
+
+    /** Stok manual: tambah/kurangi stok Alat/Bahan. Jumlah harus bilangan bulat > 0 dan stok tidak boleh negatif. */
+    public function stok(Request $request, string $kategori, int $id)
+    {
+        $back = redirect()->route('kelola-katalog.index', $request->only(['search', 'sort', 'direction', 'per_page', 'page']) + ['kategori' => $kategori]);
+        $v = Validator::make($request->only(['aksi', 'jumlah']), [
+            'aksi' => ['required', Rule::in(['tambah', 'kurangi'])],
+            'jumlah' => ['bail', 'required', 'integer', 'min:1', 'max:4294967295'],
+        ], [
+            'aksi.required' => 'Pilih aksi tambah atau kurangi stok.', 'aksi.in' => 'Pilih aksi tambah atau kurangi stok.',
+            'jumlah.required' => 'Jumlah wajib diisi.', 'jumlah.integer' => 'Jumlah harus berupa angka bulat.',
+            'jumlah.min' => 'Jumlah minimal 1.', 'jumlah.max' => 'Jumlah terlalu besar.',
+        ]);
+        if ($v->fails()) {
+            return $back->with('error', $v->errors()->first());
+        }
+        $jumlah = (int) $v->validated()['jumlah'];
+        $tambah = $v->validated()['aksi'] === 'tambah';
+
+        $hasil = DB::transaction(function () use ($kategori, $id, $jumlah, $tambah) {
+            $item = AlatBahan::where('jenis', $kategori)->lockForUpdate()->findOrFail($id);
+            $baru = $tambah ? $item->stok + $jumlah : $item->stok - $jumlah;
+            if ($baru < 0) {
+                return "Stok \"{$item->nama}\" tidak mencukupi. Stok saat ini {$item->stok}.";
+            }
+            if ($baru > 4294967295) {
+                return 'Stok melebihi batas maksimum.';
+            }
+            $item->update(['stok' => $baru]);
+
+            return null;
+        });
+
+        return $hasil
+            ? $back->with('error', $hasil)
+            : $back->with('success', 'Stok berhasil ' . ($tambah ? 'ditambah' : 'dikurangi') . '.');
     }
 
     public function destroy(Request $request, string $kategori, int $id)

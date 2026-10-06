@@ -147,6 +147,7 @@
                     @endforeach
                     <td class="text-end pe-4">
                         <div class="d-flex justify-content-end gap-2">
+                            @unless($isRoom)<button type="button" class="btn btn-outline-silab d-flex align-items-center gap-1" data-id="{{ $item->getKey() }}" data-nama="{{ $item->nama }}" data-stok="{{ $item->stok }}" onclick="openStokModal(this)"><i class="bi bi-plus-slash-minus"></i> Stok</button>@endunless
                             <button type="button" class="btn btn-edit d-flex align-items-center gap-1" data-id="{{ $item->getKey() }}" data-item="{{ json_encode($payload) }}" onclick="openItemModal('edit', this)"><i class="bi bi-pencil"></i> Edit</button>
                             <form action="{{ route('kelola-katalog.destroy', ['kategori' => $kategori, 'id' => $item->getKey()] + $listQuery) }}" method="POST"
                                   onsubmit="return confirm('Hapus {{ strtolower($label) }} &quot;{{ e($item->nama ?? $item->nama_ruangan) }}&quot;? Tindakan ini tidak dapat dibatalkan.')">
@@ -223,6 +224,41 @@
     </div>
 </div>
 
+<!-- Modal Stok Manual -->
+@unless($isRoom)
+<div class="modal fade" id="stokModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <form method="POST" id="stokForm" class="modal-content" autocomplete="off" data-action="{{ route('kelola-katalog.stok', ['kategori' => $kategori, 'id' => '__ID__']) }}" data-query="{{ json_encode($modalQuery) }}">
+            @csrf
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold" style="font-size:1rem;">Ubah Stok</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="mb-3" style="font-size:.86rem;"><span class="fw-semibold" id="stokNama"></span> &mdash; stok saat ini <strong id="stokSaatIni"></strong></div>
+                <div class="row g-3">
+                    <div class="col-12 col-md-6">
+                        <label class="form-label" for="stok_aksi">Aksi <span class="text-danger">*</span></label>
+                        <select id="stok_aksi" name="aksi" class="form-select" required>
+                            <option value="tambah">Tambah stok</option>
+                            <option value="kurangi">Kurangi stok</option>
+                        </select>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <label class="form-label" for="stok_jumlah">Jumlah <span class="text-danger">*</span></label>
+                        <input type="number" id="stok_jumlah" name="jumlah" min="1" step="1" required class="form-control" placeholder="Jumlah">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-silab" data-bs-dismiss="modal">Batal</button>
+                <button type="submit" class="btn btn-primary">Simpan</button>
+            </div>
+        </form>
+    </div>
+</div>
+@endunless
+
 <!-- Modal Import -->
 <div class="modal fade" id="importModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
@@ -289,6 +325,16 @@
             form.querySelectorAll('.invalid-feedback').forEach(el => el.remove());
         }
         bootstrap.Modal.getOrCreateInstance(document.getElementById('itemModal')).show();
+    }
+
+    function openStokModal(btn) {
+        const form = document.getElementById('stokForm');
+        form.action = form.dataset.action.replace('__ID__', btn.dataset.id) + '?' + new URLSearchParams(JSON.parse(form.dataset.query || '{}')).toString();
+        document.getElementById('stokNama').textContent = btn.dataset.nama;
+        document.getElementById('stokSaatIni').textContent = btn.dataset.stok;
+        document.getElementById('stok_aksi').value = 'tambah';
+        document.getElementById('stok_jumlah').value = '';
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('stokModal')).show();
     }
 
     @unless($isRoom)

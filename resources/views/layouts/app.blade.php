@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@yield('title', 'SILAB') — Laboratorium Komputer Bisnis</title>
+    <title>@yield('title', 'Beranda') — SIARKA</title>
+    <meta name="application-name" content="SIARKA">
+    <meta name="description" content="SIARKA — Sistem Informasi Administrasi, Reservasi, Katalog, dan Aktivitas Laboratorium">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -27,8 +29,8 @@
     <a href="{{ url('/') }}" class="sidebar-brand">
         <div class="sidebar-brand-icon"><i class="bi bi-buildings"></i></div>
         <div class="sidebar-brand-text">
-            <div class="brand-name">SILAB</div>
-            <div class="brand-sub">Laboratorium Komputer &amp; Bisnis</div>
+            <div class="brand-name">SIARKA</div>
+            <div class="brand-sub" style="font-size:.6rem;line-height:1.25;">Sistem Informasi Administrasi, Reservasi, Katalog, dan Aktivitas Laboratorium</div>
         </div>
     </a>
 
@@ -73,18 +75,23 @@
                     <i class="bi bi-diagram-3"></i><span>Kelola Data Master</span>
                 </a>
             </li>
+            <li class="nav-item">
+                <a href="{{ route('pengaturan-operasional.index') }}" class="nav-link {{ request()->is('pengaturan-operasional*') ? 'active' : '' }}">
+                    <i class="bi bi-clock-history"></i><span>Pengaturan Operasional</span>
+                </a>
+            </li>
         </ul>
         @endif
     </div>
 
     <div class="sidebar-footer">
-        <div class="d-flex align-items-center gap-2">
+        <a href="{{ route('profil.index') }}" class="d-flex align-items-center gap-2 text-decoration-none" title="Profil Saya">
             <div class="user-chip">{{ $initial }}</div>
             <div class="min-w-0 flex-grow-1">
                 <div class="user-name text-truncate">{{ $me['nama'] ?? '' }}</div>
                 <div class="user-role">{{ $roleLabel }}</div>
             </div>
-        </div>
+        </a>
     </div>
 </nav>
 
@@ -94,8 +101,8 @@
         <button class="topbar-toggle" onclick="toggleSidebar()" aria-label="Toggle sidebar"><i class="bi bi-list"></i></button>
 
         <div class="topbar-title">
-            <h1 class="font-display">@yield('page-title', 'SILAB')</h1>
-            <p>@yield('page-subtitle', 'Sistem Informasi Laboratorium Jurusan Komputer dan Bisnis')</p>
+            <h1 class="font-display">@yield('page-title', 'SIARKA')</h1>
+            <p>@yield('page-subtitle', 'Sistem Informasi Administrasi, Reservasi, Katalog, dan Aktivitas Laboratorium')</p>
         </div>
 
         <div class="topbar-right dropdown">
@@ -109,6 +116,7 @@
             <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
                 <li class="px-3 py-2"><div style="font-size:.75rem;color:var(--text-muted)">{{ $me['email'] ?? '' }}</div></li>
                 <li><hr class="dropdown-divider"></li>
+                <li><a href="{{ route('profil.index') }}" class="dropdown-item"><i class="bi bi-person-circle me-2"></i>Profil Saya</a></li>
                 <li>
                     <form action="{{ route('logout') }}" method="POST">
                         @csrf

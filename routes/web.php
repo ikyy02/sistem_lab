@@ -6,6 +6,8 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\KelolaKatalogController;
 use App\Http\Controllers\MasterDataController;
 use App\Http\Controllers\MahasiswaController;
+use App\Http\Controllers\PengaturanOperasionalController;
+use App\Http\Controllers\ProfilController;
 use App\Http\Controllers\UserManagementController;
 use App\Services\AuthService;
 use App\Support\Role;
@@ -32,6 +34,11 @@ Route::middleware('silab.auth')->group(function () {
     // Katalog: dapat dilihat semua role (hanya-baca untuk selain Laboran/Admin)
     Route::get('katalog', [AlatBahanController::class, 'index'])->name('katalog');
 
+    // Profil Saya: semua role yang login
+    Route::get('profil', [ProfilController::class, 'index'])->name('profil.index');
+    Route::put('profil', [ProfilController::class, 'update'])->name('profil.update');
+    Route::put('profil/password', [ProfilController::class, 'password'])->name('profil.password');
+
     // Khusus Laboran/Admin
     Route::middleware('silab.role:' . Role::LABORAN)->group(function () {
 
@@ -40,9 +47,16 @@ Route::middleware('silab.auth')->group(function () {
         Route::get('kelola-katalog', [KelolaKatalogController::class, 'index'])->name('kelola-katalog.index');
         Route::post('kelola-katalog/{kategori}', [KelolaKatalogController::class, 'store'])->whereIn('kategori', $kat['kategori'])->name('kelola-katalog.store');
         Route::put('kelola-katalog/{kategori}/{id}', [KelolaKatalogController::class, 'update'])->whereIn('kategori', $kat['kategori'])->whereNumber('id')->name('kelola-katalog.update');
+        Route::post('kelola-katalog/{kategori}/{id}/stok', [KelolaKatalogController::class, 'stok'])->whereIn('kategori', ['alat', 'bahan'])->whereNumber('id')->name('kelola-katalog.stok');
         Route::delete('kelola-katalog/{kategori}/{id}', [KelolaKatalogController::class, 'destroy'])->whereIn('kategori', $kat['kategori'])->whereNumber('id')->name('kelola-katalog.destroy');
         Route::get('kelola-katalog/{kategori}/template', [KelolaKatalogController::class, 'template'])->whereIn('kategori', $kat['kategori'])->name('kelola-katalog.template');
         Route::post('kelola-katalog/{kategori}/import', [KelolaKatalogController::class, 'import'])->whereIn('kategori', $kat['kategori'])->name('kelola-katalog.import');
+
+        // Pengaturan Operasional: jam, hari operasional, hari libur
+        Route::get('pengaturan-operasional', [PengaturanOperasionalController::class, 'index'])->name('pengaturan-operasional.index');
+        Route::put('pengaturan-operasional', [PengaturanOperasionalController::class, 'update'])->name('pengaturan-operasional.update');
+        Route::post('pengaturan-operasional/libur', [PengaturanOperasionalController::class, 'storeLibur'])->name('pengaturan-operasional.libur.store');
+        Route::delete('pengaturan-operasional/libur/{id}', [PengaturanOperasionalController::class, 'destroyLibur'])->whereNumber('id')->name('pengaturan-operasional.libur.destroy');
 
         // Kelola Data Master: Satuan dan Kelas
         Route::get('master-data', [MasterDataController::class, 'index'])->name('master-data.index');

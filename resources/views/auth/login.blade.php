@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Masuk — SILAB</title>
+    <title>Masuk — SIARKA</title>
+    <meta name="application-name" content="SIARKA">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
@@ -30,11 +31,12 @@
     <section class="login-aside">
         <div class="d-flex align-items-center gap-3">
             <span class="sidebar-brand-icon"><i class="bi bi-award"></i></span>
-            <div><div style="font-family:'Fraunces',serif;font-weight:600;color:var(--ink);letter-spacing:.01em;">SILAB</div><div style="font-size:.75rem;color:#8A7C55">Politeknik Negeri Tanah Laut</div></div>
+            <div><div style="font-family:'Fraunces',serif;font-weight:600;color:var(--ink);letter-spacing:.01em;">SIARKA</div><div style="font-size:.75rem;color:#8A7C55">Politeknik Negeri Tanah Laut</div></div>
         </div>
         <div>
             <div class="gold-rule"></div>
-            <h2>Laboratorium Jurusan Komputer &amp; Bisnis</h2>
+            <h2>SIARKA</h2>
+            <p class="fw-semibold" style="color:var(--ink);">Sistem Informasi Administrasi, Reservasi, Katalog, dan Aktivitas Laboratorium</p>
             <p>Pengelolaan alat, bahan, dan ruangan laboratorium dalam satu sistem yang tertata dan dapat dipercaya.</p>
 
             <div class="d-flex flex-column gap-3 mt-4" style="position:relative;max-width:420px;">
@@ -52,7 +54,7 @@
                 </div>
             </div>
         </div>
-        <div style="font-size:.75rem;color:#9A8C63;position:relative;">&copy; {{ date('Y') }} Jurusan Komputer dan Bisnis</div>
+        <div style="font-size:.75rem;color:#9A8C63;position:relative;">&copy; {{ date('Y') }} SIARKA &middot; Jurusan Komputer dan Bisnis</div>
     </section>
 
     <section class="login-main">
