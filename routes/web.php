@@ -6,6 +6,9 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\KelolaKatalogController;
 use App\Http\Controllers\MasterDataController;
 use App\Http\Controllers\MahasiswaController;
+use App\Http\Controllers\PengajuanController;
+use App\Http\Controllers\PengembalianController;
+use App\Http\Controllers\PeminjamanController;
 use App\Http\Controllers\PengaturanOperasionalController;
 use App\Http\Controllers\ProfilController;
 use App\Http\Controllers\UserManagementController;
@@ -38,6 +41,25 @@ Route::middleware('silab.auth')->group(function () {
     Route::get('profil', [ProfilController::class, 'index'])->name('profil.index');
     Route::put('profil', [ProfilController::class, 'update'])->name('profil.update');
     Route::put('profil/password', [ProfilController::class, 'password'])->name('profil.password');
+
+    // Transaksi Peminjaman: pengajuan & riwayat (hanya Mahasiswa dan Dosen yang dapat mengajukan)
+    Route::middleware('silab.role:' . Role::MAHASISWA . ',' . Role::DOSEN)->group(function () {
+        Route::get('peminjaman', [PeminjamanController::class, 'index'])->name('peminjaman.index');
+        Route::post('peminjaman', [PeminjamanController::class, 'store'])->name('peminjaman.store');
+        Route::get('peminjaman/riwayat', [PeminjamanController::class, 'riwayat'])->name('peminjaman.riwayat');
+    });
+
+    // Detail transaksi: pemilik pengajuan, Dosen, dan Laboran/Admin (dicek ulang di controller)
+    Route::get('peminjaman/{id}', [PeminjamanController::class, 'show'])->whereNumber('id')->name('peminjaman.show');
+
+    // Transaksi Peminjaman: persetujuan pengajuan & pengembalian (Dosen dan Laboran/Admin)
+    Route::middleware('silab.role:' . Role::DOSEN . ',' . Role::LABORAN)->group(function () {
+        Route::get('pengajuan-peminjaman', [PengajuanController::class, 'index'])->name('pengajuan.index');
+        Route::post('pengajuan-peminjaman/{id}/setujui', [PengajuanController::class, 'setujui'])->whereNumber('id')->name('pengajuan.setujui');
+        Route::post('pengajuan-peminjaman/{id}/tolak', [PengajuanController::class, 'tolak'])->whereNumber('id')->name('pengajuan.tolak');
+        Route::get('pengembalian', [PengembalianController::class, 'index'])->name('pengembalian.index');
+        Route::post('pengembalian/{id}', [PengembalianController::class, 'store'])->whereNumber('id')->name('pengembalian.store');
+    });
 
     // Khusus Laboran/Admin
     Route::middleware('silab.role:' . Role::LABORAN)->group(function () {

@@ -180,19 +180,36 @@ class PeminjamanServiceTest extends TestCase
         $this->assertSame(0, $k->fresh()->stok);
     }
 
-    public function test_hanya_laboran_memproses_dan_hanya_dari_status_menunggu(): void
+    public function test_dosen_dan_laboran_memproses_dan_hanya_dari_status_menunggu(): void
     {
         $k = $this->katalog();
         $p = $this->ajukanBarang($this->mahasiswa()->email, [$k->id_katalog => 1]);
         $this->gagal(fn () => $this->svc->setujui($p->id_peminjaman, $this->staff()->email), 'email_pemroses');
-        $this->gagal(fn () => $this->svc->tolak($p->id_peminjaman, $this->dosen()->email), 'email_pemroses');
+        $this->gagal(fn () => $this->svc->setujui($p->id_peminjaman, $this->mahasiswa()->email), 'email_pemroses');
+        $this->gagal(fn () => $this->svc->tolak($p->id_peminjaman, $this->staff()->email), 'email_pemroses');
 
-        $lab = $this->laboran();
-        $t = $this->svc->tolak($p->id_peminjaman, $lab->email);
-        $this->assertSame(['ditolak', $lab->email], [$t->status, $t->email_pemroses]);
+        // Dosen lain boleh menolak, lengkap dengan alasan dan waktu persetujuan.
+        $dosen = $this->dosen();
+        $t = $this->svc->tolak($p->id_peminjaman, $dosen->email, '  Alasan   penolakan uji  ');
+        $this->assertSame(['ditolak', $dosen->email, 'Alasan penolakan uji'], [$t->status, $t->email_pemroses, $t->alasan_ditolak]);
+        $this->assertNotNull($t->tanggal_persetujuan);
         $this->assertSame(10, $k->fresh()->stok); // penolakan tidak mengubah stok
-        $this->gagal(fn () => $this->svc->setujui($p->id_peminjaman, $lab->email), 'status');
-        $this->gagal(fn () => $this->svc->tolak($p->id_peminjaman, $lab->email), 'status');
+        $this->gagal(fn () => $this->svc->setujui($p->id_peminjaman, $dosen->email), 'status');
+        $this->gagal(fn () => $this->svc->tolak($p->id_peminjaman, $dosen->email), 'status');
+
+        // Pengaju tidak boleh memproses pengajuannya sendiri.
+        $dosenSendiri = $this->dosen();
+        $p2 = $this->ajukanBarang($dosenSendiri->email, [$k->id_katalog => 1]);
+        $this->gagal(fn () => $this->svc->setujui($p2->id_peminjaman, $dosenSendiri->email), 'email_pemroses');
+        $this->gagal(fn () => $this->svc->tolak($p2->id_peminjaman, $dosenSendiri->email), 'email_pemroses');
+
+        // Laboran tetap dapat menyetujui dan menghapus alasan penolakan.
+        $lab = $this->laboran();
+        $s = $this->svc->setujui($p2->id_peminjaman, $lab->email);
+        $this->assertSame(['disetujui', $lab->email], [$s->status, $s->email_pemroses]);
+        $this->assertNull($s->alasan_ditolak);
+        $this->assertNotNull($s->tanggal_persetujuan);
+        $this->assertSame(9, $k->fresh()->stok);
     }
 
     // ---------------------------------------------------------------- pengembalian
@@ -272,7 +289,7 @@ class PeminjamanServiceTest extends TestCase
         $this->gagal(fn () => $this->svc->kembalikan($p1->id_peminjaman, $lab->email, [['id_detail_peminjaman' => $this->detailId($p2, $alat), 'jumlah_dikembalikan' => 1, 'kondisi' => 'baik']]), 'detail');
     }
 
-    public function test_pengembalian_hanya_untuk_status_disetujui_dan_penerima_laboran(): void
+    public function test_pengembalian_hanya_untuk_status_disetujui_dan_penerima_dosen_atau_laboran(): void
     {
         $alat = $this->katalog('alat', 10);
         $lab = $this->laboran();
@@ -284,12 +301,18 @@ class PeminjamanServiceTest extends TestCase
         $this->svc->tolak($ditolak->id_peminjaman, $lab->email);
         $this->gagal(fn () => $this->svc->kembalikan($ditolak->id_peminjaman, $lab->email, $row($ditolak)), 'status');
 
-        [$p] = $this->disetujui([$alat->id_katalog => 1]);
-        $this->gagal(fn () => $this->svc->kembalikan($p->id_peminjaman, $this->dosen()->email, $row($p)), 'email_pemroses');
-        $this->svc->kembalikan($p->id_peminjaman, $lab->email, $row($p));
+        [$p] = $this->disetujui([$alat->id_katalog => 2]);
+        $dosen = $this->dosen();
+        $this->gagal(fn () => $this->svc->kembalikan($p->id_peminjaman, $this->staff()->email, $row($p)), 'email_pemroses');
+        $this->gagal(fn () => $this->svc->kembalikan($p->id_peminjaman, $this->mahasiswa()->email, $row($p)), 'email_pemroses');
+
+        $this->svc->kembalikan($p->id_peminjaman, $dosen->email, $row($p)); // dosen menerima sebagian
+        $this->assertSame('disetujui', $p->fresh()->status);
+        $this->svc->kembalikan($p->id_peminjaman, $lab->email, $row($p));   // sisa oleh laboran -> selesai
         $this->assertSame('selesai', $p->fresh()->status);
         $this->gagal(fn () => $this->svc->kembalikan($p->id_peminjaman, $lab->email, $row($p)), 'status'); // sudah selesai
-        $this->assertSame($lab->email, Pengembalian::first()->email_penerima);
+        $this->assertSame($dosen->email, Pengembalian::first()->email_penerima);
+        $this->assertSame($lab->email, Pengembalian::orderByDesc('id_pengembalian')->value('email_penerima'));
     }
 
     // ---------------------------------------------------------------- status selesai (ditentukan sistem)

@@ -12,13 +12,16 @@ use Tests\TestCase;
 class MigrasiDataLamaTest extends TestCase
 {
     private const FINAL = '2026_11_02_000001_revisi_final_struktur_16_tabel.php';
+    /** Migration yang hanya boleh berjalan setelah struktur final dibuat. */
+    private const SETELAH_FINAL = ['2026_11_10_000001_add_persetujuan_and_alasan_to_peminjamans.php'];
 
     public function test_data_lama_dipindahkan_ke_struktur_final(): void
     {
         $dir = sys_get_temp_dir() . '/mig_lama_' . uniqid();
         File::makeDirectory($dir);
+        $kecuali = array_merge([self::FINAL], self::SETELAH_FINAL);
         foreach (File::files(database_path('migrations')) as $f) {
-            if ($f->getFilename() !== self::FINAL) {
+            if (! in_array($f->getFilename(), $kecuali, true)) {
                 File::copy($f->getPathname(), $dir . '/' . $f->getFilename());
             }
         }
