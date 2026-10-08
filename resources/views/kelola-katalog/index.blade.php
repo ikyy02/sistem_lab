@@ -21,7 +21,7 @@
 <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
     <div>
         <h2 class="font-display fw-semibold mb-1" style="font-size:1.5rem;">Kelola {{ $label }}</h2>
-        <p class="mb-0" style="font-size:.83rem;color:var(--text-muted);">{{ $isRoom ? 'Ruangan dipakai sebagai lokasi penyimpanan alat/bahan dan untuk peminjaman ruangan.' : 'Harga adalah harga untuk 1 satuan. Lokasi penyimpanan dipilih pada kolom Ruangan.' }}</p>
+        <p class="mb-0" style="font-size:.83rem;color:var(--text-muted);">{{ $isRoom ? 'Ruangan dipakai sebagai lokasi penyimpanan alat/bahan dan untuk peminjaman ruangan.' : 'Harga adalah harga untuk 1 satuan. Lokasi penyimpanan dipilih pada form dan ditampilkan di kolom Keterangan.' }}</p>
     </div>
     <div class="d-flex flex-wrap gap-2">
         <button type="button" class="btn btn-outline-silab d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#importModal"><i class="bi bi-file-earmark-arrow-up"></i> Import</button>
@@ -102,8 +102,8 @@
 </form>
 
 <div class="card-modern overflow-hidden">
-    <div class="table-responsive">
-        <table class="table table-silab mb-0">
+    <div>
+        <table class="table table-silab mb-0" style="width:100%;">
             <thead>
                 <tr>
                     <th class="ps-4" style="width:56px;">No</th>
@@ -141,12 +141,20 @@
                             @if(in_array($col, ['nama', 'nama_ruangan'], true)) <span class="fw-semibold">{{ $item->{$col} }}</span>
                             @elseif($col === 'harga') Rp{{ number_format((float) $item->harga, 2, ',', '.') }}
                             @elseif($col === 'keterangan')
-                                <span class="d-inline-block text-truncate align-middle" style="max-width:240px;color:var(--text-muted);" title="{{ $item->keterangan }}">{{ $item->keterangan ?? '—' }}</span>
+                                @php
+                                    $ket = trim((string) $item->keterangan);
+                                    if (! $isRoom) {
+                                        $lokasi = trim((string) ($item->nama_ruangan ?? ''));
+                                        $teksLokasi = $lokasi !== '' ? 'Disimpan di ' . $lokasi . '.' : 'Lokasi penyimpanan belum ditentukan.';
+                                        $ket = trim($teksLokasi . ' ' . ($ket !== '' ? (preg_match('/[.!?]$/u', $ket) ? $ket : $ket . '.') : ''));
+                                    }
+                                @endphp
+                                <span style="color:var(--text-muted);white-space:normal;overflow-wrap:anywhere;">{{ $ket !== '' ? $ket : '—' }}</span>
                             @else {{ $item->{$col} !== '' && $item->{$col} !== null ? $item->{$col} : '—' }} @endif
                         </td>
                     @endforeach
                     <td class="text-end pe-4">
-                        <div class="d-flex justify-content-end gap-2">
+                        <div class="d-flex flex-wrap justify-content-end gap-2">
                             @unless($isRoom)<button type="button" class="btn btn-outline-silab d-flex align-items-center gap-1" data-id="{{ $item->getKey() }}" data-nama="{{ $item->nama }}" data-stok="{{ $item->stok }}" onclick="openStokModal(this)"><i class="bi bi-plus-slash-minus"></i> Stok</button>@endunless
                             <button type="button" class="btn btn-edit d-flex align-items-center gap-1" data-id="{{ $item->getKey() }}" data-item="{{ json_encode($payload) }}" onclick="openItemModal('edit', this)"><i class="bi bi-pencil"></i> Edit</button>
                             <form action="{{ route('kelola-katalog.destroy', ['kategori' => $kategori, 'id' => $item->getKey()] + $listQuery) }}" method="POST"

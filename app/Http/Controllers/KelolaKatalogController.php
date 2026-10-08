@@ -40,7 +40,7 @@ class KelolaKatalogController extends Controller
         return [
             'columns' => [
                 'nama' => ['Nama', true], 'nama_satuan' => ['Satuan', true], 'stok' => ['Stok', true],
-                'harga' => ['Harga / Satuan', true], 'nama_ruangan' => ['Ruangan', true], 'keterangan' => ['Keterangan', false],
+                'harga' => ['Harga / Satuan', true], 'keterangan' => ['Keterangan', false],
             ],
             'search' => ['alat_bahans.nama', 'satuans.nama_satuan', 'ruangans.nama_ruangan', 'alat_bahans.keterangan'],
             'fields' => [
