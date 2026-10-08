@@ -4,16 +4,18 @@ namespace App\Http\Controllers;
 
 use App\Models\Peminjaman;
 use App\Services\AuthService;
+use App\Services\DashboardMahasiswaService;
 use App\Support\Role;
 
 /**
  * Dashboard (SRS D.16) dengan data nyata modul Peminjaman:
  * - Laboran/Admin: jumlah pengajuan menunggu persetujuan + peminjaman berlangsung.
- * - Mahasiswa/Dosen: pengajuan disetujui/selesai/total, riwayat terbaru, peminjaman terdekat, tombol Ajukan.
+ * - Mahasiswa: delegasi penuh ke DashboardMahasiswaService (ringkasan, jadwal kuliah, pembaruan, dsb.).
+ * - Dosen/Staff: pengajuan disetujui/selesai/total, riwayat terbaru, peminjaman terdekat, tombol Ajukan.
  */
 class DashboardController extends Controller
 {
-    public function index()
+    public function index(DashboardMahasiswaService $mahasiswa)
     {
         $me = AuthService::user();
         $isAdmin = $me['role'] === Role::LABORAN;
@@ -26,6 +28,10 @@ class DashboardController extends Controller
                 'berlangsung' => Peminjaman::where('status', 'disetujui')->count(),
                 'tertutup' => Peminjaman::where('status', 'ditolak')->count(),
             ]);
+        }
+
+        if ($me['role'] === Role::MAHASISWA) {
+            return view('dashboard.mahasiswa', array_merge(['me' => $me, 'isAdmin' => false], $mahasiswa->untuk($me)));
         }
 
         $dasar = fn () => Peminjaman::where('email_peminjam', $me['email']);
