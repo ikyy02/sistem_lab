@@ -2,7 +2,6 @@
 
 namespace Tests\Feature;
 
-use App\Models\HariLibur;
 use App\Models\Jadwal;
 use App\Models\Kelas;
 use App\Models\KelasMahasiswa;
@@ -236,14 +235,14 @@ class DashboardMahasiswaTest extends TestCase
         $this->assertSame('Barang dipakai ujian nasional', $ditolak->fresh()->alasan_ditolak);
     }
 
-    public function test_status_laboratorium_hari_libur(): void
+    public function test_status_laboratorium_tutup_pada_hari_tidak_operasional(): void
     {
-        HariLibur::create(['tanggal' => now()->toDateString(), 'keterangan' => 'Libur nasional']);
+        Carbon::setTestNow('2026-10-11 10:00:00'); // Minggu: bukan hari operasional
 
         $m = $this->mahasiswa();
         $this->sebagai('mahasiswa', $m)->get(route('dashboard'))->assertOk()
-            ->assertSee('Libur')
-            ->assertSee('Libur nasional');
+            ->assertSee('Laboratorium Tutup')
+            ->assertSee('Laboratorium tidak beroperasi pada hari ini.');
     }
 
     public function test_status_laboratorium_buka_pada_jam_operasional(): void

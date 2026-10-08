@@ -12,20 +12,14 @@ use Tests\TestCase;
 class MigrasiDataLamaTest extends TestCase
 {
     private const FINAL = '2026_11_02_000001_revisi_final_struktur_16_tabel.php';
-    /** Migration yang hanya boleh berjalan setelah struktur final dibuat. */
-    private const SETELAH_FINAL = ['2026_11_10_000001_add_persetujuan_and_alasan_to_peminjamans.php'];
-
-    /** Migration yang hanya bisa berjalan setelah struktur final tersedia. */
-    private const SESUDAH_FINAL = ['2026_11_10_000001_create_mata_kuliahs_dan_relasi_jadwal.php'];
 
     public function test_data_lama_dipindahkan_ke_struktur_final(): void
     {
         $dir = sys_get_temp_dir() . '/mig_lama_' . uniqid();
         File::makeDirectory($dir);
-        $kecuali = array_merge([self::FINAL], self::SETELAH_FINAL);
+        // Struktur lama = semua migration sebelum migration final; sisanya dijalankan setelah data lama terisi.
         foreach (File::files(database_path('migrations')) as $f) {
-            if ($f->getFilename() !== self::FINAL && ! in_array($f->getFilename(), self::SESUDAH_FINAL, true)) {
-            if (! in_array($f->getFilename(), $kecuali, true)) {
+            if (strcmp($f->getFilename(), self::FINAL) < 0) {
                 File::copy($f->getPathname(), $dir . '/' . $f->getFilename());
             }
         }
@@ -70,5 +64,4 @@ class MigrasiDataLamaTest extends TestCase
         $this->assertSame(1.0, (float) DB::table('alat_bahans')->where('nama', 'Obeng')->value('harga')); // tanpa harga -> 1.00
         $this->assertNotNull(DB::table('kelas')->where('nama_kelas', '1A')->first());
     }
-}
 }

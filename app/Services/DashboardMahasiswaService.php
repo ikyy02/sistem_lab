@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Models\AlatBahan;
-use App\Models\HariLibur;
 use App\Models\Jadwal;
 use App\Models\KelasMahasiswa;
 use App\Models\Peminjaman;
@@ -74,7 +73,6 @@ class DashboardMahasiswaService
 
         // f) status laboratorium hari ini
         $setting = PengaturanOperasional::ambil();
-        $libur = HariLibur::query()->where('tanggal', now()->toDateString())->first();
 
         // g) katalog tersedia untuk pintasan
         $katalogTersedia = AlatBahan::query()->where('stok', '>', 0)->count();
@@ -97,7 +95,7 @@ class DashboardMahasiswaService
             'jadwal' => $jadwal,
             'hariIni' => $hariIni,
             'hariMingguIni' => $hariMingguIni,
-            'lab' => $this->statusLaboratorium($setting, $libur),
+            'lab' => $this->statusLaboratorium($setting),
             'katalogTersedia' => $katalogTersedia,
         ];
     }
@@ -111,13 +109,10 @@ class DashboardMahasiswaService
     }
 
     /** @return array{status:string,label:string,keterangan:string,jam:string} */
-    private function statusLaboratorium(PengaturanOperasional $setting, ?HariLibur $libur): array
+    private function statusLaboratorium(PengaturanOperasional $setting): array
     {
         $jam = now()->format('H:i:s');
         $rentang = substr($setting->jam_buka, 0, 5).'–'.substr($setting->jam_tutup, 0, 5);
-        if ($libur) {
-            return ['status' => 'libur', 'label' => 'Libur', 'keterangan' => $libur->keterangan, 'jam' => $rentang];
-        }
         $hariIni = self::HARI[(int) now()->format('w')];
         if (! in_array($hariIni, $setting->hariAktif(), true)) {
             return ['status' => 'tutup', 'label' => 'Tutup', 'keterangan' => 'Laboratorium tidak beroperasi pada hari ini.', 'jam' => $rentang];

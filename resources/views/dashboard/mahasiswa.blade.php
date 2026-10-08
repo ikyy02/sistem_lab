@@ -10,7 +10,7 @@
     $sapaan = $jam < 11 ? 'Selamat pagi' : ($jam < 15 ? 'Selamat siang' : ($jam < 18 ? 'Selamat sore' : 'Selamat malam'));
     $labelHari = ['senin' => 'Senin', 'selasa' => 'Selasa', 'rabu' => 'Rabu', 'kamis' => 'Kamis', 'jumat' => 'Jumat', 'sabtu' => 'Sabtu', 'minggu' => 'Minggu'];
     $labelSemester = ['ganjil' => 'Ganjil', 'genap' => 'Genap'];
-    $warnaLab = ['buka' => ['#ecfdf3', '#146c43', 'bi-unlock'], 'tutup' => ['#f1f5f9', '#475569', 'bi-lock'], 'libur' => ['#fffbeb', '#b45309', 'bi-palm']];
+    $warnaLab = ['buka' => ['#ecfdf3', '#146c43', 'bi-unlock'], 'tutup' => ['#f1f5f9', '#475569', 'bi-lock']];
 @endphp
 
 <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
