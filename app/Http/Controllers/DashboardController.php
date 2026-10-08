@@ -18,6 +18,11 @@ class DashboardController extends Controller
     {
         $me = AuthService::user();
 
+        // Staf Prodi punya dashboard akademik tersendiri (jumlah data + jadwal terdekat).
+        if ($me['role'] === Role::STAFF) {
+            return app(DashboardControllerStaff::class)->index();
+        }
+
         return view('dashboard.index', [
             'me' => $me,
             'isAdmin' => $me['role'] === Role::LABORAN,

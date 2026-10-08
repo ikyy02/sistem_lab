@@ -13,12 +13,15 @@ class MigrasiDataLamaTest extends TestCase
 {
     private const FINAL = '2026_11_02_000001_revisi_final_struktur_16_tabel.php';
 
+    /** Migration yang hanya bisa berjalan setelah struktur final tersedia. */
+    private const SESUDAH_FINAL = ['2026_11_10_000001_create_mata_kuliahs_dan_relasi_jadwal.php'];
+
     public function test_data_lama_dipindahkan_ke_struktur_final(): void
     {
         $dir = sys_get_temp_dir() . '/mig_lama_' . uniqid();
         File::makeDirectory($dir);
         foreach (File::files(database_path('migrations')) as $f) {
-            if ($f->getFilename() !== self::FINAL) {
+            if ($f->getFilename() !== self::FINAL && ! in_array($f->getFilename(), self::SESUDAH_FINAL, true)) {
                 File::copy($f->getPathname(), $dir . '/' . $f->getFilename());
             }
         }

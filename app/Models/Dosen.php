@@ -11,7 +11,7 @@ class Dosen extends Model
     public $incrementing = false;
     protected $keyType = 'string';
     public $timestamps = false;
-    protected $fillable = ['nuptk_nidn', 'nama', 'id_prodi', 'email', 'no_whatsapp'];
+    protected $fillable = ['nuptk_nidn', 'nama', 'id_prodi', 'email', 'no_whatsapp', 'status'];
 
     public function akun()
     {

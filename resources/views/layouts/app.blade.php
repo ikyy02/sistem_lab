@@ -19,6 +19,7 @@
     $role = $me['role'] ?? null;
     $roleLabel = \App\Support\Role::LABELS[$role] ?? '';
     $isAdmin = $role === \App\Support\Role::LABORAN;
+    $isStaff = $role === \App\Support\Role::STAFF;
     $initial = mb_strtoupper(mb_substr($me['nama'] ?? 'U', 0, 1));
 @endphp
 
@@ -47,6 +48,18 @@
                     <i class="bi bi-collection"></i><span>Katalog</span>
                 </a>
             </li>
+            @if($isStaff)
+            <li class="nav-item">
+                <a href="{{ route('data-akademik.index') }}" class="nav-link {{ request()->routeIs('data-akademik.index') ? 'active' : '' }}">
+                    <i class="bi bi-mortarboard"></i><span>Data Akademik</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{{ route('jadwal.index') }}" class="nav-link {{ request()->routeIs('jadwal.*') ? 'active' : '' }}">
+                    <i class="bi bi-calendar-week"></i><span>Jadwal Perkuliahan</span>
+                </a>
+            </li>
+            @endif
             @if($isAdmin)
             <li class="nav-item">
                 <a href="{{ route('kelola-katalog.index') }}" class="nav-link {{ request()->is('kelola-katalog*') ? 'active' : '' }}">
@@ -56,11 +69,13 @@
             @endif
         </ul>
 
+        @unless($isStaff)
         <div class="sidebar-section-label">Transaksi</div>
         <ul class="nav flex-column">
             <li class="nav-item"><a href="#" class="nav-link disabled-link"><i class="bi bi-arrow-up-right-square"></i><span>Peminjaman</span></a></li>
             <li class="nav-item"><a href="#" class="nav-link disabled-link"><i class="bi bi-arrow-down-left-square"></i><span>Pengembalian</span></a></li>
         </ul>
+        @endunless
 
         @if($isAdmin)
         <div class="sidebar-section-label">Administrasi</div>

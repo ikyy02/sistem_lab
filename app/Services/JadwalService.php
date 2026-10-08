@@ -17,6 +17,7 @@ class JadwalService
     public function simpan(array $data, ?Jadwal $jadwal = null): Jadwal
     {
         $v = Validator::make($data, [
+            'id_mata_kuliah' => ['nullable', 'integer', Rule::exists('mata_kuliahs', 'id_mata_kuliah')],
             'id_kelas' => ['required', 'integer', Rule::exists('kelas', 'id_kelas')],
             'nuptk_nidn' => ['required', 'string', Rule::exists('dosens', 'nuptk_nidn')],
             'id_ruangan' => ['required', 'integer', Rule::exists('ruangans', 'id_ruangan')],

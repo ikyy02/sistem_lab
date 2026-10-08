@@ -3,6 +3,8 @@
 use App\Http\Controllers\AlatBahanController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DataAkademikController;
+use App\Http\Controllers\JadwalController;
 use App\Http\Controllers\KelolaKatalogController;
 use App\Http\Controllers\MasterDataController;
 use App\Http\Controllers\MahasiswaController;
@@ -39,6 +41,29 @@ Route::middleware('silab.auth')->group(function () {
     Route::put('profil', [ProfilController::class, 'update'])->name('profil.update');
     Route::put('profil/password', [ProfilController::class, 'password'])->name('profil.password');
 
+    // Khusus Staf Prodi
+    Route::middleware('silab.role:' . Role::STAFF)->group(function () {
+
+        // Data Akademik: Mata Kuliah, Kelas, Semester, dan Dosen (satu menu, empat tab)
+        $tabAkademik = ['mata-kuliah', 'kelas', 'dosen'];
+        Route::get('data-akademik', [DataAkademikController::class, 'index'])->name('data-akademik.index');
+        Route::post('data-akademik/{tab}', [DataAkademikController::class, 'store'])
+            ->whereIn('tab', $tabAkademik)->name('data-akademik.store');
+        Route::put('data-akademik/{tab}/{id}', [DataAkademikController::class, 'update'])
+            ->whereIn('tab', $tabAkademik)->where('id', '[A-Za-z0-9._\-]+')->name('data-akademik.update');
+        Route::delete('data-akademik/{tab}/{id}', [DataAkademikController::class, 'destroy'])
+            ->whereIn('tab', $tabAkademik)->where('id', '[A-Za-z0-9._\-]+')->name('data-akademik.destroy');
+
+        // Kelola Jadwal Perkuliahan (cek bentrok ruangan/hari/jam lewat JadwalService)
+        Route::get('jadwal', [JadwalController::class, 'index'])->name('jadwal.index');
+        Route::get('jadwal/create', [JadwalController::class, 'create'])->name('jadwal.create');
+        Route::post('jadwal', [JadwalController::class, 'store'])->name('jadwal.store');
+        Route::get('jadwal/{jadwal}', [JadwalController::class, 'show'])->whereNumber('jadwal')->name('jadwal.show');
+        Route::get('jadwal/{jadwal}/edit', [JadwalController::class, 'edit'])->whereNumber('jadwal')->name('jadwal.edit');
+        Route::put('jadwal/{jadwal}', [JadwalController::class, 'update'])->whereNumber('jadwal')->name('jadwal.update');
+        Route::delete('jadwal/{jadwal}', [JadwalController::class, 'destroy'])->whereNumber('jadwal')->name('jadwal.destroy');
+    });
+
     // Khusus Laboran/Admin
     Route::middleware('silab.role:' . Role::LABORAN)->group(function () {
 
@@ -52,11 +77,9 @@ Route::middleware('silab.auth')->group(function () {
         Route::get('kelola-katalog/{kategori}/template', [KelolaKatalogController::class, 'template'])->whereIn('kategori', $kat['kategori'])->name('kelola-katalog.template');
         Route::post('kelola-katalog/{kategori}/import', [KelolaKatalogController::class, 'import'])->whereIn('kategori', $kat['kategori'])->name('kelola-katalog.import');
 
-        // Pengaturan Operasional: jam, hari operasional, hari libur
+        // Pengaturan Operasional: jam dan hari operasional
         Route::get('pengaturan-operasional', [PengaturanOperasionalController::class, 'index'])->name('pengaturan-operasional.index');
         Route::put('pengaturan-operasional', [PengaturanOperasionalController::class, 'update'])->name('pengaturan-operasional.update');
-        Route::post('pengaturan-operasional/libur', [PengaturanOperasionalController::class, 'storeLibur'])->name('pengaturan-operasional.libur.store');
-        Route::delete('pengaturan-operasional/libur/{id}', [PengaturanOperasionalController::class, 'destroyLibur'])->whereNumber('id')->name('pengaturan-operasional.libur.destroy');
 
         // Kelola Data Master: Satuan dan Kelas
         Route::get('master-data', [MasterDataController::class, 'index'])->name('master-data.index');
