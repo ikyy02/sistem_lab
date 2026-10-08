@@ -65,6 +65,8 @@ Route::middleware('silab.auth')->group(function () {
         Route::get('jadwal/{jadwal}/edit', [JadwalController::class, 'edit'])->whereNumber('jadwal')->name('jadwal.edit');
         Route::put('jadwal/{jadwal}', [JadwalController::class, 'update'])->whereNumber('jadwal')->name('jadwal.update');
         Route::delete('jadwal/{jadwal}', [JadwalController::class, 'destroy'])->whereNumber('jadwal')->name('jadwal.destroy');
+    });
+
     // Transaksi Peminjaman: pengajuan & riwayat (hanya Mahasiswa dan Dosen yang dapat mengajukan)
     Route::middleware('silab.role:' . Role::MAHASISWA . ',' . Role::DOSEN)->group(function () {
         Route::get('peminjaman', [PeminjamanController::class, 'index'])->name('peminjaman.index');
@@ -127,5 +129,4 @@ Route::middleware('silab.auth')->group(function () {
         Route::get('mahasiswa/template', [MahasiswaController::class, 'template'])->name('mahasiswa.template');
         Route::post('mahasiswa/import', [MahasiswaController::class, 'import'])->name('mahasiswa.import');
     });
-});
 });
