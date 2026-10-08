@@ -133,16 +133,19 @@ class PeminjamanService
 
     /**
      * Setujui: cek ulang stok (dengan lock), cek konflik ruangan (JADWAL aktif + peminjaman lain yang sudah disetujui),
-     * kurangi stok, lalu commit — semuanya satu transaksi.
+     * kurangi stok, lalu commit — semuanya satu transaksi. Dapat diproses Dosen atau Laboran.
      */
-    public function setujui(int $idPeminjaman, string $emailLaboran): Peminjaman
+    public function setujui(int $idPeminjaman, string $emailPemroses): Peminjaman
     {
-        $laboran = $this->pastikanLaboran($emailLaboran);
+        $pemroses = $this->pastikanPemroses($emailPemroses);
 
-        return DB::transaction(function () use ($idPeminjaman, $laboran) {
+        return DB::transaction(function () use ($idPeminjaman, $pemroses) {
             $p = Peminjaman::whereKey($idPeminjaman)->lockForUpdate()->firstOrFail();
             if ($p->status !== 'menunggu') {
                 $this->gagal(['status' => 'Hanya peminjaman berstatus menunggu yang dapat diproses.']);
+            }
+            if ($p->email_peminjam === $pemroses->email) {
+                $this->gagal(['email_pemroses' => 'Tidak dapat memproses pengajuan peminjaman yang diajukan sendiri.']);
             }
             $details = $p->details()->orderBy('id_katalog')->get();
 
@@ -173,22 +176,37 @@ class PeminjamanService
                     $this->gagal(['stok' => 'Stok berubah saat diproses. Silakan coba lagi.']);
                 }
             }
-            $p->update(['status' => 'disetujui', 'email_pemroses' => $laboran->email]);
+            $p->update([
+                'status' => 'disetujui',
+                'email_pemroses' => $pemroses->email,
+                'tanggal_persetujuan' => now(),
+                'alasan_ditolak' => null,
+            ]);
 
             return $p->refresh();
         });
     }
 
-    public function tolak(int $idPeminjaman, string $emailLaboran): Peminjaman
+    /** Tolak pengajuan: status menjadi ditolak beserta alasan dari Dosen/Laboran; stok tidak diubah. */
+    public function tolak(int $idPeminjaman, string $emailPemroses, ?string $alasan = null): Peminjaman
     {
-        $laboran = $this->pastikanLaboran($emailLaboran);
+        $pemroses = $this->pastikanPemroses($emailPemroses);
+        $alasan = $alasan !== null ? trim(preg_replace('/\s+/u', ' ', $alasan)) : null;
 
-        return DB::transaction(function () use ($idPeminjaman, $laboran) {
+        return DB::transaction(function () use ($idPeminjaman, $pemroses, $alasan) {
             $p = Peminjaman::whereKey($idPeminjaman)->lockForUpdate()->firstOrFail();
             if ($p->status !== 'menunggu') {
                 $this->gagal(['status' => 'Hanya peminjaman berstatus menunggu yang dapat ditolak.']);
             }
-            $p->update(['status' => 'ditolak', 'email_pemroses' => $laboran->email]);
+            if ($p->email_peminjam === $pemroses->email) {
+                $this->gagal(['email_pemroses' => 'Tidak dapat memproses pengajuan peminjaman yang diajukan sendiri.']);
+            }
+            $p->update([
+                'status' => 'ditolak',
+                'email_pemroses' => $pemroses->email,
+                'tanggal_persetujuan' => now(),
+                'alasan_ditolak' => $alasan ?: null,
+            ]);
 
             return $p;
         });
@@ -254,9 +272,9 @@ class PeminjamanService
      *
      * @param  array<int,array{id_detail_peminjaman:int,jumlah_dikembalikan:int,kondisi?:?string,keterangan?:?string}>  $rows
      */
-    public function kembalikan(int $idPeminjaman, string $emailLaboran, array $rows, ?string $keterangan = null): Pengembalian
+    public function kembalikan(int $idPeminjaman, string $emailPenerima, array $rows, ?string $keterangan = null): Pengembalian
     {
-        $penerima = $this->pastikanLaboran($emailLaboran);
+        $penerima = $this->pastikanPemroses($emailPenerima);
 
         return DB::transaction(function () use ($idPeminjaman, $penerima, $rows, $keterangan) {
             $p = Peminjaman::whereKey($idPeminjaman)->lockForUpdate()->firstOrFail();
@@ -391,11 +409,12 @@ class PeminjamanService
         return [$awal . '/' . ($awal + 1), ($bulan >= 8 || $bulan === 1) ? 'ganjil' : 'genap'];
     }
 
-    private function pastikanLaboran(string $email): Akun
+    /** Pemroses peminjaman: Dosen (persetujuan/pengembalian) atau Laboran/Admin. */
+    private function pastikanPemroses(string $email): Akun
     {
         $akun = Akun::find($email);
-        if (! $akun || $akun->role !== 'laboran') {
-            $this->gagal(['email_pemroses' => 'Hanya Laboran yang dapat memproses peminjaman.']);
+        if (! $akun || ! in_array($akun->role, ['dosen', 'laboran'], true)) {
+            $this->gagal(['email_pemroses' => 'Hanya Dosen dan Laboran yang dapat memproses peminjaman.']);
         }
 
         return $akun;

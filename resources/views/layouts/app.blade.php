@@ -72,8 +72,30 @@
         @unless($isStaff)
         <div class="sidebar-section-label">Transaksi</div>
         <ul class="nav flex-column">
-            <li class="nav-item"><a href="#" class="nav-link disabled-link"><i class="bi bi-arrow-up-right-square"></i><span>Peminjaman</span></a></li>
-            <li class="nav-item"><a href="#" class="nav-link disabled-link"><i class="bi bi-arrow-down-left-square"></i><span>Pengembalian</span></a></li>
+            @if($role === \App\Support\Role::MAHASISWA || $role === \App\Support\Role::DOSEN)
+            <li class="nav-item">
+                <a href="{{ route('peminjaman.index') }}" class="nav-link {{ request()->routeIs('peminjaman.index', 'peminjaman.show') ? 'active' : '' }}">
+                    <i class="bi bi-arrow-up-right-square"></i><span>Peminjaman</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{{ route('peminjaman.riwayat') }}" class="nav-link {{ request()->routeIs('peminjaman.riwayat') ? 'active' : '' }}">
+                    <i class="bi bi-clock-history"></i><span>Riwayat Peminjaman</span>
+                </a>
+            </li>
+            @endif
+            @if($role === \App\Support\Role::DOSEN || $isAdmin)
+            <li class="nav-item">
+                <a href="{{ route('pengajuan.index') }}" class="nav-link {{ request()->routeIs('pengajuan.*') ? 'active' : '' }}">
+                    <i class="bi bi-clipboard2-check"></i><span>Pengajuan Peminjaman</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{{ route('pengembalian.index') }}" class="nav-link {{ request()->routeIs('pengembalian.*') ? 'active' : '' }}">
+                    <i class="bi bi-arrow-down-left-square"></i><span>Pengembalian</span>
+                </a>
+            </li>
+            @endif
         </ul>
         @endunless
 
