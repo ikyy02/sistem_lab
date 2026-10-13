@@ -6,6 +6,7 @@ use App\Models\AlatBahan;
 use App\Models\Peminjaman;
 use App\Models\PeminjamanDetail;
 use App\Models\Pengembalian;
+use App\Models\PengembalianDetail;
 use App\Services\PeminjamanService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -50,7 +51,7 @@ class PeminjamanServiceTest extends TestCase
         try {
             $fn();
         } catch (ValidationException $e) {
-            $this->assertArrayHasKey($field, $e->errors(), 'Error pada field ' . $field . ' diharapkan, dapat: ' . json_encode($e->errors()));
+            $this->assertArrayHasKey($field, $e->errors(), 'Error pada field '.$field.' diharapkan, dapat: '.json_encode($e->errors()));
 
             return;
         }
@@ -64,7 +65,9 @@ class PeminjamanServiceTest extends TestCase
         $k = $this->katalog();
         $d = ['detail' => [['id_katalog' => $k->id_katalog, 'jumlah' => 1]]];
         $this->assertSame('menunggu', $this->svc->ajukan($this->mahasiswa()->email, $this->data($d))->status);
-        $this->assertSame('menunggu', $this->svc->ajukan($this->dosen()->email, $this->data($d))->status);
+        // Dosen: pengajuan otomatis "Pembelajaran" dan hanya 1 hari (pengembalian pada tanggal yang sama).
+        $dosenOk = $this->svc->ajukan($this->dosen()->email, $this->data($d + ['tanggal_rencana_kembali' => '2030-01-08 10:00']));
+        $this->assertSame(['menunggu', 'pembelajaran'], [$dosenOk->status, $dosenOk->jenis_peminjaman]);
         $this->gagal(fn () => $this->svc->ajukan($this->staff()->email, $this->data($d)), 'email_peminjam');
         $this->gagal(fn () => $this->svc->ajukan($this->laboran()->email, $this->data($d)), 'email_peminjam');
         $this->gagal(fn () => $this->svc->ajukan('tidak@ada.test', $this->data($d)), 'email_peminjam');
@@ -87,6 +90,31 @@ class PeminjamanServiceTest extends TestCase
         // email_dosen harus akun ber-role dosen
         $this->gagal(fn () => $this->svc->ajukan($m->email, $this->data($d + ['jenis_peminjaman' => 'atas_dosen', 'email_dosen' => $this->mahasiswa()->email])), 'email_dosen');
         $this->gagal(fn () => $this->svc->ajukan($m->email, $this->data($d + ['jenis_peminjaman' => 'umum'])), 'jenis_peminjaman');
+    }
+
+    public function test_dosen_otomatis_pembelajaran_hanya_satu_hari_dan_jam_kerja(): void
+    {
+        $k = $this->katalog();
+        $d = ['detail' => [['id_katalog' => $k->id_katalog, 'jumlah' => 1]]];
+        $dosen = $this->dosen()->email;
+
+        // Batas wajib: pengembalian harus satu hari (hari yang sama dengan peminjaman).
+        $this->gagal(fn () => $this->svc->ajukan($dosen, $this->data($d + ['tanggal_rencana_kembali' => '2030-01-09 08:00'])), 'tanggal_rencana_kembali');
+        // Luar jam kerja (buka 08:00).
+        $this->gagal(fn () => $this->svc->ajukan($dosen, $this->data($d + ['tanggal_peminjaman' => '2030-01-08 06:00', 'tanggal_rencana_kembali' => '2030-01-08 10:00'])), 'tanggal_peminjaman');
+        // Hari minggu bukan hari operasional.
+        $this->gagal(fn () => $this->svc->ajukan($dosen, $this->data($d + ['tanggal_peminjaman' => '2030-01-13 08:00', 'tanggal_rencana_kembali' => '2030-01-13 10:00'])), 'tanggal_peminjaman');
+        // Waktu yang sudah lewat dari jam pengajuan.
+        $this->gagal(fn () => $this->svc->ajukan($dosen, $this->data($d + ['tanggal_peminjaman' => '2030-01-07 06:00', 'tanggal_rencana_kembali' => '2030-01-07 10:00'])), 'tanggal_peminjaman');
+
+        // Masih boleh: satu hari, dalam jam kerja, tanpa memilih jenis & keperluan.
+        $ok = $this->svc->ajukan($dosen, $d + [
+            'tanggal_peminjaman' => '2030-01-08 08:00',
+            'tanggal_rencana_kembali' => '2030-01-08 10:00',
+        ]);
+        $this->assertSame('pembelajaran', $ok->jenis_peminjaman);
+        $this->assertNull($ok->email_dosen);
+        $this->assertTrue($ok->tanggal_peminjaman->isSameDay($ok->tanggal_rencana_kembali));
     }
 
     public function test_validasi_tanggal(): void
@@ -199,7 +227,7 @@ class PeminjamanServiceTest extends TestCase
 
         // Pengaju tidak boleh memproses pengajuannya sendiri.
         $dosenSendiri = $this->dosen();
-        $p2 = $this->ajukanBarang($dosenSendiri->email, [$k->id_katalog => 1]);
+        $p2 = $this->ajukanBarang($dosenSendiri->email, [$k->id_katalog => 1], ['tanggal_rencana_kembali' => '2030-01-08 10:00']);
         $this->gagal(fn () => $this->svc->setujui($p2->id_peminjaman, $dosenSendiri->email), 'email_pemroses');
         $this->gagal(fn () => $this->svc->tolak($p2->id_peminjaman, $dosenSendiri->email), 'email_pemroses');
 
@@ -248,7 +276,7 @@ class PeminjamanServiceTest extends TestCase
         $d = $this->detailId($p, $bahan);
         $this->svc->kembalikan($p->id_peminjaman, $lab->email, [['id_detail_peminjaman' => $d, 'jumlah_dikembalikan' => 2]]);
         $this->assertSame(6, $bahan->fresh()->stok); // 10 - 6 + 2
-        $this->assertNull(\App\Models\PengembalianDetail::first()->kondisi);
+        $this->assertNull(PengembalianDetail::first()->kondisi);
         $this->gagal(fn () => $this->svc->kembalikan($p->id_peminjaman, $lab->email, [['id_detail_peminjaman' => $d, 'jumlah_dikembalikan' => 1, 'kondisi' => 'baik']]), 'kondisi');
     }
 

@@ -74,7 +74,7 @@
                     <td style="font-size:.82rem;">{{ $p->tanggal_pengajuan?->format('d/m/Y H:i') }}</td>
                     <td>
                         <div class="fw-semibold">{{ $p->nama_peminjam }}</div>
-                        <div style="font-size:.75rem;color:var(--text-muted);">{{ $p->identitas_peminjam }} · {{ $p->jenis_peminjaman === 'atas_dosen' ? 'Atas Dosen' : 'Pribadi' }}</div>
+                        <div style="font-size:.75rem;color:var(--text-muted);">{{ $p->identitas_peminjam }} · {{ $p->label_jenis }}</div>
                     </td>
                     <td>
                         <span class="d-inline-block text-truncate align-middle" style="max-width:300px;" title="{{ $p->ringkasan }}">{{ $p->ringkasan }}</span>

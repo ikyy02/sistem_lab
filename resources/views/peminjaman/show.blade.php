@@ -71,7 +71,7 @@
                     <tr><td style="width:170px;color:var(--text-muted);">Nama</td><td class="fw-semibold">{{ $p->nama_peminjam }}</td></tr>
                     <tr><td style="color:var(--text-muted);">{{ $p->mahasiswaPeminjam ? 'NIM' : 'NIDN/ID' }}</td><td>{{ $p->identitas_peminjam }}</td></tr>
                     <tr><td style="color:var(--text-muted);">Email</td><td>{{ $p->email_peminjam }}</td></tr>
-                    <tr><td style="color:var(--text-muted);">Jenis Peminjaman</td><td>{{ $p->jenis_peminjaman === 'atas_dosen' ? 'Atas Dosen' : 'Pribadi' }}</td></tr>
+                    <tr><td style="color:var(--text-muted);">Jenis Peminjaman</td><td>{{ $p->label_jenis }}</td></tr>
                     @if($p->email_dosen)
                         <tr><td style="color:var(--text-muted);">Dosen Penanggung Jawab</td><td>{{ $p->dosenPenanggung?->nama ?? $p->email_dosen }}</td></tr>
                     @endif

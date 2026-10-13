@@ -8,6 +8,7 @@ use App\Models\Jadwal;
 use App\Models\Peminjaman;
 use App\Models\PeminjamanDetail;
 use App\Models\PeminjamanRuangan;
+use App\Models\PengaturanOperasional;
 use App\Models\Pengembalian;
 use Carbon\Carbon;
 use Carbon\CarbonInterface;
@@ -20,8 +21,11 @@ use Illuminate\Validation\ValidationException;
  */
 class PeminjamanService
 {
+    /** Nama hari sesuai index Carbon format('w') (0 = minggu). */
+    private const HARI = ['minggu', 'senin', 'selasa', 'rabu', 'kamis', 'jumat', 'sabtu'];
+
     /**
-     * @param  array{jenis_peminjaman:string, email_dosen?:?string, tanggal_peminjaman:mixed, tanggal_rencana_kembali:mixed, keterangan?:?string,
+     * @param  array{jenis_peminjaman?:string, email_dosen?:?string, tanggal_peminjaman:mixed, tanggal_rencana_kembali:mixed, keterangan?:?string,
      *               detail?:array<int,array{id_katalog:int,jumlah:int}>, ruangan?:array<int,array{id_ruangan:int,tanggal_mulai:mixed,tanggal_selesai:mixed,keterangan?:?string}>}  $data
      */
     public function ajukan(string $emailPengaju, array $data): Peminjaman
@@ -34,31 +38,51 @@ class PeminjamanService
             $this->gagal(['email_peminjam' => 'Hanya Mahasiswa dan Dosen yang dapat mengajukan peminjaman.']);
         }
 
-        $jenis = $data['jenis_peminjaman'] ?? null;
-        $emailDosen = $data['email_dosen'] ?? null;
-        if (! in_array($jenis, Peminjaman::JENIS, true)) {
-            $err['jenis_peminjaman'] = 'Jenis peminjaman tidak valid.';
-        } elseif ($jenis === 'pribadi' && $emailDosen !== null && $emailDosen !== '') {
-            $err['email_dosen'] = 'Peminjaman pribadi tidak boleh memiliki dosen.';
-        } elseif ($jenis === 'atas_dosen') {
-            if (! $emailDosen) {
-                $err['email_dosen'] = 'Dosen wajib diisi untuk peminjaman atas dosen.';
-            } elseif (! Akun::where('email', $emailDosen)->where('role', 'dosen')->exists()) {
-                $err['email_dosen'] = 'Dosen harus berupa akun dengan role dosen.';
-            }
-        }
-        if ($jenis === 'pribadi') {
+        // Dosen: jenis peminjaman selalu "Pembelajaran" (otomatis, tanpa pilihan) dan tanpa dosen penanggung jawab.
+        $roleDosen = $pengaju->role === 'dosen';
+
+        if ($roleDosen) {
+            $jenis = Peminjaman::JENIS_PEMBELAJARAN;
             $emailDosen = null;
+        } else {
+            $jenis = $data['jenis_peminjaman'] ?? null;
+            $emailDosen = $data['email_dosen'] ?? null;
+            if (! in_array($jenis, Peminjaman::JENIS_MAHASISWA, true)) {
+                $err['jenis_peminjaman'] = 'Jenis peminjaman tidak valid.';
+            } elseif ($jenis === 'pribadi' && $emailDosen !== null && $emailDosen !== '') {
+                $err['email_dosen'] = 'Peminjaman pribadi tidak boleh memiliki dosen.';
+            } elseif ($jenis === 'atas_dosen') {
+                if (! $emailDosen) {
+                    $err['email_dosen'] = 'Dosen wajib diisi untuk peminjaman atas dosen.';
+                } elseif (! Akun::where('email', $emailDosen)->where('role', 'dosen')->exists()) {
+                    $err['email_dosen'] = 'Dosen harus berupa akun dengan role dosen.';
+                }
+            }
+            if ($jenis === 'pribadi') {
+                $emailDosen = null;
+            }
         }
 
         $pinjam = $this->tanggal($data['tanggal_peminjaman'] ?? null);
         $kembali = $this->tanggal($data['tanggal_rencana_kembali'] ?? null);
         if (! $pinjam || ! $kembali) {
             $err['tanggal_peminjaman'] = 'Tanggal peminjaman dan rencana kembali wajib diisi dengan format yang valid.';
-        } elseif ($pinjam->lt($sekarang->copy()->startOfMinute())) {
-            $err['tanggal_peminjaman'] = 'Tanggal peminjaman tidak boleh sebelum tanggal pengajuan.';
-        } elseif ($kembali->lt($pinjam)) {
-            $err['tanggal_rencana_kembali'] = 'Tanggal rencana kembali tidak boleh sebelum tanggal peminjaman.';
+        } else {
+            if ($pinjam->lt($sekarang->copy()->startOfMinute())) {
+                $err['tanggal_peminjaman'] = 'Tanggal peminjaman tidak boleh sebelum tanggal pengajuan.';
+            }
+            if ($kembali->lt($pinjam)) {
+                $err['tanggal_rencana_kembali'] = 'Tanggal rencana kembali tidak boleh sebelum tanggal peminjaman.';
+            }
+            if ($roleDosen) {
+                // Peminjaman Dosen maksimal 1 hari: pengembalian harus pada hari yang sama.
+                if (! $kembali->isSameDay($pinjam)) {
+                    $err['tanggal_rencana_kembali'] = 'Peminjaman Dosen hanya berlaku 1 hari: pengembalian harus pada tanggal yang sama dengan peminjaman.';
+                }
+                if (! isset($err['tanggal_peminjaman']) && ($pesan = $this->cekJamKerja($pinjam)) !== null) {
+                    $err['tanggal_peminjaman'] = $pesan;
+                }
+            }
         }
 
         $barang = array_values($data['detail'] ?? []);
@@ -93,6 +117,8 @@ class PeminjamanService
             $selesai = $this->tanggal($r['tanggal_selesai'] ?? null);
             if (! $mulai || ! $selesai || ! $mulai->lt($selesai)) {
                 $err['ruangan'] = 'Tanggal mulai ruangan harus lebih awal dari tanggal selesai.';
+            } elseif ($roleDosen && $pinjam && (! $mulai->isSameDay($pinjam) || ! $selesai->isSameDay($pinjam))) {
+                $err['ruangan'] = 'Periode ruangan peminjaman Dosen harus berada pada tanggal yang sama dengan peminjaman.';
             }
         }
         if ($rid && DB::table('ruangans')->whereIn('id_ruangan', array_keys($rid))->count() !== count($rid)) {
@@ -406,7 +432,72 @@ class PeminjamanService
         $tahun = (int) $tanggal->format('Y');
         $awal = $bulan >= 8 ? $tahun : $tahun - 1;
 
-        return [$awal . '/' . ($awal + 1), ($bulan >= 8 || $bulan === 1) ? 'ganjil' : 'genap'];
+        return [$awal.'/'.($awal + 1), ($bulan >= 8 || $bulan === 1) ? 'ganjil' : 'genap'];
+    }
+
+    /**
+     * Aturan jam kerja laboratorium dari Pengaturan Operasional (dapat diubah lewat menu tersebut).
+     *
+     * @return array{jam_buka:string, jam_tutup:string, hari:array<int,string>}
+     */
+    public function aturanJamKerja(): array
+    {
+        $pengaturan = PengaturanOperasional::ambil();
+
+        return [
+            'jam_buka' => substr((string) $pengaturan->jam_buka, 0, 5),
+            'jam_tutup' => substr((string) $pengaturan->jam_tutup, 0, 5),
+            'hari' => $pengaturan->hariAktif(),
+        ];
+    }
+
+    /**
+     * Waktu paling awal yang masih boleh dipilih Dosen: hari operasional pertama yang jamnya
+     * masih buka dan waktu tersebut belum lewat. null bila tidak ditemukan dalam 60 hari.
+     */
+    public function waktuPalingAwal(?CarbonInterface $sekarang = null): ?Carbon
+    {
+        $sekarang = ($sekarang ? Carbon::instance($sekarang) : now())->copy()->startOfMinute();
+        $aturan = $this->aturanJamKerja();
+        [$jamBuka, $menitBuka, $detikBuka] = $this->pecahJam($aturan['jam_buka']);
+        [$jamTutup, $menitTutup, $detikTutup] = $this->pecahJam($aturan['jam_tutup']);
+        $hari = $sekarang->copy()->startOfDay();
+
+        for ($i = 0; $i < 60; $i++, $hari->addDay()) {
+            if (! in_array(self::HARI[(int) $hari->format('w')], $aturan['hari'], true)) {
+                continue;
+            }
+            $buka = $hari->copy()->setTime($jamBuka, $menitBuka, $detikBuka);
+            $tutup = $hari->copy()->setTime($jamTutup, $menitTutup, $detikTutup);
+            $mulai = $sekarang->lt($buka) ? $buka : $sekarang->copy();
+            if ($mulai->lt($tutup)) {
+                return $mulai;
+            }
+        }
+
+        return null;
+    }
+
+    /** Pesan bila $waktu di luar hari/jam operasional laboratorium; null bila masih dalam jam kerja. */
+    private function cekJamKerja(CarbonInterface $waktu): ?string
+    {
+        $aturan = $this->aturanJamKerja();
+        if (! in_array(self::HARI[(int) $waktu->format('w')], $aturan['hari'], true)) {
+            return 'Peminjaman hanya dapat dijadwalkan pada hari operasional laboratorium ('.implode(', ', $aturan['hari']).').';
+        }
+        if ($waktu->format('H:i:s') < $aturan['jam_buka'].':00' || $waktu->format('H:i:s') >= $aturan['jam_tutup'].':00') {
+            return 'Waktu peminjaman harus berada dalam jam kerja laboratorium ('.$aturan['jam_buka'].' – '.$aturan['jam_tutup'].').';
+        }
+
+        return null;
+    }
+
+    /** "08:00" | "08:00:00" -> [8, 0, 0]. */
+    private function pecahJam(string $jam): array
+    {
+        $bagian = array_map('intval', explode(':', $jam));
+
+        return [$bagian[0] ?? 0, $bagian[1] ?? 0, $bagian[2] ?? 0];
     }
 
     /** Pemroses peminjaman: Dosen (persetujuan/pengembalian) atau Laboran/Admin. */

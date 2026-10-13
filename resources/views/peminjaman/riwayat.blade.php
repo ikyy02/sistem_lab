@@ -57,7 +57,7 @@
                     <td class="ps-4 text-muted">{{ $data->firstItem() + $loop->index }}</td>
                     <td>
                         <div class="fw-semibold">{{ $p->tanggal_pengajuan?->format('d/m/Y H:i') }}</div>
-                        <div style="font-size:.75rem;color:var(--text-muted);">{{ $p->jenis_peminjaman === 'atas_dosen' ? 'Atas Dosen' : 'Pribadi' }}</div>
+                        <div style="font-size:.75rem;color:var(--text-muted);">{{ $p->label_jenis }}</div>
                     </td>
                     <td>
                         <span class="d-inline-block text-truncate align-middle" style="max-width:320px;" title="{{ $p->ringkasan }}">{{ $p->ringkasan }}</span>

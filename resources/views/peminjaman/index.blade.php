@@ -6,10 +6,31 @@
 
 @section('content')
 @php
-    $tgl = fn ($key, $default) => old($key) ? \Carbon\Carbon::parse(old($key))->format('Y-m-d\TH:i') : $default;
-    $nilaiPinjam = $tgl('tanggal_peminjaman', now()->addHour()->startOfHour()->format('Y-m-d\TH:i'));
-    $nilaiKembali = $tgl('tanggal_rencana_kembali', now()->addDay()->startOfHour()->format('Y-m-d\TH:i'));
-    $jenis = old('jenis_peminjaman', 'pribadi');
+    $fmt = fn ($v) => \Carbon\Carbon::parse($v)->format('Y-m-d\TH:i');
+    $jamBuka = $aturanJamKerja['jam_buka'] ?? '08:00';
+    $jamTutup = $aturanJamKerja['jam_tutup'] ?? '16:00';
+    $hariKerja = $aturanJamKerja['hari'] ?? [];
+
+    // Dosen: pengajuan otomatis "Pembelajaran"; tanggal mengikuti jam operasional pertama yang belum lewat.
+    $jenis = $roleDosen ? 'pembelajaran' : old('jenis_peminjaman', 'pribadi');
+    $pinjamDefault = $roleDosen
+        ? ($awalIzin ? $awalIzin->format('Y-m-d\TH:i') : now()->format('Y-m-d\TH:i'))
+        : now()->addHour()->startOfHour()->format('Y-m-d\TH:i');
+    if ($roleDosen) {
+        $mulai = \Carbon\Carbon::parse($pinjamDefault);
+        [$jTutup, $mTutup] = array_pad(explode(':', $jamTutup), 2, 0);
+        $batasTutup = $mulai->copy()->setTime((int) $jTutup, (int) $mTutup, 0);
+        $selesai = $mulai->copy()->addHour();
+        if ($selesai->greaterThan($batasTutup)) {
+            $selesai = $batasTutup;
+        }
+        $kembaliDefault = $selesai->format('Y-m-d\TH:i');
+    } else {
+        $kembaliDefault = now()->addDay()->startOfHour()->format('Y-m-d\TH:i');
+    }
+    $nilaiPinjam = old('tanggal_peminjaman') ? $fmt(old('tanggal_peminjaman')) : $pinjamDefault;
+    $nilaiKembali = old('tanggal_rencana_kembali') ? $fmt(old('tanggal_rencana_kembali')) : $kembaliDefault;
+
     $jsKatalog = $opsiKatalog->map(fn ($k) => ['id' => $k->id_katalog, 'nama' => $k->nama, 'stok' => $k->stok, 'satuan' => $k->nama_satuan])->values();
     $jsRuangan = $opsiRuangan->map(fn ($r) => ['id' => $r->id_ruangan, 'nama' => $r->nama_ruangan])->values();
     $jsLamaBarang = collect(old('detail', []))->values();
@@ -27,43 +48,67 @@
 <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
     <div>
         <h2 class="font-display fw-semibold mb-1" style="font-size:1.5rem;">Ajukan Peminjaman</h2>
-        <p class="mb-0" style="font-size:.83rem;color:var(--text-muted);">Pilih alat, bahan, atau ruangan beserta jumlah dan waktu peminjamannya. Pengajuan akan berstatus <strong>Menunggu Persetujuan</strong>.</p>
+        <p class="mb-0" style="font-size:.83rem;color:var(--text-muted);">
+            @if($roleDosen)
+                Peminjaman pembelajaran berlaku 1 hari dan hanya dapat dijadwalkan pada jam operasional laboratorium ({{ $jamBuka }} – {{ $jamTutup }}). Pengajuan akan berstatus <strong>Menunggu Persetujuan</strong>.
+            @else
+                Pilih alat, bahan, atau ruangan beserta jumlah dan waktu peminjamannya. Pengajuan akan berstatus <strong>Menunggu Persetujuan</strong>.
+            @endif
+        </p>
     </div>
     <a href="{{ route('peminjaman.riwayat') }}" class="btn btn-outline-silab d-flex align-items-center gap-2"><i class="bi bi-clock-history"></i> Riwayat Peminjaman</a>
 </div>
 
 <form method="POST" action="{{ route('peminjaman.store') }}" id="formPinjam"
-      onsubmit="return confirm('Kirim pengajuan peminjaman ini? Pengajuan akan menunggu persetujuan Dosen/Laboran.')">
+      onsubmit="return prosesKirim(event)">
     @csrf
     <div class="card-modern p-4">
         <h3 class="font-display fw-semibold mb-1" style="font-size:1.05rem;">Data Peminjaman</h3>
-        <p class="mb-3" style="font-size:.8rem;color:var(--text-muted);">Semua data wajib diisi kecuali bagian ruangan (opsional).</p>
+        <p class="mb-3" style="font-size:.8rem;color:var(--text-muted);">
+            @if($roleDosen)
+                Lengkapi data peminjaman, barang/alat/bahan, dan ruangan (opsional) pada formulir berikut.
+            @else
+                Semua data wajib diisi kecuali bagian ruangan (opsional).
+            @endif
+        </p>
 
         <div class="row g-3">
-            <div class="col-12 col-md-3">
-                <label class="form-label" for="jenis_peminjaman">Jenis Peminjaman</label>
-                <select id="jenis_peminjaman" name="jenis_peminjaman" class="form-select @error('jenis_peminjaman') is-invalid @enderror" onchange="toggleDosen(this.value)">
-                    <option value="pribadi" @selected($jenis === 'pribadi')>Pribadi</option>
-                    <option value="atas_dosen" @selected($jenis === 'atas_dosen')>Atas Dosen</option>
-                </select>
-                @error('jenis_peminjaman')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
-            </div>
+            @if($roleDosen)
+                <div class="col-12 col-md-3">
+                    <label class="form-label" for="jenis_peminjaman_tampil">Jenis Peminjaman</label>
+                    <input type="text" id="jenis_peminjaman_tampil" class="form-control" value="Pembelajaran" disabled>
+                    <input type="hidden" name="jenis_peminjaman" id="jenis_peminjaman" value="pembelajaran">
+                </div>
+            @else
+                <div class="col-12 col-md-3">
+                    <label class="form-label" for="jenis_peminjaman">Jenis Peminjaman</label>
+                    <select id="jenis_peminjaman" name="jenis_peminjaman" class="form-select @error('jenis_peminjaman') is-invalid @enderror" onchange="toggleDosen(this.value)">
+                        <option value="pribadi" @selected($jenis === 'pribadi')>Pribadi</option>
+                        <option value="atas_dosen" @selected($jenis === 'atas_dosen')>Atas Dosen</option>
+                    </select>
+                    @error('jenis_peminjaman')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+                </div>
 
-            <div class="col-12 col-md-3" id="boxDosen" style="display:none;">
-                <label class="form-label" for="email_dosen">Dosen Penanggung Jawab</label>
-                <select id="email_dosen" name="email_dosen" class="form-select @error('email_dosen') is-invalid @enderror">
-                    <option value="">Pilih dosen...</option>
-                    @foreach($opsiDosen as $d)
-                        <option value="{{ $d->email }}" @selected(old('email_dosen') === $d->email)>{{ $d->nama }}</option>
-                    @endforeach
-                </select>
-                @error('email_dosen')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
-            </div>
+                <div class="col-12 col-md-3" id="boxDosen" style="display:none;">
+                    <label class="form-label" for="email_dosen">Dosen Penanggung Jawab</label>
+                    <select id="email_dosen" name="email_dosen" class="form-select @error('email_dosen') is-invalid @enderror">
+                        <option value="">Pilih dosen...</option>
+                        @foreach($opsiDosen as $d)
+                            <option value="{{ $d->email }}" @selected(old('email_dosen') === $d->email)>{{ $d->nama }}</option>
+                        @endforeach
+                    </select>
+                    @error('email_dosen')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+                </div>
+            @endif
 
             <div class="col-6 col-md-3">
                 <label class="form-label" for="tanggal_peminjaman">Tanggal & Waktu Peminjaman</label>
                 <input type="datetime-local" id="tanggal_peminjaman" name="tanggal_peminjaman" value="{{ $nilaiPinjam }}"
+                       @if($roleDosen && $awalIzin) min="{{ $awalIzin->format('Y-m-d\TH:i') }}" @endif
                        class="form-control @error('tanggal_peminjaman') is-invalid @enderror">
+                @if($roleDosen)
+                    <div class="form-text">Hanya {{ $jamBuka }} – {{ $jamTutup }} pada hari operasional ({{ implode(', ', $hariKerja) }}).</div>
+                @endif
                 @error('tanggal_peminjaman')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
             </div>
 
@@ -71,20 +116,25 @@
                 <label class="form-label" for="tanggal_rencana_kembali">Tanggal & Waktu Pengembalian</label>
                 <input type="datetime-local" id="tanggal_rencana_kembali" name="tanggal_rencana_kembali" value="{{ $nilaiKembali }}"
                        class="form-control @error('tanggal_rencana_kembali') is-invalid @enderror">
+                @if($roleDosen)
+                    <div class="form-text">Harus pada tanggal yang sama dengan peminjaman (maksimal 1 hari).</div>
+                @endif
                 @error('tanggal_rencana_kembali')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
             </div>
 
-            <div class="col-12">
-                <label class="form-label" for="keterangan">Keperluan Peminjaman</label>
-                <textarea id="keterangan" name="keterangan" rows="2" maxlength="500"
-                          class="form-control @error('keterangan') is-invalid @enderror"
-                          placeholder="Contoh: Praktikum jaringan komputer kelas A">{{ old('keterangan') }}</textarea>
-                @error('keterangan')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
-            </div>
+            @unless($roleDosen)
+                <div class="col-12">
+                    <label class="form-label" for="keterangan">Keperluan Peminjaman</label>
+                    <textarea id="keterangan" name="keterangan" rows="2" maxlength="500"
+                              class="form-control @error('keterangan') is-invalid @enderror"
+                              placeholder="Contoh: Praktikum jaringan komputer kelas A">{{ old('keterangan') }}</textarea>
+                    @error('keterangan')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+                </div>
+            @endunless
         </div>
-    </div>
 
-    <div class="card-modern p-4 mt-3">
+        <hr class="my-4">
+
         <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
             <div>
                 <h3 class="font-display fw-semibold mb-1" style="font-size:1.05rem;">Barang (Alat / Bahan)</h3>
@@ -105,13 +155,19 @@
                 <tbody id="barangRows"></tbody>
             </table>
         </div>
-    </div>
 
-    <div class="card-modern p-4 mt-3">
+        <hr class="my-4">
+
         <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
             <div>
                 <h3 class="font-display fw-semibold mb-1" style="font-size:1.05rem;">Ruangan (Opsional)</h3>
-                <p class="mb-0" style="font-size:.8rem;color:var(--text-muted);">Pilih ruangan bila peminjaman memerlukan ruangan beserta periode pemakaiannya.</p>
+                <p class="mb-0" style="font-size:.8rem;color:var(--text-muted);">
+                    @if($roleDosen)
+                        Periode ruangan harus berada pada tanggal yang sama dengan peminjaman.
+                    @else
+                        Pilih ruangan bila peminjaman memerlukan ruangan beserta periode pemakaiannya.
+                    @endif
+                </p>
             </div>
             <button type="button" class="btn btn-outline-silab d-flex align-items-center gap-2" onclick="tambahRuangan()"><i class="bi bi-plus-lg"></i> Tambah Ruangan</button>
         </div>
@@ -137,80 +193,6 @@
         <button type="submit" class="btn btn-primary d-flex align-items-center gap-2"><i class="bi bi-send"></i> Kirim Pengajuan</button>
     </div>
 </form>
-
-<div class="card-modern overflow-hidden mt-4">
-    <div class="p-4 pb-3 d-flex flex-wrap align-items-center justify-content-between gap-2">
-        <div>
-            <h3 class="font-display fw-semibold mb-1" style="font-size:1.05rem;">Katalog Tersedia</h3>
-            <p class="mb-0" style="font-size:.8rem;color:var(--text-muted);">Alat dan bahan dengan stok tersedia untuk dipinjam.</p>
-        </div>
-        <form method="GET" action="{{ route('peminjaman.index') }}" class="d-flex gap-2">
-            <input type="text" name="search" value="{{ $search }}" maxlength="100" class="form-control" placeholder="Cari nama, satuan, ruangan..." style="min-width:220px;">
-            <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i></button>
-            @if($search !== '')<a href="{{ route('peminjaman.index') }}" class="btn btn-outline-silab" title="Reset"><i class="bi bi-arrow-counterclockwise"></i></a>@endif
-        </form>
-    </div>
-
-    @if($katalog->isEmpty())
-        <div class="text-center py-5" style="color:var(--text-muted);font-size:.85rem;border-top:1px solid var(--border-color);">
-            <i class="bi bi-inbox fs-1 d-block mb-2" style="color:#c9bdb4;"></i>
-            {{ $search !== '' ? 'Tidak ada data yang cocok dengan "' . $search . '".' : 'Belum ada katalog dengan stok tersedia.' }}
-        </div>
-    @else
-        <div class="table-responsive">
-            <table class="table table-silab mb-0">
-                <thead>
-                    <tr>
-                        <th class="ps-4">Nama</th>
-                        <th style="width:100px;">Jenis</th>
-                        <th style="width:120px;">Stok</th>
-                        <th style="width:120px;">Satuan</th>
-                        <th class="pe-4">Ruangan</th>
-                    </tr>
-                </thead>
-                <tbody>
-                @foreach($katalog as $k)
-                    <tr>
-                        <td class="ps-4 fw-semibold">{{ $k->nama }}</td>
-                        <td><span class="badge-status" style="background:var(--primary-soft);color:var(--ink);">{{ $k->jenis === 'alat' ? 'Alat' : 'Bahan' }}</span></td>
-                        <td>{{ $k->stok }}</td>
-                        <td>{{ $k->nama_satuan }}</td>
-                        <td class="pe-4">{{ $k->nama_ruangan }}</td>
-                    </tr>
-                @endforeach
-                </tbody>
-            </table>
-        </div>
-        <div class="table-footer">
-            <div>Menampilkan {{ $katalog->firstItem() }}–{{ $katalog->lastItem() }} dari {{ $katalog->total() }} data</div>
-            <div class="d-flex align-items-center gap-3">
-                <form method="GET" action="{{ route('peminjaman.index') }}" class="d-flex align-items-center gap-2">
-                    <input type="hidden" name="search" value="{{ $search }}">
-                    <label class="mb-0" style="font-size:.78rem;">Tampil</label>
-                    <select name="per_page" class="form-select form-select-sm" style="width:auto;" onchange="this.form.submit()">
-                        @foreach($perPageOptions as $n)<option value="{{ $n }}" @selected($perPage === $n)>{{ $n }}</option>@endforeach
-                    </select>
-                </form>
-                {{ $katalog->links('pagination.silab') }}
-            </div>
-        </div>
-    @endif
-</div>
-
-<div class="card-modern p-4 mt-3">
-    <h3 class="font-display fw-semibold mb-1" style="font-size:1.05rem;">Ruangan Tersedia</h3>
-    <p class="mb-3" style="font-size:.8rem;color:var(--text-muted);">Daftar ruangan laboratorium yang dapat diajukan.</p>
-    <div class="d-flex flex-wrap gap-2">
-        @forelse($opsiRuangan->take(12) as $r)
-            <span class="badge-status" style="background:var(--gold-tint);color:#6E6142;"><i class="bi bi-door-open me-1"></i>{{ $r->nama_ruangan }}</span>
-        @empty
-            <span style="font-size:.83rem;color:var(--text-muted);">Belum ada ruangan.</span>
-        @endforelse
-        @if($opsiRuangan->count() > 12)
-            <a href="{{ route('katalog', ['jenis' => 'ruangan']) }}" class="badge-status text-decoration-none" style="background:var(--primary-soft);color:var(--ink);">+{{ $opsiRuangan->count() - 12 }} ruangan lainnya</a>
-        @endif
-    </div>
-</div>
 @endsection
 
 @push('scripts')
@@ -219,6 +201,9 @@
     const OPSI_RUANGAN = @json($jsRuangan);
     const LAMA_BARANG = @json($jsLamaBarang);
     const LAMA_RUANGAN = @json($jsLamaRuangan);
+    const ROLE_DOSEN = @json($roleDosen);
+    const JAM_KERJA = @json(['buka' => $jamBuka, 'tutup' => $jamTutup, 'hari' => $hariKerja]);
+    const NAMA_HARI = ['minggu', 'senin', 'selasa', 'rabu', 'kamis', 'jumat', 'sabtu'];
     let idxBarang = 0;
     let idxRuangan = 0;
 
@@ -230,7 +215,8 @@
     }
 
     function toggleDosen(jenis) {
-        document.getElementById('boxDosen').style.display = jenis === 'atas_dosen' ? '' : 'none';
+        const box = document.getElementById('boxDosen');
+        if (box) box.style.display = jenis === 'atas_dosen' ? '' : 'none';
     }
 
     function tambahBarang(data = {}) {
@@ -312,7 +298,11 @@
         mulai.name = 'ruangan[' + i + '][tanggal_mulai]';
         mulai.className = 'form-control';
         mulai.required = true;
-        mulai.value = data.tanggal_mulai ? String(data.tanggal_mulai).replace(' ', 'T') : '';
+        if (data.tanggal_mulai) {
+            mulai.value = String(data.tanggal_mulai).replace(' ', 'T');
+        } else if (ROLE_DOSEN) {
+            mulai.value = document.getElementById('tanggal_peminjaman').value;
+        }
         tdMulai.appendChild(mulai);
 
         const tdSelesai = document.createElement('td');
@@ -321,7 +311,11 @@
         selesai.name = 'ruangan[' + i + '][tanggal_selesai]';
         selesai.className = 'form-control';
         selesai.required = true;
-        selesai.value = data.tanggal_selesai ? String(data.tanggal_selesai).replace(' ', 'T') : '';
+        if (data.tanggal_selesai) {
+            selesai.value = String(data.tanggal_selesai).replace(' ', 'T');
+        } else if (ROLE_DOSEN) {
+            selesai.value = document.getElementById('tanggal_rencana_kembali').value;
+        }
         tdSelesai.appendChild(selesai);
 
         const tdKet = document.createElement('td');
@@ -348,8 +342,78 @@
         document.getElementById('ruanganRows').appendChild(tr);
     }
 
+    function waktuKerja(stringNilai) {
+        const d = new Date(stringNilai);
+        if (isNaN(d.getTime())) return false;
+        const hari = NAMA_HARI[d.getDay()];
+        if (!JAM_KERJA.hari.includes(hari)) return false;
+        const menit = d.getHours() * 60 + d.getMinutes();
+        const [jBuka, mBuka] = JAM_KERJA.buka.split(':').map(Number);
+        const [jTutup, mTutup] = JAM_KERJA.tutup.split(':').map(Number);
+        return menit >= (jBuka * 60 + mBuka) && menit <= (jTutup * 60 + mTutup);
+    }
+
+    // Validasi sisi klien khusus Dosen (dilakukan ulang di backend).
+    function validasiDosen() {
+        const form = document.getElementById('formPinjam');
+        const pinjam = form.tanggal_peminjaman.value;
+        const kembali = form.tanggal_rencana_kembali.value;
+        if (!pinjam || !kembali) {
+            return 'Tanggal peminjaman dan pengembalian wajib diisi.';
+        }
+        const dPinjam = new Date(pinjam);
+        const dKembali = new Date(kembali);
+        if (dKembali < dPinjam) {
+            return 'Tanggal pengembalian tidak boleh sebelum tanggal peminjaman.';
+        }
+        if (dPinjam.toDateString() !== dKembali.toDateString()) {
+            return 'Peminjaman Dosen hanya berlaku 1 hari: tanggal pengembalian harus sama dengan tanggal peminjaman.';
+        }
+        if (!waktuKerja(pinjam)) {
+            return 'Waktu peminjaman harus berada dalam jam kerja laboratorium (' + JAM_KERJA.buka + ' – ' + JAM_KERJA.tutup + ') pada hari operasional.';
+        }
+        if (!waktuKerja(kembali)) {
+            return 'Waktu pengembalian harus berada dalam jam kerja laboratorium (' + JAM_KERJA.buka + ' – ' + JAM_KERJA.tutup + ') pada hari operasional.';
+        }
+
+        const rows = document.getElementById('ruanganRows').querySelectorAll('tr');
+        for (const tr of rows) {
+            const mulai = tr.querySelector('[name$="[tanggal_mulai]"]');
+            const selesai = tr.querySelector('[name$="[tanggal_selesai]"]');
+            if (!mulai || !selesai || !mulai.value || !selesai.value) continue;
+            const dMulai = new Date(mulai.value);
+            const dSelesai = new Date(selesai.value);
+            if (dSelesai <= dMulai) {
+                return 'Tanggal selesai ruangan harus setelah tanggal mulai.';
+            }
+            if (dMulai.toDateString() !== dPinjam.toDateString() || dSelesai.toDateString() !== dPinjam.toDateString()) {
+                return 'Periode ruangan peminjaman Dosen harus berada pada tanggal yang sama dengan peminjaman.';
+            }
+            if (!waktuKerja(mulai.value) || !waktuKerja(selesai.value)) {
+                return 'Waktu ruangan harus berada dalam jam kerja laboratorium (' + JAM_KERJA.buka + ' – ' + JAM_KERJA.tutup + ').';
+            }
+        }
+
+        return null;
+    }
+
+    function prosesKirim(e) {
+        if (ROLE_DOSEN) {
+            const pesan = validasiDosen();
+            if (pesan) {
+                e.preventDefault();
+                alert(pesan);
+                return false;
+            }
+        }
+        return confirm('Kirim pengajuan peminjaman ini? Pengajuan akan menunggu persetujuan Dosen/Laboran.');
+    }
+
     document.addEventListener('DOMContentLoaded', function () {
-        toggleDosen(document.getElementById('jenis_peminjaman').value);
+        const selectJenis = document.getElementById('jenis_peminjaman');
+        if (selectJenis && selectJenis.tagName === 'SELECT') {
+            toggleDosen(selectJenis.value);
+        }
         const lamaBarang = LAMA_BARANG.length ? LAMA_BARANG : [{}];
         lamaBarang.forEach(tambahBarang);
         LAMA_RUANGAN.forEach(tambahRuangan);

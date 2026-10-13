@@ -202,9 +202,16 @@ class KelolaKatalogController extends Controller
 
     public function template(Request $request, string $kategori, KatalogImportService $svc)
     {
-        [$writer, $name] = $svc->template($kategori, $request->query('format') === 'csv' ? 'csv' : 'xlsx');
+        [$content, $name] = $svc->template($kategori, $request->query('format') === 'csv' ? 'csv' : 'xlsx');
+        $contentType = str_ends_with($name, '.csv') 
+            ? 'text/csv; charset=UTF-8' 
+            : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 
-        return response()->streamDownload(fn () => $writer->save('php://output'), $name);
+        return response($content, 200, [
+            'Content-Type' => $contentType,
+            'Content-Disposition' => 'attachment; filename="' . $name . '"',
+            'Cache-Control' => 'no-cache, must-revalidate',
+        ]);
     }
 
     public function import(Request $request, string $kategori, KatalogImportService $svc)

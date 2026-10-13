@@ -7,7 +7,13 @@ use Illuminate\Database\Eloquent\Model;
 class Peminjaman extends Model
 {
     public const STATUS = ['menunggu', 'disetujui', 'ditolak', 'selesai'];
-    public const JENIS = ['pribadi', 'atas_dosen'];
+
+    public const JENIS = ['pribadi', 'atas_dosen', 'pembelajaran'];
+
+    /** Jenis yang boleh dipilih Mahasiswa (Dosen selalu memakai "Pembelajaran"). */
+    public const JENIS_MAHASISWA = ['pribadi', 'atas_dosen'];
+
+    public const JENIS_PEMBELAJARAN = 'pembelajaran';
 
     /** Tampilan status (nilai enum database tetap apa adanya). */
     public const LABELS = [
@@ -17,13 +23,24 @@ class Peminjaman extends Model
         'selesai' => 'Dikembalikan',
     ];
 
+    /** Tampilan jenis peminjaman (nilai enum database tetap apa adanya). */
+    public const LABEL_JENIS = [
+        'pribadi' => 'Pribadi',
+        'atas_dosen' => 'Atas Dosen',
+        'pembelajaran' => 'Pembelajaran',
+    ];
+
     protected $table = 'peminjamans';
+
     protected $primaryKey = 'id_peminjaman';
+
     public $timestamps = false;
+
     protected $fillable = [
         'email_peminjam', 'jenis_peminjaman', 'email_dosen', 'tanggal_pengajuan', 'tanggal_peminjaman',
         'tanggal_rencana_kembali', 'status', 'keterangan', 'email_pemroses', 'alasan_ditolak', 'tanggal_persetujuan',
     ];
+
     protected $casts = [
         'tanggal_pengajuan' => 'datetime', 'tanggal_peminjaman' => 'datetime', 'tanggal_rencana_kembali' => 'datetime',
         'tanggal_persetujuan' => 'datetime',
@@ -80,6 +97,11 @@ class Peminjaman extends Model
         return self::LABELS[$this->status] ?? $this->status;
     }
 
+    public function getLabelJenisAttribute(): string
+    {
+        return self::LABEL_JENIS[$this->jenis_peminjaman] ?? $this->jenis_peminjaman;
+    }
+
     /** Nama peminjam: profil Mahasiswa/Dosen, fallback ke email akun. */
     public function getNamaPeminjamAttribute(): string
     {
@@ -102,7 +124,7 @@ class Peminjaman extends Model
     /** Ringkasan barang/ruangan untuk ditampilkan pada tabel. */
     public function getRingkasanAttribute(): string
     {
-        $barang = $this->details->map(fn ($d) => $d->katalog?->nama . ' (' . $d->jumlah . ')')->filter()->values();
+        $barang = $this->details->map(fn ($d) => $d->katalog?->nama.' ('.$d->jumlah.')')->filter()->values();
         $ruang = $this->ruangans->map(fn ($r) => $r->ruangan?->nama_ruangan)->filter()->values();
         $semua = $barang->concat($ruang);
 

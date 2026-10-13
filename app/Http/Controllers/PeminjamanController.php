@@ -22,30 +22,11 @@ class PeminjamanController extends Controller
 {
     public const PER_PAGE = [10, 25, 50, 100];
 
-    /** Halaman Ajukan Peminjaman + daftar katalog/ruangan yang tersedia. */
-    public function index(Request $request)
+    /** Halaman Ajukan Peminjaman + data pilihan form (katalog, ruangan, dosen, jam kerja). */
+    public function index(PeminjamanService $service)
     {
-        $search = mb_substr(trim((string) $request->query('search', '')), 0, 100);
-        $perPage = (int) $request->query('per_page');
-        $perPage = in_array($perPage, self::PER_PAGE, true) ? $perPage : self::PER_PAGE[0];
-
-        $query = AlatBahan::query()
-            ->select('alat_bahans.*', 'satuans.nama_satuan', 'ruangans.nama_ruangan')
-            ->join('satuans', 'satuans.id_satuan', '=', 'alat_bahans.id_satuan')
-            ->join('ruangans', 'ruangans.id_ruangan', '=', 'alat_bahans.id_ruangan')
-            ->where('alat_bahans.stok', '>', 0);
-        foreach (array_slice(preg_split('/\s+/u', $search, -1, PREG_SPLIT_NO_EMPTY) ?: [], 0, 5) as $word) {
-            $like = '%'.str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $word).'%';
-            $query->where(function ($g) use ($like) {
-                $g->orWhereRaw("alat_bahans.nama LIKE ? ESCAPE '!'", [$like])
-                    ->orWhereRaw("satuans.nama_satuan LIKE ? ESCAPE '!'", [$like])
-                    ->orWhereRaw("ruangans.nama_ruangan LIKE ? ESCAPE '!'", [$like]);
-            });
-        }
-        $katalog = $query->orderBy('alat_bahans.nama')->paginate($perPage)->withQueryString();
-        if ($katalog->currentPage() > $katalog->lastPage() && $katalog->lastPage() > 0) {
-            return redirect()->route('peminjaman.index', array_merge($request->query(), ['page' => $katalog->lastPage()]));
-        }
+        $me = AuthService::user();
+        $roleDosen = ($me['role'] ?? null) === Role::DOSEN;
 
         // Opsi dropdown: hanya katalog dengan stok tersedia.
         $opsiKatalog = AlatBahan::query()
@@ -56,27 +37,31 @@ class PeminjamanController extends Controller
             ->get();
 
         return view('peminjaman.index', [
-            'katalog' => $katalog,
-            'search' => $search,
-            'perPage' => $perPage,
-            'perPageOptions' => self::PER_PAGE,
             'opsiKatalog' => $opsiKatalog,
             'opsiRuangan' => Ruangan::orderBy('nama_ruangan')->get(),
             'opsiDosen' => Dosen::orderBy('nama')->get(['nama', 'email']),
-            'me' => AuthService::user(),
+            'me' => $me,
+            'roleDosen' => $roleDosen,
+            'aturanJamKerja' => $service->aturanJamKerja(),
+            // Batas waktu terendah untuk Dosen (hari & jam operasional pertama yang belum lewat).
+            'awalIzin' => $roleDosen ? $service->waktuPalingAwal() : null,
         ]);
     }
 
     /** Simpan pengajuan peminjaman -> status "menunggu" (stok baru dipotong saat disetujui). */
     public function store(Request $request, PeminjamanService $service)
     {
+        // Dosen: jenis peminjaman & keperluan tidak dipilih (jenis selalu "Pembelajaran", diatur service).
+        $roleDosen = (AuthService::user()['role'] ?? null) === Role::DOSEN;
+
         $data = $request->validate([
-            'jenis_peminjaman' => ['required', Rule::in(Peminjaman::JENIS)],
-            'email_dosen' => ['required_if:jenis_peminjaman,atas_dosen', 'nullable', 'email', 'max:50',
+            'jenis_peminjaman' => [$roleDosen ? 'nullable' : 'required',
+                Rule::in($roleDosen ? Peminjaman::JENIS : Peminjaman::JENIS_MAHASISWA)],
+            'email_dosen' => $roleDosen ? ['nullable'] : ['required_if:jenis_peminjaman,atas_dosen', 'nullable', 'email', 'max:50',
                 Rule::exists('dosens', 'email')],
             'tanggal_peminjaman' => ['required', 'date'],
             'tanggal_rencana_kembali' => ['required', 'date', 'after_or_equal:tanggal_peminjaman'],
-            'keterangan' => ['required', 'string', 'max:500'],
+            'keterangan' => [$roleDosen ? 'nullable' : 'required', 'string', 'max:500'],
             'detail' => ['required', 'array', 'min:1'],
             'detail.*.id_katalog' => ['required', 'integer', 'distinct', Rule::exists('alat_bahans', 'id_katalog')],
             'detail.*.jumlah' => ['required', 'integer', 'min:1'],
@@ -119,11 +104,11 @@ class PeminjamanController extends Controller
         }
 
         $service->ajukan(AuthService::user()['email'], [
-            'jenis_peminjaman' => $data['jenis_peminjaman'],
+            'jenis_peminjaman' => $data['jenis_peminjaman'] ?? null,
             'email_dosen' => $data['email_dosen'] ?? null,
             'tanggal_peminjaman' => $data['tanggal_peminjaman'],
             'tanggal_rencana_kembali' => $data['tanggal_rencana_kembali'],
-            'keterangan' => $data['keterangan'],
+            'keterangan' => $data['keterangan'] ?? null,
             'detail' => $data['detail'],
             'ruangan' => array_map(fn ($r) => $r + ['keterangan' => $r['keterangan'] ?? null], $data['ruangan'] ?? []),
         ]);

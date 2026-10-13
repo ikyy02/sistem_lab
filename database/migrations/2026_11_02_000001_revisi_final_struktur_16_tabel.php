@@ -122,7 +122,7 @@ return new class extends Migration
         Schema::create('peminjamans', function (Blueprint $t) {
             $t->id('id_peminjaman');
             $t->string('email_peminjam', 50)->index('ix_peminjamans_peminjam');
-            $t->enum('jenis_peminjaman', ['pribadi', 'atas_dosen']);
+            $t->enum('jenis_peminjaman', ['pribadi', 'atas_dosen', 'pembelajaran']);
             $t->string('email_dosen', 50)->nullable()->index('ix_peminjamans_dosen');
             $t->dateTime('tanggal_pengajuan');
             $t->dateTime('tanggal_peminjaman');
