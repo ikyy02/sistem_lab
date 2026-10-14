@@ -13,9 +13,11 @@
             {{ $jumlahMenunggu }} pengajuan menunggu persetujuan. Persetujuan memotong stok; penolakan tidak.
         </p>
     </div>
-    <a href="{{ route('pengembalian.index') }}" class="btn btn-outline-silab d-flex align-items-center gap-2">
-        <i class="bi bi-arrow-down-left-square"></i> Pengembalian
-    </a>
+    @if((\App\Services\AuthService::user()['role'] ?? null) === \App\Support\Role::LABORAN)
+        <a href="{{ route('pengembalian.index') }}" class="btn btn-outline-silab d-flex align-items-center gap-2">
+            <i class="bi bi-arrow-down-left-square"></i> Pengembalian
+        </a>
+    @endif
 </div>
 
 @if($errors->any())

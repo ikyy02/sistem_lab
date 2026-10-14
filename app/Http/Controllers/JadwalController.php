@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Jadwal;
+use App\Models\PeriodeJadwal;
 use App\Services\JadwalService;
 use App\Support\Options;
 use Illuminate\Http\Request;
@@ -24,6 +25,13 @@ class JadwalController extends Controller
         $perPage = (int) $request->query('per_page');
         $perPage = in_array($perPage, self::PER_PAGE, true) ? $perPage : self::PER_PAGE[0];
 
+        // Periode: default periode berjalan; periode arsip dapat dipilih (hanya-baca); 'semua' menampilkan seluruhnya.
+        $daftarPeriode = PeriodeJadwal::orderByDesc('tanggal_mulai')->orderByDesc('id_periode')->get();
+        $berjalan = $daftarPeriode->firstWhere('status', PeriodeJadwal::BERJALAN);
+        $periodeReq = (string) $request->query('periode', '');
+        $periode = ($periodeReq === 'semua' || $daftarPeriode->contains('id_periode', (int) $periodeReq))
+            ? $periodeReq : (string) ($berjalan?->id_periode ?? 'semua');
+
         $query = Jadwal::query()
             ->select('jadwals.*')
             ->leftJoin('mata_kuliahs', 'mata_kuliahs.id_mata_kuliah', '=', 'jadwals.id_mata_kuliah')
@@ -31,6 +39,9 @@ class JadwalController extends Controller
             ->leftJoin('ruangans', 'ruangans.id_ruangan', '=', 'jadwals.id_ruangan')
             ->leftJoin('kelas', 'kelas.id_kelas', '=', 'jadwals.id_kelas');
 
+        if ($periode !== 'semua') {
+            $query->where('jadwals.id_periode', (int) $periode);
+        }
         if ($hari !== '') {
             $query->where('jadwals.hari', $hari);
         }
@@ -48,6 +59,7 @@ class JadwalController extends Controller
             });
         }
 
+        $query->with('periode');
         $data = $query->orderByRaw(Jadwal::HARI_SQL)->orderBy('jam_mulai')->orderBy('id_jadwal')
             ->paginate($perPage)->withQueryString();
         if ($data->currentPage() > $data->lastPage()) {
@@ -59,6 +71,9 @@ class JadwalController extends Controller
             'search' => $search,
             'hari' => $hari,
             'status' => $status,
+            'periode' => $periode,
+            'daftarPeriode' => $daftarPeriode,
+            'berjalan' => $berjalan,
             'perPage' => $perPage,
             'perPageOptions' => self::PER_PAGE,
         ]);
@@ -86,11 +101,14 @@ class JadwalController extends Controller
 
     public function edit(Jadwal $jadwal)
     {
+        $this->pastikanBisaDiubah($jadwal);
+
         return view('jadwal.edit', ['jadwal' => $jadwal] + $this->form());
     }
 
     public function update(Request $request, Jadwal $jadwal, JadwalService $service)
     {
+        $this->pastikanBisaDiubah($jadwal);
         $this->validateJadwal($request);
         $service->simpan($this->payload($request), $jadwal);
 
@@ -99,9 +117,18 @@ class JadwalController extends Controller
 
     public function destroy(Jadwal $jadwal)
     {
+        $this->pastikanBisaDiubah($jadwal);
         $jadwal->delete();
 
         return redirect()->route('jadwal.index')->with('success', 'Jadwal perkuliahan berhasil dihapus.');
+    }
+
+    /** Jadwal periode arsip hanya dapat dilihat. */
+    private function pastikanBisaDiubah(Jadwal $jadwal): void
+    {
+        if ($jadwal->terarsip()) {
+            abort(403, 'Jadwal arsip hanya dapat dilihat dan tidak dapat diubah.');
+        }
     }
 
     /** @return array<string,mixed> */

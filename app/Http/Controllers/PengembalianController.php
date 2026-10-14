@@ -13,7 +13,7 @@ use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
 /**
- * Pengembalian (Dosen & Laboran/Admin): daftar peminjaman aktif dan pencatatan pengembalian.
+ * Pengembalian (khusus Laboran/Admin; akses dibatasi di routes lewat middleware role): daftar peminjaman aktif dan pencatatan pengembalian.
  * Pemotongan/pengembalian stok serta penentuan status selesai dikerjakan PeminjamanService.
  */
 class PengembalianController extends Controller
@@ -31,6 +31,7 @@ class PengembalianController extends Controller
 
         $data = Peminjaman::query()
             ->with(array_merge(Peminjaman::withProfil(), ['details.katalog', 'ruangans.ruangan']))
+            ->whereHas('details') // peminjaman ruangan saja tidak punya barang untuk dikembalikan
             ->when($status !== 'semua', fn ($q) => $q->where('status', $status))
             ->orderBy('tanggal_rencana_kembali')
             ->paginate($perPage)

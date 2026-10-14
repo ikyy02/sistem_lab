@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Peminjaman extends Model
 {
-    public const STATUS = ['menunggu', 'disetujui', 'ditolak', 'selesai'];
+    public const STATUS = ['menunggu', 'disetujui', 'ditolak', 'selesai', 'dibatalkan'];
 
     public const JENIS = ['pribadi', 'atas_dosen', 'pembelajaran'];
 
@@ -21,12 +21,13 @@ class Peminjaman extends Model
         'disetujui' => 'Disetujui',
         'ditolak' => 'Ditolak',
         'selesai' => 'Dikembalikan',
+        'dibatalkan' => 'Dibatalkan',
     ];
 
     /** Tampilan jenis peminjaman (nilai enum database tetap apa adanya). */
     public const LABEL_JENIS = [
-        'pribadi' => 'Pribadi',
-        'atas_dosen' => 'Atas Dosen',
+        'pribadi' => 'Peminjaman Mandiri',
+        'atas_dosen' => 'Peminjaman dengan Penanggung Jawab Dosen',
         'pembelajaran' => 'Pembelajaran',
     ];
 
@@ -90,6 +91,58 @@ class Peminjaman extends Model
     public static function withProfil(): array
     {
         return ['mahasiswaPeminjam', 'dosenPeminjam', 'dosenPenanggung', 'details.katalog.satuan', 'ruangans.ruangan'];
+    }
+
+    public function melibatkanRuangan(): bool
+    {
+        return $this->ruangans->isNotEmpty();
+    }
+
+    public function melibatkanBarang(): bool
+    {
+        return $this->details->isNotEmpty();
+    }
+
+    /** Awal tanggal pelaksanaan: yang paling awal antara tanggal peminjaman dan mulai pemakaian ruangan. */
+    public function tanggalPelaksanaan(): ?\Carbon\Carbon
+    {
+        $awal = $this->ruangans->map(fn ($r) => \Carbon\Carbon::parse($r->tanggal_mulai))
+            ->push($this->tanggal_peminjaman)->filter()->sort()->first();
+
+        return $awal?->copy()->startOfDay();
+    }
+
+    /** Dapat dibatalkan peminjam: melibatkan ruangan, belum diproses akhir, dan sebelum tanggal pelaksanaan (sampai 23.59 H-1). */
+    public function bisaDibatalkanOleh(string $email, ?\Carbon\CarbonInterface $sekarang = null): bool
+    {
+        $pelaksanaan = $this->tanggalPelaksanaan();
+
+        return $this->email_peminjam === $email
+            && in_array($this->status, ['menunggu', 'disetujui'], true)
+            && $this->melibatkanRuangan()
+            && $pelaksanaan !== null
+            && ($sekarang ?? now())->lt($pelaksanaan);
+    }
+
+    /**
+     * Pihak yang menekan Selesai (hanya bila melibatkan ruangan; transaksi tanpa ruangan mengikuti proses pengembalian):
+     * - ruangan + alat/bahan -> Laboran;
+     * - ruangan saja dengan Penanggung Jawab Dosen -> Dosen terkait;
+     * - ruangan saja lainnya (mandiri/pembelajaran) -> peminjam sendiri.
+     */
+    public function bisaDiselesaikanOleh(string $email, string $role): bool
+    {
+        if ($this->status !== 'disetujui' || ! $this->melibatkanRuangan()) {
+            return false;
+        }
+        if ($this->melibatkanBarang()) {
+            return $role === 'laboran';
+        }
+        if ($this->jenis_peminjaman === 'atas_dosen') {
+            return $role === 'dosen' && $this->email_dosen === $email;
+        }
+
+        return $this->email_peminjam === $email;
     }
 
     public function getLabelStatusAttribute(): string

@@ -33,16 +33,9 @@ class Role
         self::LABORAN => 'Laboran/Admin',
     ];
 
-    /**
-     * Halaman tujuan setelah login.
-     * Laboran/Admin -> Kelola Katalog; Staf Prodi -> Dashboard Staf Prodi; lainnya -> Katalog.
-     */
+    /** Halaman tujuan setelah login (dan saat membuka halaman awal): Beranda sesuai peran. */
     public static function home(string $role): string
     {
-        if ($role === self::LABORAN) {
-            return route('kelola-katalog.index', ['kategori' => 'alat']);
-        }
-
-        return $role === self::STAFF ? route('dashboard') : route('katalog');
+        return route('dashboard');
     }
 }

@@ -62,11 +62,43 @@
     </div>
 @endif
 
+@if($dapatSelesai)
+    <div class="card-modern p-4 mb-3">
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+            <div style="font-size:.85rem;color:var(--text-muted);">
+                <i class="bi bi-check2-circle me-1"></i>
+                Tekan <strong>Selesai</strong> setelah kegiatan berakhir{{ $p->melibatkanBarang() ? ' dan alat/bahan sudah dikembalikan' : '' }}.
+            </div>
+            <form action="{{ route('peminjaman.selesai', $p->id_peminjaman) }}" method="POST" class="d-inline"
+                  onsubmit="return confirm('Tandai peminjaman #{{ $p->id_peminjaman }} sebagai selesai?')">
+                @csrf
+                <button type="submit" class="btn btn-primary d-flex align-items-center gap-2"><i class="bi bi-check2-circle"></i> Selesai</button>
+            </form>
+        </div>
+    </div>
+@endif
+
+@if($dapatBatalkan)
+    <div class="card-modern p-4 mb-3">
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+            <div style="font-size:.85rem;color:var(--text-muted);">
+                <i class="bi bi-calendar-x me-1"></i>
+                Peminjaman ini dapat dibatalkan sampai <strong>pukul 23.59 pada H-1</strong> ({{ $p->tanggalPelaksanaan()?->copy()->subDay()->format('d/m/Y') }}). Mulai tanggal pelaksanaan tidak dapat dibatalkan.
+            </div>
+            <form action="{{ route('peminjaman.batal', $p->id_peminjaman) }}" method="POST" class="d-inline"
+                  onsubmit="return confirm('Batalkan peminjaman #{{ $p->id_peminjaman }}? Tindakan ini tidak dapat dibatalkan.')">
+                @csrf
+                <button type="submit" class="btn btn-del d-flex align-items-center gap-2"><i class="bi bi-x-lg"></i> Batalkan</button>
+            </form>
+        </div>
+    </div>
+@endif
+
 <div class="row g-3">
     <div class="col-12 col-lg-6">
         <div class="card-modern p-4 h-100">
             <h3 class="font-display fw-semibold mb-3" style="font-size:1.05rem;">Data Peminjam</h3>
-            <table class="table table-sm mb-0" style="font-size:.85rem;">
+            <div class="table-responsive"><table class="table table-sm mb-0" style="font-size:.85rem;word-break:break-word;">
                 <tbody>
                     <tr><td style="width:170px;color:var(--text-muted);">Nama</td><td class="fw-semibold">{{ $p->nama_peminjam }}</td></tr>
                     <tr><td style="color:var(--text-muted);">{{ $p->mahasiswaPeminjam ? 'NIM' : 'NIDN/ID' }}</td><td>{{ $p->identitas_peminjam }}</td></tr>
@@ -77,14 +109,14 @@
                     @endif
                     <tr><td style="color:var(--text-muted);">Keperluan</td><td>{{ $p->keterangan ?? '—' }}</td></tr>
                 </tbody>
-            </table>
+            </table></div>
         </div>
     </div>
 
     <div class="col-12 col-lg-6">
         <div class="card-modern p-4 h-100">
             <h3 class="font-display fw-semibold mb-3" style="font-size:1.05rem;">Waktu & Proses</h3>
-            <table class="table table-sm mb-0" style="font-size:.85rem;">
+            <div class="table-responsive"><table class="table table-sm mb-0" style="font-size:.85rem;word-break:break-word;">
                 <tbody>
                     <tr><td style="width:190px;color:var(--text-muted);">Waktu Pengajuan</td><td>{{ $p->tanggal_pengajuan?->format('d/m/Y H:i') }}</td></tr>
                     <tr><td style="color:var(--text-muted);">Tanggal Peminjaman</td><td>{{ $p->tanggal_peminjaman?->format('d/m/Y H:i') }}</td></tr>
@@ -101,7 +133,7 @@
                         </tr>
                     @endif
                 </tbody>
-            </table>
+            </table></div>
         </div>
     </div>
 </div>

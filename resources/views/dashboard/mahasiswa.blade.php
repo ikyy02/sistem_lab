@@ -278,11 +278,6 @@
                         <i class="bi bi-collection"></i> Katalog
                     </a>
                 </div>
-                <div class="col-6">
-                    <a href="{{ route('profil.index') }}" class="btn btn-outline-silab w-100 d-flex align-items-center justify-content-center gap-2">
-                        <i class="bi bi-person-circle"></i> Profil
-                    </a>
-                </div>
             </div>
             <div class="mt-3" style="font-size:.78rem;color:var(--text-muted);">
                 <i class="bi bi-box-seam me-1"></i>{{ $katalogTersedia }} katalog tersedia disewakan/dipinjam hari ini.

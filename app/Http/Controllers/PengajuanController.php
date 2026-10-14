@@ -15,7 +15,7 @@ class PengajuanController extends Controller
 {
     public const PER_PAGE = [10, 25, 50, 100];
 
-    public const FILTER = ['menunggu', 'disetujui', 'ditolak', 'selesai', 'semua'];
+    public const FILTER = ['menunggu', 'disetujui', 'ditolak', 'selesai', 'dibatalkan', 'semua'];
 
     public function index(Request $request)
     {

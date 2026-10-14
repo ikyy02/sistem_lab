@@ -10,6 +10,7 @@ use App\Services\AuthService;
 use App\Services\PeminjamanService;
 use App\Support\Role;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -21,6 +22,8 @@ use Illuminate\Validation\ValidationException;
 class PeminjamanController extends Controller
 {
     public const PER_PAGE = [10, 25, 50, 100];
+
+    public const PESAN_MINIMAL_ITEM = 'Pilih minimal satu ruangan, alat, atau bahan yang ingin dipinjam sebelum mengajukan peminjaman.';
 
     /** Halaman Ajukan Peminjaman + data pilihan form (katalog, ruangan, dosen, jam kerja). */
     public function index(PeminjamanService $service)
@@ -39,7 +42,7 @@ class PeminjamanController extends Controller
         return view('peminjaman.index', [
             'opsiKatalog' => $opsiKatalog,
             'opsiRuangan' => Ruangan::orderBy('nama_ruangan')->get(),
-            'opsiDosen' => Dosen::orderBy('nama')->get(['nama', 'email']),
+            'opsiDosen' => Dosen::where('status', 'aktif')->orderBy('nama')->get(['nama', 'email']),
             'me' => $me,
             'roleDosen' => $roleDosen,
             'aturanJamKerja' => $service->aturanJamKerja(),
@@ -51,49 +54,54 @@ class PeminjamanController extends Controller
     /** Simpan pengajuan peminjaman -> status "menunggu" (stok baru dipotong saat disetujui). */
     public function store(Request $request, PeminjamanService $service)
     {
-        // Dosen: jenis peminjaman & keperluan tidak dipilih (jenis selalu "Pembelajaran", diatur service).
+        // Dosen: jenis selalu "Pembelajaran" (ditetapkan service), tanpa dosen penanggung jawab; input jenis dari klien diabaikan.
         $roleDosen = (AuthService::user()['role'] ?? null) === Role::DOSEN;
+        if ($roleDosen) {
+            $request->request->remove('jenis_peminjaman');
+            $request->request->remove('email_dosen');
+        }
+
+        // Baris kosong/placeholder (belum memilih ruangan atau barang) tidak dihitung sebagai item.
+        $request->merge([
+            'detail' => $this->barisTerisi($request->input('detail'), 'id_katalog'),
+            'ruangan' => $this->barisTerisi($request->input('ruangan'), 'id_ruangan'),
+        ]);
 
         $data = $request->validate([
-            'jenis_peminjaman' => [$roleDosen ? 'nullable' : 'required',
-                Rule::in($roleDosen ? Peminjaman::JENIS : Peminjaman::JENIS_MAHASISWA)],
+            'jenis_peminjaman' => $roleDosen ? ['nullable'] : ['required', Rule::in(Peminjaman::JENIS_MAHASISWA)],
             'email_dosen' => $roleDosen ? ['nullable'] : ['required_if:jenis_peminjaman,atas_dosen', 'nullable', 'email', 'max:50',
-                Rule::exists('dosens', 'email')],
+                Rule::exists('dosens', 'email')->where('status', 'aktif')],
             'tanggal_peminjaman' => ['required', 'date'],
             'tanggal_rencana_kembali' => ['required', 'date', 'after_or_equal:tanggal_peminjaman'],
             'keterangan' => [$roleDosen ? 'nullable' : 'required', 'string', 'max:500'],
-            'detail' => ['required', 'array', 'min:1'],
+            // Ruangan, alat, dan bahan dapat dipilih sendiri-sendiri; minimal salah satu harus ada.
+            'detail' => ['required_without:ruangan', 'nullable', 'array'],
             'detail.*.id_katalog' => ['required', 'integer', 'distinct', Rule::exists('alat_bahans', 'id_katalog')],
             'detail.*.jumlah' => ['required', 'integer', 'min:1'],
             'ruangan' => ['nullable', 'array'],
             'ruangan.*.id_ruangan' => ['required', 'integer', 'distinct', Rule::exists('ruangans', 'id_ruangan')],
-            'ruangan.*.tanggal_mulai' => ['required', 'date'],
-            'ruangan.*.tanggal_selesai' => ['required', 'date', 'after:ruangan.*.tanggal_mulai'],
-            'ruangan.*.keterangan' => ['nullable', 'string', 'max:500'],
         ], [
             'required' => ':attribute wajib diisi.',
-            'required_if' => ':attribute wajib diisi untuk peminjaman atas dosen.',
+            'required_if' => ':attribute wajib dipilih untuk peminjaman dengan penanggung jawab dosen.',
+            'required_without' => self::PESAN_MINIMAL_ITEM,
             'date' => ':attribute tidak valid.',
             'after_or_equal' => 'Tanggal pengembalian tidak boleh sebelum tanggal peminjaman.',
-            'after' => 'Tanggal selesai ruangan harus setelah tanggal mulai.',
             'distinct' => 'Satu katalog/ruangan hanya boleh dipilih sekali.',
             'exists' => 'Data :attribute tidak ditemukan.',
-            'detail.min' => 'Pilih minimal satu alat atau bahan yang akan dipinjam.',
             'detail.*.jumlah.min' => 'Jumlah peminjaman minimal 1.',
             'max' => ':attribute maksimal :max karakter.',
         ], [
-            'jenis_peminjaman' => 'Jenis peminjaman', 'email_dosen' => 'Dosen',
+            'jenis_peminjaman' => 'Jenis peminjaman', 'email_dosen' => 'Dosen penanggung jawab',
             'tanggal_peminjaman' => 'Tanggal peminjaman', 'tanggal_rencana_kembali' => 'Tanggal pengembalian',
             'keterangan' => 'Keperluan peminjaman', 'detail' => 'Barang', 'detail.*.id_katalog' => 'Barang',
             'detail.*.jumlah' => 'Jumlah', 'ruangan.*.id_ruangan' => 'Ruangan',
-            'ruangan.*.tanggal_mulai' => 'Tanggal mulai ruangan', 'ruangan.*.tanggal_selesai' => 'Tanggal selesai ruangan',
-            'ruangan.*.keterangan' => 'Keterangan ruangan',
         ]);
 
         // Validasi stok saat pengajuan (stok dicek ulang & dikunci lagi saat persetujuan).
-        $stok = AlatBahan::whereIn('id_katalog', array_column($data['detail'], 'id_katalog'))->get()->keyBy('id_katalog');
+        $detail = $data['detail'] ?? [];
+        $stok = AlatBahan::whereIn('id_katalog', array_column($detail, 'id_katalog'))->get()->keyBy('id_katalog');
         $pesan = [];
-        foreach ($data['detail'] as $row) {
+        foreach ($detail as $row) {
             $k = $stok[$row['id_katalog']] ?? null;
             if ($k && (int) $row['jumlah'] > $k->stok) {
                 $pesan[] = "Stok {$k->nama} tidak mencukupi (tersedia {$k->stok}, diminta {$row['jumlah']}).";
@@ -103,40 +111,103 @@ class PeminjamanController extends Controller
             throw ValidationException::withMessages(['detail' => implode(' ', $pesan)]);
         }
 
-        $service->ajukan(AuthService::user()['email'], [
+        $payload = [
             'jenis_peminjaman' => $data['jenis_peminjaman'] ?? null,
             'email_dosen' => $data['email_dosen'] ?? null,
             'tanggal_peminjaman' => $data['tanggal_peminjaman'],
             'tanggal_rencana_kembali' => $data['tanggal_rencana_kembali'],
             'keterangan' => $data['keterangan'] ?? null,
-            'detail' => $data['detail'],
-            'ruangan' => array_map(fn ($r) => $r + ['keterangan' => $r['keterangan'] ?? null], $data['ruangan'] ?? []),
-        ]);
+            'detail' => $detail,
+            'ruangan' => array_map(fn ($r) => ['id_ruangan' => $r['id_ruangan']], $data['ruangan'] ?? []),
+        ];
+
+        // Perlindungan kirim ganda: satu token form hanya boleh menghasilkan satu pengajuan (dikonsumsi setelah validasi lolos).
+        $kunci = null;
+        if (is_string($request->input('token_pengajuan')) && $request->input('token_pengajuan') !== '') {
+            $kunci = 'pengajuan:'.AuthService::user()['email'].':'.substr($request->input('token_pengajuan'), 0, 64);
+            if (! Cache::add($kunci, 1, now()->addMinutes(10))) {
+                return redirect()->route('peminjaman.riwayat')
+                    ->with('success', 'Pengajuan Anda sudah diterima sebelumnya.');
+            }
+        }
+        try {
+            $service->ajukan(AuthService::user()['email'], $payload);
+        } catch (\Throwable $e) {
+            if ($kunci) {
+                Cache::forget($kunci); // gagal: token boleh dipakai lagi setelah perbaikan
+            }
+            throw $e;
+        }
 
         return redirect()->route('peminjaman.riwayat')
             ->with('success', 'Pengajuan peminjaman berhasil dikirim dan sedang menunggu persetujuan.');
     }
 
-    /** Riwayat peminjaman milik sendiri. */
+    /** Buang baris tanpa pilihan; hasil kosong menjadi null agar dihitung "belum ada item". */
+    private function barisTerisi(mixed $baris, string $kunci): ?array
+    {
+        if (! is_array($baris)) {
+            return null;
+        }
+        $isi = array_values(array_filter($baris, fn ($r) => is_array($r) && trim((string) ($r[$kunci] ?? '')) !== ''));
+
+        return $isi === [] ? null : $isi;
+    }
+
+    /** Kolom yang dapat diurutkan pada Riwayat Peminjaman. */
+    public const SORT = [
+        'tanggal_pengajuan' => 'Waktu Pengajuan', 'tanggal_peminjaman' => 'Tanggal Peminjaman',
+        'tanggal_rencana_kembali' => 'Tanggal Pengembalian', 'status' => 'Status',
+    ];
+
+    /** Riwayat peminjaman milik sendiri: terbaru (waktu pengajuan) di atas; ada pencarian, filter status, sorting, pagination. */
     public function riwayat(Request $request)
     {
         $me = AuthService::user();
         $status = $request->query('status');
         $status = in_array($status, Peminjaman::STATUS, true) ? $status : null;
+        $search = mb_substr(trim((string) $request->query('search', '')), 0, 100);
+        $sort = array_key_exists($request->query('sort'), self::SORT) ? $request->query('sort') : 'tanggal_pengajuan';
+        $arah = strtolower((string) $request->query('direction'));
+        $direction = in_array($arah, ['asc', 'desc'], true) ? $arah : ($sort === 'tanggal_pengajuan' ? 'desc' : 'asc');
         $perPage = (int) $request->query('per_page');
         $perPage = in_array($perPage, self::PER_PAGE, true) ? $perPage : self::PER_PAGE[0];
 
-        $data = Peminjaman::query()
+        $query = Peminjaman::query()
             ->with(Peminjaman::withProfil())
             ->where('email_peminjam', $me['email'])
-            ->when($status, fn ($q) => $q->where('status', $status))
-            ->orderByDesc('tanggal_pengajuan')
+            ->when($status, fn ($q) => $q->where('status', $status));
+        foreach (array_slice(preg_split('/\s+/u', $search, -1, PREG_SPLIT_NO_EMPTY) ?: [], 0, 5) as $word) {
+            $like = '%'.str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $word).'%';
+            $query->where(function ($g) use ($like) {
+                $g->whereRaw("peminjamans.keterangan LIKE ? ESCAPE '!'", [$like])
+                    ->orWhereExists(fn ($q) => $q->selectRaw('1')->from('peminjaman_details as d')
+                        ->join('alat_bahans as k', 'k.id_katalog', '=', 'd.id_katalog')
+                        ->whereColumn('d.id_peminjaman', 'peminjamans.id_peminjaman')
+                        ->whereRaw("k.nama LIKE ? ESCAPE '!'", [$like]))
+                    ->orWhereExists(fn ($q) => $q->selectRaw('1')->from('peminjaman_ruangans as pr')
+                        ->join('ruangans as r', 'r.id_ruangan', '=', 'pr.id_ruangan')
+                        ->whereColumn('pr.id_peminjaman', 'peminjamans.id_peminjaman')
+                        ->whereRaw("r.nama_ruangan LIKE ? ESCAPE '!'", [$like]));
+            });
+        }
+        // Urutan utama sesuai pilihan; waktu pengajuan terbaru dan id terbaru sebagai pembeda agar urutan stabil.
+        $data = $query->orderBy($sort, $direction)
+            ->when($sort !== 'tanggal_pengajuan', fn ($q) => $q->orderByDesc('tanggal_pengajuan'))
+            ->orderByDesc('id_peminjaman')
             ->paginate($perPage)
             ->withQueryString();
+        if ($data->currentPage() > $data->lastPage() && $data->lastPage() > 0) {
+            return redirect()->route('peminjaman.riwayat', array_merge($request->query(), ['page' => $data->lastPage()]));
+        }
 
         return view('peminjaman.riwayat', [
             'data' => $data,
             'status' => $status,
+            'search' => $search,
+            'sort' => $sort,
+            'direction' => $direction,
+            'sortLabels' => self::SORT,
             'perPage' => $perPage,
             'perPageOptions' => self::PER_PAGE,
             'labels' => Peminjaman::LABELS,
@@ -172,7 +243,26 @@ class PeminjamanController extends Controller
             'p' => $p,
             'sudah' => $sudah,
             'dapatMemproses' => $dapatMemproses,
-            'dapatKembalikan' => $p->status === 'disetujui' && in_array($me['role'], [Role::DOSEN, Role::LABORAN], true),
+            // Pengembalian hanya dicatat Laboran.
+            'dapatKembalikan' => $p->status === 'disetujui' && $p->melibatkanBarang() && $me['role'] === Role::LABORAN,
+            'dapatBatalkan' => $p->bisaDibatalkanOleh($me['email']),
+            'dapatSelesai' => $p->bisaDiselesaikanOleh($me['email'], $me['role']),
         ]);
+    }
+
+    /** Batalkan peminjaman ber-ruangan (peminjam, sampai 23.59 H-1). */
+    public function batalkan(int $id, PeminjamanService $service)
+    {
+        $service->batalkan($id, AuthService::user()['email']);
+
+        return redirect()->route('peminjaman.show', $id)->with('success', 'Peminjaman berhasil dibatalkan.');
+    }
+
+    /** Tombol Selesai untuk peminjaman ber-ruangan (pihak berwenang dicek di service). */
+    public function selesai(int $id, PeminjamanService $service)
+    {
+        $service->selesaikan($id, AuthService::user()['email']);
+
+        return redirect()->route('peminjaman.show', $id)->with('success', 'Peminjaman ditandai selesai.');
     }
 }

@@ -65,7 +65,7 @@ class DashboardMahasiswaService
             $urut = array_flip($hariMingguIni);
             $jadwal = Jadwal::query()->with(['kelas', 'ruangan', 'dosen'])
                 ->whereIn('id_kelas', $keanggotaan->pluck('id_kelas'))
-                ->where('status', 'aktif')->whereIn('hari', $hariMingguIni)
+                ->berlaku()->where('status', 'aktif')->whereIn('hari', $hariMingguIni)
                 ->where('tahun_akademik', $tahun)->where('semester', $semester)
                 ->orderBy('jam_mulai')->get()
                 ->sortBy(fn ($j) => [$urut[$j->hari] ?? PHP_INT_MAX, $j->jam_mulai])->values();

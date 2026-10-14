@@ -20,8 +20,28 @@ class Jadwal extends Model
     public $timestamps = false;
 
     protected $fillable = [
-        'id_kelas', 'id_mata_kuliah', 'nuptk_nidn', 'id_ruangan', 'hari', 'jam_mulai', 'jam_selesai', 'status', 'tahun_akademik', 'semester',
+        'id_kelas', 'id_mata_kuliah', 'id_periode', 'nuptk_nidn', 'id_ruangan', 'hari', 'jam_mulai', 'jam_selesai', 'status', 'tahun_akademik', 'semester',
     ];
+
+    public function periode()
+    {
+        return $this->belongsTo(PeriodeJadwal::class, 'id_periode', 'id_periode');
+    }
+
+    /** Jadwal milik periode arsip: hanya dapat dilihat, tidak dapat diubah atau dihapus. */
+    public function terarsip(): bool
+    {
+        return $this->periode?->terarsip() ?? false;
+    }
+
+    /** Jadwal yang sedang berlaku: periode berjalan (atau belum terhubung ke periode mana pun). */
+    public function scopeBerlaku($query)
+    {
+        return $query->where(function ($q) {
+            $q->whereNull('jadwals.id_periode')
+                ->orWhereIn('jadwals.id_periode', PeriodeJadwal::query()->where('status', PeriodeJadwal::BERJALAN)->select('id_periode'));
+        });
+    }
 
     public function mataKuliah()
     {

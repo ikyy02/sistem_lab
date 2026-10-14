@@ -12,7 +12,7 @@
 
 <div class="mb-4">
     <h2 class="font-display fw-semibold mb-1" style="font-size:1.7rem;">{{ $sapaan }}, {{ explode(' ', $me['nama'])[0] }}.</h2>
-    <p class="mb-0" style="color:var(--text-muted);font-size:.9rem;">Ringkasan aktivitas peminjaman laboratorium hari ini.</p>
+    <p class="mb-0" style="color:var(--text-muted);font-size:.9rem;">{{ $isAdmin ? 'Ringkasan pengajuan dan peminjaman yang perlu ditangani.' : 'Ringkasan pengajuan peminjaman Anda dan pengajuan yang perlu Anda proses.' }}</p>
 </div>
 
 @if($isAdmin)
@@ -45,8 +45,7 @@
     <div class="card-modern p-4 mt-3" style="background:var(--gold-tint);border-color:#EFE1C2;">
         <div style="font-size:.82rem;color:#6E6142;">
             <i class="bi bi-info-circle me-1"></i>
-            Setujui pengajuan dari menu <strong>Pengajuan Peminjaman</strong>; catat pengembalian barang dari menu <strong>Pengembalian</strong>.
-            {{ $tertutup }} pengajuan berstatus ditolak.
+            Setujui atau tolak pengajuan dari menu <strong>Pengajuan Peminjaman</strong>; catat pengembalian barang dari menu <strong>Pengembalian</strong>.
         </div>
     </div>
 @else

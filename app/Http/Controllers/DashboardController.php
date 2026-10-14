@@ -26,7 +26,6 @@ class DashboardController extends Controller
                 'isAdmin' => true,
                 'menunggu' => Peminjaman::where('status', 'menunggu')->count(),
                 'berlangsung' => Peminjaman::where('status', 'disetujui')->count(),
-                'tertutup' => Peminjaman::where('status', 'ditolak')->count(),
             ]);
         }
 

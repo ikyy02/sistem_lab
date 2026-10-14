@@ -9,6 +9,7 @@ use App\Models\Peminjaman;
 use App\Models\PeminjamanDetail;
 use App\Models\PeminjamanRuangan;
 use App\Models\PengaturanOperasional;
+use App\Models\PeriodeJadwal;
 use App\Models\Pengembalian;
 use Carbon\Carbon;
 use Carbon\CarbonInterface;
@@ -26,7 +27,7 @@ class PeminjamanService
 
     /**
      * @param  array{jenis_peminjaman?:string, email_dosen?:?string, tanggal_peminjaman:mixed, tanggal_rencana_kembali:mixed, keterangan?:?string,
-     *               detail?:array<int,array{id_katalog:int,jumlah:int}>, ruangan?:array<int,array{id_ruangan:int,tanggal_mulai:mixed,tanggal_selesai:mixed,keterangan?:?string}>}  $data
+     *               detail?:array<int,array{id_katalog:int,jumlah:int}>, ruangan?:array<int,array{id_ruangan:int}>}  $data
      */
     public function ajukan(string $emailPengaju, array $data): Peminjaman
     {
@@ -50,10 +51,10 @@ class PeminjamanService
             if (! in_array($jenis, Peminjaman::JENIS_MAHASISWA, true)) {
                 $err['jenis_peminjaman'] = 'Jenis peminjaman tidak valid.';
             } elseif ($jenis === 'pribadi' && $emailDosen !== null && $emailDosen !== '') {
-                $err['email_dosen'] = 'Peminjaman pribadi tidak boleh memiliki dosen.';
+                $err['email_dosen'] = 'Peminjaman mandiri tidak boleh memiliki dosen penanggung jawab.';
             } elseif ($jenis === 'atas_dosen') {
                 if (! $emailDosen) {
-                    $err['email_dosen'] = 'Dosen wajib diisi untuk peminjaman atas dosen.';
+                    $err['email_dosen'] = 'Dosen penanggung jawab wajib dipilih.';
                 } elseif (! Akun::where('email', $emailDosen)->where('role', 'dosen')->exists()) {
                     $err['email_dosen'] = 'Dosen harus berupa akun dengan role dosen.';
                 }
@@ -88,7 +89,11 @@ class PeminjamanService
         $barang = array_values($data['detail'] ?? []);
         $ruangan = array_values($data['ruangan'] ?? []);
         if ($barang === [] && $ruangan === []) {
-            $err['detail'] = 'Pilih minimal satu alat/bahan atau ruangan.';
+            $err['detail'] = 'Pilih minimal satu ruangan, alat, atau bahan yang ingin dipinjam sebelum mengajukan peminjaman.';
+        }
+        // Jadwal tunggal: ruangan memakai periode yang sama dengan peminjaman, sehingga harus berdurasi.
+        if ($ruangan !== [] && $pinjam && $kembali && ! $pinjam->lt($kembali)) {
+            $err['tanggal_rencana_kembali'] = 'Waktu selesai harus setelah waktu mulai bila meminjam ruangan.';
         }
 
         $ids = [];
@@ -113,13 +118,6 @@ class PeminjamanService
                 $err['ruangan'] = 'Satu ruangan hanya boleh muncul sekali dalam satu transaksi.';
             }
             $rid[$id] = true;
-            $mulai = $this->tanggal($r['tanggal_mulai'] ?? null);
-            $selesai = $this->tanggal($r['tanggal_selesai'] ?? null);
-            if (! $mulai || ! $selesai || ! $mulai->lt($selesai)) {
-                $err['ruangan'] = 'Tanggal mulai ruangan harus lebih awal dari tanggal selesai.';
-            } elseif ($roleDosen && $pinjam && (! $mulai->isSameDay($pinjam) || ! $selesai->isSameDay($pinjam))) {
-                $err['ruangan'] = 'Periode ruangan peminjaman Dosen harus berada pada tanggal yang sama dengan peminjaman.';
-            }
         }
         if ($rid && DB::table('ruangans')->whereIn('id_ruangan', array_keys($rid))->count() !== count($rid)) {
             $err['ruangan'] = 'Ada ruangan yang tidak ditemukan.';
@@ -147,9 +145,9 @@ class PeminjamanService
             foreach ($ruangan as $r) {
                 $p->ruangans()->create([
                     'id_ruangan' => (int) $r['id_ruangan'],
-                    'tanggal_mulai' => $this->tanggal($r['tanggal_mulai']),
-                    'tanggal_selesai' => $this->tanggal($r['tanggal_selesai']),
-                    'keterangan' => $r['keterangan'] ?? null,
+                    'tanggal_mulai' => $pinjam,
+                    'tanggal_selesai' => $kembali,
+                    'keterangan' => null,
                 ]);
             }
 
@@ -239,11 +237,11 @@ class PeminjamanService
     }
 
     /**
-     * Status selesai ditentukan sistem, bukan dipilih manual. Hanya untuk transaksi berstatus disetujui:
+     * Status selesai otomatis untuk transaksi TANPA ruangan yang berstatus disetujui:
      * - ada Alat        → semua jumlah Alat sudah dikembalikan (baik/rusak);
-     * - ada Ruangan     → semua periode ruangan sudah berakhir;
      * - Bahan           → tidak punya kewajiban kembali (yang tidak dikembalikan dianggap terpakai);
      * - Bahan saja      → selesai setelah tanggal rencana kembali.
+     * Transaksi yang melibatkan ruangan hanya selesai lewat selesaikan() (tombol Selesai).
      */
     public function evaluasiStatus(Peminjaman $p, ?CarbonInterface $sekarang = null): bool
     {
@@ -253,32 +251,99 @@ class PeminjamanService
             return false;
         }
 
-        $punyaAlat = DB::table('peminjaman_details as d')->join('alat_bahans as k', 'k.id_katalog', '=', 'd.id_katalog')
-            ->where('d.id_peminjaman', $p->id_peminjaman)->where('k.jenis', 'alat')->exists();
-        $punyaRuangan = $p->ruangans()->exists();
-
-        if ($punyaAlat) {
-            $alatBelumKembali = DB::table('peminjaman_details as d')
-                ->join('alat_bahans as k', 'k.id_katalog', '=', 'd.id_katalog')
-                ->where('d.id_peminjaman', $p->id_peminjaman)->where('k.jenis', 'alat')
-                ->whereRaw('d.jumlah > COALESCE((SELECT SUM(pd.jumlah_dikembalikan) FROM pengembalian_details pd
-                            JOIN pengembalians pg ON pg.id_pengembalian = pd.id_pengembalian
-                            WHERE pd.id_detail_peminjaman = d.id_detail AND pg.id_peminjaman = d.id_peminjaman), 0)')
-                ->exists();
-            if ($alatBelumKembali) {
-                return false;
-            }
-        }
-        if ($punyaRuangan && $p->ruangans()->where('tanggal_selesai', '>', $sekarang)->exists()) {
+        if ($p->ruangans()->exists()) {
             return false;
         }
-        if (! $punyaAlat && ! $punyaRuangan && $sekarang->lt($p->tanggal_rencana_kembali)) {
+        $punyaAlat = DB::table('peminjaman_details as d')->join('alat_bahans as k', 'k.id_katalog', '=', 'd.id_katalog')
+            ->where('d.id_peminjaman', $p->id_peminjaman)->where('k.jenis', 'alat')->exists();
+
+        if ($punyaAlat && $this->alatBelumKembali($p)) {
+            return false;
+        }
+        if (! $punyaAlat && $sekarang->lt($p->tanggal_rencana_kembali)) {
             return false; // bahan saja: menunggu rencana kembali
         }
 
         $p->update(['status' => 'selesai']);
 
         return true;
+    }
+
+    /** True bila ada Alat pada transaksi yang belum seluruhnya dikembalikan. */
+    private function alatBelumKembali(Peminjaman $p): bool
+    {
+        return DB::table('peminjaman_details as d')
+            ->join('alat_bahans as k', 'k.id_katalog', '=', 'd.id_katalog')
+            ->where('d.id_peminjaman', $p->id_peminjaman)->where('k.jenis', 'alat')
+            ->whereRaw('d.jumlah > COALESCE((SELECT SUM(pd.jumlah_dikembalikan) FROM pengembalian_details pd
+                        JOIN pengembalians pg ON pg.id_pengembalian = pd.id_pengembalian
+                        WHERE pd.id_detail_peminjaman = d.id_detail AND pg.id_peminjaman = d.id_peminjaman), 0)')
+            ->exists();
+    }
+
+    /**
+     * Batalkan peminjaman yang melibatkan ruangan oleh peminjam sendiri, paling lambat pukul 23.59 H-1
+     * (berdasarkan tanggal kalender). Bila sudah disetujui, stok alat/bahan dikembalikan.
+     */
+    public function batalkan(int $idPeminjaman, string $emailPeminjam, ?CarbonInterface $sekarang = null): Peminjaman
+    {
+        $sekarang = $sekarang ? Carbon::instance($sekarang) : now();
+
+        return DB::transaction(function () use ($idPeminjaman, $emailPeminjam, $sekarang) {
+            $p = Peminjaman::whereKey($idPeminjaman)->lockForUpdate()->firstOrFail();
+            if ($p->email_peminjam !== $emailPeminjam) {
+                $this->gagal(['status' => 'Hanya peminjam yang dapat membatalkan peminjaman ini.']);
+            }
+            if (! in_array($p->status, ['menunggu', 'disetujui'], true)) {
+                $this->gagal(['status' => 'Peminjaman dengan status ini tidak dapat dibatalkan.']);
+            }
+            if (! $p->melibatkanRuangan()) {
+                $this->gagal(['status' => 'Hanya peminjaman yang melibatkan ruangan yang dapat dibatalkan.']);
+            }
+            if (! $p->bisaDibatalkanOleh($emailPeminjam, $sekarang)) {
+                $this->gagal(['status' => 'Pembatalan hanya dapat dilakukan sampai pukul 23.59 pada H-1 tanggal pelaksanaan.']);
+            }
+
+            if ($p->status === 'disetujui') {
+                $details = $p->details()->orderBy('id_katalog')->get();
+                AlatBahan::whereIn('id_katalog', $details->pluck('id_katalog'))->orderBy('id_katalog')->lockForUpdate()->get();
+                foreach ($details as $d) {
+                    AlatBahan::where('id_katalog', $d->id_katalog)->increment('stok', $d->jumlah); // stok dipotong saat disetujui
+                }
+            }
+            $p->update(['status' => 'dibatalkan']);
+
+            return $p->refresh();
+        });
+    }
+
+    /**
+     * Tombol Selesai untuk peminjaman yang melibatkan ruangan. Pihak yang berhak: lihat Peminjaman::bisaDiselesaikanOleh().
+     * Syarat: seluruh periode ruangan sudah berakhir; bila ada Alat, seluruhnya sudah dikembalikan.
+     */
+    public function selesaikan(int $idPeminjaman, string $email, ?CarbonInterface $sekarang = null): Peminjaman
+    {
+        $sekarang = $sekarang ? Carbon::instance($sekarang) : now();
+        $akun = Akun::find($email) ?? $this->gagal(['status' => 'Akun tidak ditemukan.']);
+
+        return DB::transaction(function () use ($idPeminjaman, $akun, $sekarang) {
+            $p = Peminjaman::whereKey($idPeminjaman)->lockForUpdate()->firstOrFail();
+            if ($p->status !== 'disetujui') {
+                $this->gagal(['status' => 'Hanya peminjaman berstatus disetujui yang dapat diselesaikan.']);
+            }
+            if (! $p->bisaDiselesaikanOleh($akun->email, $akun->role)) {
+                $this->gagal(['status' => 'Anda tidak berwenang menyelesaikan peminjaman ini.']);
+            }
+            if ($p->ruangans()->where('tanggal_selesai', '>', $sekarang)->exists()) {
+                $this->gagal(['status' => 'Peminjaman baru dapat diselesaikan setelah kegiatan berakhir.']);
+            }
+            if ($this->alatBelumKembali($p)) {
+                $this->gagal(['status' => 'Masih ada alat yang belum dikembalikan. Catat pengembalian terlebih dahulu.']);
+            }
+            $p->update(['status' => 'selesai']);
+
+            return $p->refresh();
+        });
     }
 
     /** Evaluasi semua transaksi disetujui (dijadwalkan berkala). Mengembalikan jumlah transaksi yang menjadi selesai. */
@@ -410,6 +475,9 @@ class PeminjamanService
             $ada = Jadwal::where('id_ruangan', $r->id_ruangan)
                 ->where('status', 'aktif')->where('hari', $namaHari)
                 ->where('tahun_akademik', $tahun)->where('semester', $semester)
+                // Jadwal hanya berlaku pada tanggal di dalam periodenya.
+                ->where(fn ($q) => $q->whereNull('id_periode')->orWhereIn('id_periode', PeriodeJadwal::query()
+                    ->where('tanggal_mulai', '<=', $tgl->toDateString())->where('tanggal_berakhir', '>=', $tgl->toDateString())->select('id_periode')))
                 ->where('jam_mulai', '<', $akhir)->where('jam_selesai', '>', $awal)
                 ->exists();
             if ($ada) {

@@ -90,6 +90,8 @@
                     <i class="bi bi-clipboard2-check"></i><span>Pengajuan Peminjaman</span>
                 </a>
             </li>
+            @endif
+            @if($isAdmin)
             <li class="nav-item">
                 <a href="{{ route('pengembalian.index') }}" class="nav-link {{ request()->routeIs('pengembalian.*') ? 'active' : '' }}">
                     <i class="bi bi-arrow-down-left-square"></i><span>Pengembalian</span>
@@ -120,16 +122,6 @@
         </ul>
         @endif
     </div>
-
-    <div class="sidebar-footer">
-        <a href="{{ route('profil.index') }}" class="d-flex align-items-center gap-2 text-decoration-none" title="Profil Saya">
-            <div class="user-chip">{{ $initial }}</div>
-            <div class="min-w-0 flex-grow-1">
-                <div class="user-name text-truncate">{{ $me['nama'] ?? '' }}</div>
-                <div class="user-role">{{ $roleLabel }}</div>
-            </div>
-        </a>
-    </div>
 </nav>
 
 <!-- ========== MAIN ========== -->
@@ -153,7 +145,6 @@
             <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
                 <li class="px-3 py-2"><div style="font-size:.75rem;color:var(--text-muted)">{{ $me['email'] ?? '' }}</div></li>
                 <li><hr class="dropdown-divider"></li>
-                <li><a href="{{ route('profil.index') }}" class="dropdown-item"><i class="bi bi-person-circle me-2"></i>Profil Saya</a></li>
                 <li>
                     <form action="{{ route('logout') }}" method="POST">
                         @csrf
@@ -192,6 +183,34 @@
         document.getElementById('sidebar').classList.remove('show');
         document.getElementById('sidebar-overlay').classList.remove('show');
     }
+
+    // Satu mekanisme untuk semua form POST: cegah kirim ganda dan beri umpan balik "memproses"
+    // tanpa mengubah ukuran tombol (lebar dikunci). Form dapat memilih keluar dengan atribut data-no-lock.
+    document.addEventListener('submit', function (e) {
+        const form = e.target;
+        if (e.defaultPrevented || !(form instanceof HTMLFormElement) || form.hasAttribute('data-no-lock')) return;
+        if ((form.method || '').toLowerCase() !== 'post') return;
+        if (form.dataset.terkirim === '1') { e.preventDefault(); return; }
+        form.dataset.terkirim = '1';
+        const tombol = e.submitter || form.querySelector('button[type=submit]');
+        setTimeout(function () {
+            if (!tombol) return;
+            tombol.dataset.semula = tombol.innerHTML;
+            tombol.style.minWidth = tombol.offsetWidth + 'px';
+            tombol.innerHTML = '<span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Memproses...';
+            form.querySelectorAll('button[type=submit]').forEach(b => { b.disabled = true; });
+        }, 0);
+    });
+    // Kembali lewat cache browser (Back): pulihkan form yang sempat terkunci.
+    window.addEventListener('pageshow', function () {
+        document.querySelectorAll('form[data-terkirim="1"]').forEach(function (f) {
+            delete f.dataset.terkirim;
+            f.querySelectorAll('button[type=submit]').forEach(function (b) {
+                b.disabled = false;
+                if (b.dataset.semula) { b.innerHTML = b.dataset.semula; b.style.minWidth = ''; }
+            });
+        });
+    });
 </script>
 @stack('scripts')
 </body>

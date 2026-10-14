@@ -54,6 +54,7 @@
                             ['icon' => 'bi-clock', 'label' => 'Jam', 'nilai' => $jamTeks($jadwal->jam_mulai) . ' - ' . $jamTeks($jadwal->jam_selesai)],
                             ['icon' => 'bi-mortarboard', 'label' => 'Tahun Akademik', 'nilai' => $jadwal->tahun_akademik],
                             ['icon' => 'bi-list-check', 'label' => 'Semester', 'nilai' => ucfirst($jadwal->semester)],
+                            ['icon' => 'bi-calendar-range', 'label' => 'Periode', 'nilai' => $jadwal->periode ? $jadwal->periode->nama . ' (' . $jadwal->periode->tanggal_mulai->format('d/m/Y') . ' – ' . $jadwal->periode->tanggal_berakhir->format('d/m/Y') . ')' . ($jadwal->terarsip() ? ' · Arsip' : '') : '—'],
                         ];
                     @endphp
                     @foreach($baris as $b)
@@ -70,17 +71,23 @@
             </div>
 
             <div class="px-4 py-3 d-flex flex-wrap gap-2" style="border-top:1px solid var(--border-color);background:#FAFBFD;">
+                @unless($jadwal->terarsip())
                 <a href="{{ route('jadwal.edit', $jadwal) }}" class="btn btn-primary d-flex align-items-center gap-2">
                     <i class="bi bi-pencil"></i> Ubah Jadwal
                 </a>
+                @endunless
                 <a href="{{ route('jadwal.index') }}" class="btn btn-outline-silab d-flex align-items-center gap-2">
                     <i class="bi bi-arrow-left"></i> Kembali
                 </a>
+                @if($jadwal->terarsip())
+                    <span class="ms-auto align-self-center" style="font-size:.8rem;color:var(--text-muted);"><i class="bi bi-archive me-1"></i>Jadwal arsip hanya dapat dilihat.</span>
+                @else
                 <form action="{{ route('jadwal.destroy', $jadwal) }}" method="POST" class="ms-auto"
                       onsubmit="return confirm('Hapus jadwal ini?')">
                     @csrf @method('DELETE')
                     <button type="submit" class="btn btn-del d-flex align-items-center gap-2"><i class="bi bi-trash"></i> Hapus</button>
                 </form>
+                @endif
             </div>
         </div>
     </div>

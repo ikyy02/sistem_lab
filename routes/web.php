@@ -9,10 +9,10 @@ use App\Http\Controllers\KelolaKatalogController;
 use App\Http\Controllers\MasterDataController;
 use App\Http\Controllers\MahasiswaController;
 use App\Http\Controllers\PengajuanController;
+use App\Http\Controllers\PeriodeJadwalController;
 use App\Http\Controllers\PengembalianController;
 use App\Http\Controllers\PeminjamanController;
 use App\Http\Controllers\PengaturanOperasionalController;
-use App\Http\Controllers\ProfilController;
 use App\Http\Controllers\UserManagementController;
 use App\Services\AuthService;
 use App\Support\Role;
@@ -25,24 +25,21 @@ use Illuminate\Support\Facades\Route;
 | Role: mahasiswa | dosen | staff | laboran (Laboran/Admin)
 */
 
-// Login / logout (tanpa registrasi: akun dikelola Laboran/Admin)
+// Landing Page + Login / logout (tanpa registrasi: akun dikelola Laboran/Admin)
+Route::get('/', [AuthController::class, 'landing'])->name('landing');
 Route::get('login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('login', [AuthController::class, 'login'])->name('login.attempt');
 Route::post('logout', [AuthController::class, 'logout'])->name('logout');
 
 Route::middleware('silab.auth')->group(function () {
 
-    // Halaman awal: dashboard ringkas sesuai role
-    Route::get('/', fn () => redirect()->route('dashboard'));
+    // Beranda: dashboard ringkas sesuai role
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     // Katalog: dapat dilihat semua role (hanya-baca untuk selain Laboran/Admin)
     Route::get('katalog', [AlatBahanController::class, 'index'])->name('katalog');
 
-    // Profil Saya: semua role yang login
-    Route::get('profil', [ProfilController::class, 'index'])->name('profil.index');
-    Route::put('profil', [ProfilController::class, 'update'])->name('profil.update');
-    Route::put('profil/password', [ProfilController::class, 'password'])->name('profil.password');
+    // Kelola Profil dinonaktifkan sementara (route, menu, dan halaman dihapus; data & kolom profil tetap ada).
 
     // Khusus Staf Prodi
     Route::middleware('silab.role:' . Role::STAFF)->group(function () {
@@ -58,6 +55,11 @@ Route::middleware('silab.auth')->group(function () {
             ->whereIn('tab', $tabAkademik)->where('id', '[A-Za-z0-9._\-]+')->name('data-akademik.destroy');
 
         // Kelola Jadwal Perkuliahan (cek bentrok ruangan/hari/jam lewat JadwalService)
+        // Periode berlaku jadwal (periode lama otomatis menjadi arsip hanya-baca)
+        Route::get('jadwal/periode', [PeriodeJadwalController::class, 'index'])->name('jadwal.periode.index');
+        Route::post('jadwal/periode', [PeriodeJadwalController::class, 'store'])->name('jadwal.periode.store');
+        Route::put('jadwal/periode/{id}', [PeriodeJadwalController::class, 'update'])->whereNumber('id')->name('jadwal.periode.update');
+
         Route::get('jadwal', [JadwalController::class, 'index'])->name('jadwal.index');
         Route::get('jadwal/create', [JadwalController::class, 'create'])->name('jadwal.create');
         Route::post('jadwal', [JadwalController::class, 'store'])->name('jadwal.store');
@@ -77,17 +79,23 @@ Route::middleware('silab.auth')->group(function () {
     // Detail transaksi: pemilik pengajuan, Dosen, dan Laboran/Admin (dicek ulang di controller)
     Route::get('peminjaman/{id}', [PeminjamanController::class, 'show'])->whereNumber('id')->name('peminjaman.show');
 
-    // Transaksi Peminjaman: persetujuan pengajuan & pengembalian (Dosen dan Laboran/Admin)
+    // Batalkan (peminjam) dan Selesai (pihak berwenang): hak akses dicek ulang di PeminjamanService
+    Route::post('peminjaman/{id}/batal', [PeminjamanController::class, 'batalkan'])->whereNumber('id')->name('peminjaman.batal');
+    Route::post('peminjaman/{id}/selesai', [PeminjamanController::class, 'selesai'])->whereNumber('id')->name('peminjaman.selesai');
+
+    // Transaksi Peminjaman: persetujuan/penolakan pengajuan (Dosen dan Laboran/Admin)
     Route::middleware('silab.role:' . Role::DOSEN . ',' . Role::LABORAN)->group(function () {
         Route::get('pengajuan-peminjaman', [PengajuanController::class, 'index'])->name('pengajuan.index');
         Route::post('pengajuan-peminjaman/{id}/setujui', [PengajuanController::class, 'setujui'])->whereNumber('id')->name('pengajuan.setujui');
         Route::post('pengajuan-peminjaman/{id}/tolak', [PengajuanController::class, 'tolak'])->whereNumber('id')->name('pengajuan.tolak');
-        Route::get('pengembalian', [PengembalianController::class, 'index'])->name('pengembalian.index');
-        Route::post('pengembalian/{id}', [PengembalianController::class, 'store'])->whereNumber('id')->name('pengembalian.store');
     });
 
     // Khusus Laboran/Admin
     Route::middleware('silab.role:' . Role::LABORAN)->group(function () {
+
+        // Pengembalian hanya dicatat Laboran/Admin (Dosen ditolak di tingkat route)
+        Route::get('pengembalian', [PengembalianController::class, 'index'])->name('pengembalian.index');
+        Route::post('pengembalian/{id}', [PengembalianController::class, 'store'])->whereNumber('id')->name('pengembalian.store');
 
         // Kelola Katalog (Alat, Bahan, Ruangan — satu menu, 3 tab terpisah)
         $kat = ['kategori' => array_keys(KelolaKatalogController::KATEGORI)];

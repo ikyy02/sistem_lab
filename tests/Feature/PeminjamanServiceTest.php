@@ -139,9 +139,10 @@ class PeminjamanServiceTest extends TestCase
         $this->gagal(fn () => $this->svc->ajukan($m, $this->data(['detail' => [['id_katalog' => $k->id_katalog, 'jumlah' => 0]]])), 'detail');
         $this->gagal(fn () => $this->svc->ajukan($m, $this->data(['detail' => [['id_katalog' => 9999, 'jumlah' => 1]]])), 'detail');
         $this->gagal(fn () => $this->svc->ajukan($m, $this->data()), 'detail'); // kosong
-        $rr = ['id_ruangan' => $r->id_ruangan, 'tanggal_mulai' => '2030-01-08 08:00', 'tanggal_selesai' => '2030-01-08 10:00'];
+        $rr = ['id_ruangan' => $r->id_ruangan];
         $this->gagal(fn () => $this->svc->ajukan($m, $this->data(['ruangan' => [$rr, $rr]])), 'ruangan');
-        $this->gagal(fn () => $this->svc->ajukan($m, $this->data(['ruangan' => [['tanggal_mulai' => '2030-01-08 10:00'] + $rr]])), 'ruangan'); // mulai == selesai? mulai 10:00 > selesai 10:00 tidak <
+        // ruangan memakai jadwal tunggal: waktu mulai == waktu selesai ditolak
+        $this->gagal(fn () => $this->svc->ajukan($m, $this->data(['tanggal_rencana_kembali' => '2030-01-08 08:00', 'ruangan' => [$rr]])), 'tanggal_rencana_kembali');
     }
 
     // ---------------------------------------------------------------- approval & stok
@@ -367,44 +368,50 @@ class PeminjamanServiceTest extends TestCase
         $this->assertSame('selesai', $p->fresh()->status);
     }
 
-    public function test_status_campuran_butuh_alat_kembali_dan_ruangan_selesai(): void
+    public function test_peminjaman_ber_ruangan_tidak_selesai_otomatis_dan_selesai_lewat_tombol(): void
     {
         $alat = $this->katalog('alat', 10);
-        $bahan = $this->katalog('bahan', 10);
         $r = $this->ruangan();
         $lab = $this->laboran();
         $p = $this->svc->ajukan($this->mahasiswa()->email, $this->data([
-            'detail' => [['id_katalog' => $alat->id_katalog, 'jumlah' => 1], ['id_katalog' => $bahan->id_katalog, 'jumlah' => 1]],
-            'ruangan' => [['id_ruangan' => $r->id_ruangan, 'tanggal_mulai' => '2030-01-08 08:00', 'tanggal_selesai' => '2030-01-08 10:00']],
+            'detail' => [['id_katalog' => $alat->id_katalog, 'jumlah' => 1]],
+            'tanggal_peminjaman' => '2030-01-08 08:00', 'tanggal_rencana_kembali' => '2030-01-08 10:00',
+            'ruangan' => [['id_ruangan' => $r->id_ruangan]],
         ]));
         $this->svc->setujui($p->id_peminjaman, $lab->email);
         $d = $this->detailId($p, $alat);
 
-        // alat kembali sebelum ruangan selesai -> belum selesai
         Carbon::setTestNow('2030-01-08 09:00');
         $this->svc->kembalikan($p->id_peminjaman, $lab->email, [['id_detail_peminjaman' => $d, 'jumlah_dikembalikan' => 1, 'kondisi' => 'baik']]);
+        $this->assertSame(0, $this->svc->sinkronSelesai(Carbon::parse('2030-01-08 11:00'))); // ruangan: tidak otomatis
         $this->assertSame('disetujui', $p->fresh()->status);
-        // setelah periode ruangan lewat -> selesai (bahan tanpa kewajiban)
-        $this->assertSame(1, $this->svc->sinkronSelesai(Carbon::parse('2030-01-08 10:00')));
-        $this->assertSame('selesai', $p->fresh()->status);
+        $this->gagal(fn () => $this->svc->selesaikan($p->id_peminjaman, $lab->email), 'status'); // kegiatan belum berakhir
+
+        Carbon::setTestNow('2030-01-08 10:00');
+        $this->gagal(fn () => $this->svc->selesaikan($p->id_peminjaman, $this->mahasiswa(['email' => 'lain@uji.test'])->email), 'status'); // bukan pihak berwenang
+        $this->assertSame('selesai', $this->svc->selesaikan($p->id_peminjaman, $lab->email)->status);
     }
 
-    public function test_status_ruangan_saja_selesai_setelah_periode(): void
+    public function test_ruangan_saja_mandiri_diselesaikan_peminjam_dan_dapat_dibatalkan_sampai_h_min_1(): void
     {
         $r = $this->ruangan();
         $lab = $this->laboran();
-        $p = $this->svc->ajukan($this->mahasiswa()->email, $this->data(['ruangan' => [['id_ruangan' => $r->id_ruangan, 'tanggal_mulai' => '2030-01-08 08:00', 'tanggal_selesai' => '2030-01-08 10:00']]]));
+        $m = $this->mahasiswa();
+        $p = $this->ajukanRuangan($m->email, $r, '2030-01-08 08:00', '2030-01-08 10:00');
         $this->svc->setujui($p->id_peminjaman, $lab->email);
-        $this->assertSame('disetujui', $p->fresh()->status);
-        $this->assertSame(0, $this->svc->sinkronSelesai(Carbon::parse('2030-01-08 09:59')));
-        $this->assertSame(1, $this->svc->sinkronSelesai(Carbon::parse('2030-01-08 10:00')));
+        $this->assertSame(0, $this->svc->sinkronSelesai(Carbon::parse('2030-01-08 10:00')));
+        $this->assertSame('selesai', $this->svc->selesaikan($p->id_peminjaman, $m->email, Carbon::parse('2030-01-08 10:00'))->status);
+
+        $q = $this->ajukanRuangan($m->email, $r, '2030-01-10 08:00', '2030-01-10 10:00');
+        $this->gagal(fn () => $this->svc->batalkan($q->id_peminjaman, $m->email, Carbon::parse('2030-01-10 00:00')), 'status');
+        $this->assertSame('dibatalkan', $this->svc->batalkan($q->id_peminjaman, $m->email, Carbon::parse('2030-01-09 23:59'))->status);
     }
 
     // ---------------------------------------------------------------- konflik ruangan & jadwal
 
     private function ajukanRuangan(string $email, $r, string $mulai, string $selesai): Peminjaman
     {
-        return $this->svc->ajukan($email, $this->data(['ruangan' => [['id_ruangan' => $r->id_ruangan, 'tanggal_mulai' => $mulai, 'tanggal_selesai' => $selesai]]]));
+        return $this->svc->ajukan($email, $this->data(['tanggal_peminjaman' => $mulai, 'tanggal_rencana_kembali' => $selesai, 'ruangan' => [['id_ruangan' => $r->id_ruangan]]]));
     }
 
     public function test_konflik_ruangan_dengan_peminjaman_lain(): void
@@ -433,7 +440,7 @@ class PeminjamanServiceTest extends TestCase
         $this->svc->setujui($a->id_peminjaman, $lab->email);
         $b = $this->svc->ajukan($m, $this->data([
             'detail' => [['id_katalog' => $k->id_katalog, 'jumlah' => 3]],
-            'ruangan' => [['id_ruangan' => $r->id_ruangan, 'tanggal_mulai' => '2030-01-08 09:00', 'tanggal_selesai' => '2030-01-08 09:30']],
+            'tanggal_peminjaman' => '2030-01-08 09:00', 'tanggal_rencana_kembali' => '2030-01-08 09:30', 'ruangan' => [['id_ruangan' => $r->id_ruangan]],
         ]));
         $this->gagal(fn () => $this->svc->setujui($b->id_peminjaman, $lab->email), 'ruangan');
         $this->assertSame(10, $k->fresh()->stok);

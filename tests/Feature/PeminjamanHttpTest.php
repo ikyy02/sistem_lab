@@ -154,7 +154,66 @@ class PeminjamanHttpTest extends TestCase
         $this->sebagai('dosen', $dosen);
         $this->get(route('peminjaman.index'))->assertOk();
         $this->get(route('pengajuan.index'))->assertOk();
-        $this->get(route('pengembalian.index'))->assertOk();
+        // pengembalian khusus Laboran: Dosen ditolak lewat URL maupun aksi langsung
+        $this->get(route('pengembalian.index'))->assertForbidden();
+        $this->post(route('pengembalian.store', 1), [])->assertForbidden();
+    }
+
+    public function test_form_dosen_dan_mahasiswa_terpisah_tanpa_riwayat_dan_tanpa_jadwal_per_ruangan(): void
+    {
+        $this->sebagai('mahasiswa', $this->mahasiswa())->get(route('peminjaman.index'))->assertOk()
+            ->assertSee('name="jenis_peminjaman"', false)->assertSee('Jadwal berlaku untuk semua', false)
+            ->assertDontSee('Riwayat Peminjaman</a>', false)->assertDontSee('[tanggal_mulai]', false)
+            ->assertSee('id="btnAjukan"', false)->assertSee('disabled', false)->assertSee('Pilih minimal satu ruangan, alat, atau bahan yang ingin dipinjam sebelum mengajukan peminjaman.');
+        $this->sebagai('dosen', $this->dosen())->get(route('peminjaman.index'))->assertOk()
+            ->assertDontSee('name="jenis_peminjaman"', false)->assertDontSee('name="email_dosen"', false);
+    }
+
+    public function test_profil_dinonaktifkan(): void
+    {
+        $this->sebagai('mahasiswa', $this->mahasiswa())->get('/profil')->assertNotFound();
+        $this->get(route('dashboard'))->assertOk()->assertDontSee('Profil Saya');
+    }
+
+    public function test_pengajuan_hanya_ruangan_atau_hanya_alat_dan_dosen_otomatis_pembelajaran(): void
+    {
+        $m = $this->mahasiswa();
+        $r = $this->ruangan();
+        $k = $this->katalog('alat', 5);
+        $waktu = ['tanggal_peminjaman' => now()->addDay()->format('Y-m-d H:i:s'), 'tanggal_rencana_kembali' => now()->addDay()->addHours(2)->format('Y-m-d H:i:s')];
+
+        $this->sebagai('mahasiswa', $m);
+        $this->post(route('peminjaman.store'), $waktu + ['jenis_peminjaman' => 'pribadi', 'keterangan' => 'Rapat', 'ruangan' => [['id_ruangan' => $r->id_ruangan]]])
+            ->assertSessionHasNoErrors();
+        $this->post(route('peminjaman.store'), $waktu + ['jenis_peminjaman' => 'pribadi', 'keterangan' => 'Alat', 'detail' => [['id_katalog' => $k->id_katalog, 'jumlah' => 1]]])
+            ->assertSessionHasNoErrors();
+        $this->post(route('peminjaman.store'), $waktu + ['jenis_peminjaman' => 'pribadi', 'keterangan' => 'Kosong'])
+            ->assertSessionHasErrors();
+        $this->assertSame(2, Peminjaman::count());
+
+        // baris placeholder/kosong tidak dihitung sebagai item; pesan sesuai ketentuan
+        $this->post(route('peminjaman.store'), $waktu + ['jenis_peminjaman' => 'pribadi', 'keterangan' => 'Placeholder',
+            'detail' => [['id_katalog' => '', 'jumlah' => 1]], 'ruangan' => [['id_ruangan' => '']]])
+            ->assertSessionHasErrors(['detail' => \App\Http\Controllers\PeminjamanController::PESAN_MINIMAL_ITEM]);
+        $this->assertSame(2, Peminjaman::count());
+
+        // token form yang sama tidak membuat pengajuan ganda
+        $kirim = $waktu + ['jenis_peminjaman' => 'pribadi', 'keterangan' => 'Ganda', 'token_pengajuan' => 'token-uji-1',
+            'detail' => [['id_katalog' => $k->id_katalog, 'jumlah' => 1]]];
+        $this->post(route('peminjaman.store'), $kirim)->assertSessionHasNoErrors();
+        $this->post(route('peminjaman.store'), $kirim)->assertRedirect(route('peminjaman.riwayat'));
+        $this->assertSame(3, Peminjaman::count());
+
+        // pengajuan yang gagal tidak menghabiskan token
+        $gagal = $kirim + [];
+        $gagal['token_pengajuan'] = 'token-uji-2';
+        $gagal['detail'] = [['id_katalog' => $k->id_katalog, 'jumlah' => 99]];
+        $this->post(route('peminjaman.store'), $gagal)->assertSessionHasErrors('detail');
+        $gagal['detail'] = [['id_katalog' => $k->id_katalog, 'jumlah' => 1]];
+        $this->post(route('peminjaman.store'), $gagal)->assertSessionHasNoErrors();
+        $this->assertSame(4, Peminjaman::count());
+        $p = Peminjaman::with('ruangans')->has('ruangans')->first();
+        $this->assertSame($waktu['tanggal_peminjaman'], $p->ruangans->first()->tanggal_mulai->format('Y-m-d H:i:s'));
     }
 
     // ------------------------------------------------------------------ persetujuan

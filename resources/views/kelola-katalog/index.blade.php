@@ -50,7 +50,7 @@
             data-bs-toggle="modal"
             data-bs-target="#importModal">
             <i class="bi bi-file-earmark-arrow-up"></i>
-            Import
+            Impor
         </button>
 
         <button
@@ -215,7 +215,7 @@
 </form>
 
 <div class="card-modern overflow-hidden">
-    <div>
+    <div class="table-responsive">
         <table class="table table-silab tbl-katalog mb-0">
             <thead>
                 <tr>

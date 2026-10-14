@@ -16,15 +16,35 @@
         <h2 class="font-display fw-semibold mb-1" style="font-size:1.5rem;">Jadwal Perkuliahan</h2>
         <p class="mb-0" style="font-size:.83rem;color:var(--text-muted);">Kelola jadwal kuliah: tambah, lihat detail, ubah, dan hapus.</p>
     </div>
-    <a href="{{ route('jadwal.create') }}" class="btn btn-primary d-flex align-items-center gap-2">
-        <i class="bi bi-plus-lg"></i> Tambah Jadwal
-    </a>
+    <div class="d-flex flex-wrap gap-2">
+        <a href="{{ route('jadwal.periode.index') }}" class="btn btn-outline-silab d-flex align-items-center gap-2">
+            <i class="bi bi-calendar-range"></i> Periode Jadwal
+        </a>
+        <a href="{{ route('jadwal.create') }}" class="btn btn-primary d-flex align-items-center gap-2">
+            <i class="bi bi-plus-lg"></i> Tambah Jadwal
+        </a>
+    </div>
 </div>
+
+@if(! $berjalan)
+    <div class="alert alert-warning mb-3">Belum ada periode berjalan. <a href="{{ route('jadwal.periode.index') }}" class="alert-link">Atur periode jadwal</a> agar jadwal baru tercatat pada periode yang berlaku.</div>
+@elseif($periode !== 'semua' && (int) $periode !== $berjalan->id_periode)
+    <div class="alert alert-secondary mb-3"><i class="bi bi-archive me-1"></i> Anda melihat <strong>periode arsip</strong>. Jadwal arsip hanya dapat dilihat dan tidak dapat diubah.</div>
+@endif
 
 {{-- Filter --}}
 <form method="GET" action="{{ route('jadwal.index') }}" class="card-modern p-3 mb-3">
     <div class="row g-2 align-items-end">
-        <div class="col-12 col-lg-4">
+        <div class="col-12 col-lg-2">
+            <label class="form-label" for="periode">Periode</label>
+            <select id="periode" name="periode" class="form-select">
+                @foreach($daftarPeriode as $pr)
+                    <option value="{{ $pr->id_periode }}" @selected($periode === (string) $pr->id_periode)>{{ $pr->nama }}{{ $pr->terarsip() ? ' (Arsip)' : '' }}</option>
+                @endforeach
+                <option value="semua" @selected($periode === 'semua')>Semua periode</option>
+            </select>
+        </div>
+        <div class="col-12 col-lg-3">
             <label class="form-label" for="search">Pencarian</label>
             <div class="input-group">
                 <span class="input-group-text bg-white" style="border-color:var(--border-color);"><i class="bi bi-search"></i></span>
@@ -55,7 +75,7 @@
                 @foreach($perPageOptions as $n)<option value="{{ $n }}" @selected($perPage === $n)>{{ $n }}</option>@endforeach
             </select>
         </div>
-        <div class="col-6 col-lg-3 d-flex gap-2">
+        <div class="col-6 col-lg-2 d-flex gap-2">
             <button type="submit" class="btn btn-primary flex-grow-1">Terapkan</button>
             <a href="{{ route('jadwal.index') }}" class="btn btn-outline-silab" title="Reset"><i class="bi bi-arrow-counterclockwise"></i></a>
         </div>
@@ -85,6 +105,7 @@
                         <div class="fw-semibold text-capitalize">{{ $j->hari }}</div>
                         <div style="font-size:.78rem;color:var(--text-muted);">{{ $jamTeks($j->jam_mulai) }} - {{ $jamTeks($j->jam_selesai) }}</div>
                         <div style="font-size:.72rem;color:var(--text-muted);">{{ $j->tahun_akademik }} · {{ ucfirst($j->semester) }}</div>
+                        @if($j->periode)<div style="font-size:.72rem;color:var(--text-muted);">{{ $j->periode->nama }}@if($j->terarsip()) <span class="badge-status" style="background:#f1f5f9;color:#475569;">Arsip</span>@endif</div>@endif
                     </td>
                     <td>
                         <div class="fw-semibold">{{ $j->mataKuliah->nama_mk ?? '—' }}</div>
@@ -106,6 +127,7 @@
                             <a href="{{ route('jadwal.show', $j) }}" class="btn btn-edit d-flex align-items-center gap-1" title="Lihat detail">
                                 <i class="bi bi-eye"></i> Lihat
                             </a>
+                            @unless($j->terarsip())
                             <a href="{{ route('jadwal.edit', $j) }}" class="btn btn-edit d-flex align-items-center gap-1" title="Ubah jadwal">
                                 <i class="bi bi-pencil"></i> Ubah
                             </a>
@@ -114,6 +136,7 @@
                                 @csrf @method('DELETE')
                                 <button type="submit" class="btn btn-del d-flex align-items-center gap-1"><i class="bi bi-trash"></i> Hapus</button>
                             </form>
+                            @endunless
                         </div>
                     </td>
                 </tr>

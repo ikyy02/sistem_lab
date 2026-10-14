@@ -21,9 +21,9 @@ class DashboardControllerStaff extends Controller
             'me' => AuthService::user(),
             'totalDosen' => Dosen::count(),
             'totalMataKuliah' => MataKuliah::count(),
-            'totalJadwal' => Jadwal::count(),
+            'totalJadwal' => Jadwal::berlaku()->count(),
             'hariIni' => $hariIni,
-            'jadwal' => Jadwal::with(['mataKuliah', 'dosen', 'kelas', 'ruangan'])
+            'jadwal' => Jadwal::berlaku()->with(['mataKuliah', 'dosen', 'kelas', 'ruangan'])
                 ->orderByRaw('CASE WHEN hari = ? THEN 0 ELSE 1 END', [$hariIni])
                 ->orderByRaw(Jadwal::HARI_SQL)
                 ->orderBy('jam_mulai')

@@ -5,6 +5,7 @@
         'disetujui' => ['Disetujui', '#eff6ff', '#1d4ed8'],
         'ditolak' => ['Ditolak', '#fef2f2', '#b42318'],
         'selesai' => ['Dikembalikan', '#ecfdf3', '#146c43'],
+        'dibatalkan' => ['Dibatalkan', '#f1f5f9', '#475569'],
     ];
     $s = $peta[$status] ?? [$status, '#f1f5f9', '#475569'];
 @endphp

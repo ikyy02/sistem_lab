@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Jadwal;
+use App\Models\PeriodeJadwal;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
@@ -43,6 +44,11 @@ class JadwalService
             }
         });
         $valid = $v->validate();
+        if ($jadwal?->terarsip()) {
+            throw ValidationException::withMessages(['status' => 'Jadwal arsip hanya dapat dilihat dan tidak dapat diubah.']);
+        }
+        // Jadwal baru masuk periode berjalan; jadwal yang diubah tetap pada periodenya.
+        $valid['id_periode'] = $jadwal ? $jadwal->id_periode : PeriodeJadwal::berjalan()?->id_periode;
         $valid['jam_mulai'] = date('H:i:s', strtotime($valid['jam_mulai']));
         $valid['jam_selesai'] = date('H:i:s', strtotime($valid['jam_selesai']));
 
@@ -51,6 +57,7 @@ class JadwalService
                 $bentrok = Jadwal::where('status', 'aktif')
                     ->where('id_ruangan', $valid['id_ruangan'])->where('hari', $valid['hari'])
                     ->where('tahun_akademik', $valid['tahun_akademik'])->where('semester', $valid['semester'])
+                    ->when($valid['id_periode'], fn ($q, $id) => $q->where('id_periode', $id), fn ($q) => $q->whereNull('id_periode'))
                     ->when($jadwal, fn ($q) => $q->where('id_jadwal', '!=', $jadwal->id_jadwal))
                     ->where('jam_mulai', '<', $valid['jam_selesai'])->where('jam_selesai', '>', $valid['jam_mulai'])
                     ->lockForUpdate()->exists();

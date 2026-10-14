@@ -2,11 +2,13 @@
 
 namespace Tests\Feature;
 
-// use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class ExampleTest extends TestCase
 {
+    use RefreshDatabase; // landing page membaca pengaturan operasional dari database
+
     /**
      * A basic test example.
      */
@@ -14,6 +16,7 @@ class ExampleTest extends TestCase
     {
         $response = $this->get('/');
 
-        $response->assertRedirect();
+        // Pengguna belum login melihat Landing Page SIARKA beserta formulir login.
+        $response->assertOk()->assertSee('SIARKA')->assertSee('Masuk');
     }
 }
