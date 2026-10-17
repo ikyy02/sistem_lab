@@ -3,25 +3,34 @@
 namespace App\Http\Controllers;
 
 use App\Models\PengaturanOperasional;
+use App\Models\Ruangan;
 use App\Services\AuthService;
 use App\Support\Role;
 use Illuminate\Http\Request;
 
 class AuthController extends Controller
 {
-    /** Landing Page (pengguna belum login) yang memuat formulir Login; pengguna yang sudah login langsung ke Beranda. */
+    /** Landing Page publik (tanpa formulir login); pengguna yang sudah login langsung ke Beranda sesuai role. */
     public function landing()
     {
         if ($user = AuthService::user()) {
             return redirect(Role::home($user['role']));
         }
 
-        return view('auth.login', ['setting' => PengaturanOperasional::find(1)]);
+        return view('landing', [
+            'setting' => PengaturanOperasional::find(1),
+            'ruangans' => Ruangan::where('nama_ruangan', '<>', 'Belum ditentukan')->orderBy('id_ruangan')->get(),
+        ]);
     }
 
+    /** Halaman login tersendiri (hanya formulir autentikasi). */
     public function showLogin()
     {
-        return $this->landing();
+        if ($user = AuthService::user()) {
+            return redirect(Role::home($user['role']));
+        }
+
+        return view('auth.login');
     }
 
     public function login(Request $request, AuthService $auth)

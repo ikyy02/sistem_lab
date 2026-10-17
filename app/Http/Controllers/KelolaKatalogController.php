@@ -112,6 +112,8 @@ class KelolaKatalogController extends Controller
         }
         $data = $v->validated();
         if ($kategori === 'ruangan') {
+            unset($data['gambar']);
+            $data['gambar'] = $request->hasFile('gambar') ? $this->saveImage($request->file('gambar'), Ruangan::GAMBAR_DIR) : null;
             Ruangan::create($data);
         } else {
             unset($data['gambar']);
@@ -133,6 +135,11 @@ class KelolaKatalogController extends Controller
         }
         $data = $v->validated();
         if ($kategori === 'ruangan') {
+            unset($data['gambar']);
+            if ($request->hasFile('gambar')) {
+                $this->deleteImage($item->gambar, Ruangan::GAMBAR_DIR);
+                $data['gambar'] = $this->saveImage($request->file('gambar'), Ruangan::GAMBAR_DIR);
+            }
             $item->update($data);
         } else {
             unset($data['gambar']);
@@ -193,9 +200,7 @@ class KelolaKatalogController extends Controller
         } catch (QueryException $e) {
             return $back->with('error', self::KATEGORI[$kategori] . ' "' . ($item->nama ?? $item->nama_ruangan) . '" sudah dipakai data lain dan tidak dapat dihapus.');
         }
-        if ($kategori !== 'ruangan') {
-            $this->deleteImage($item->gambar);
-        }
+        $this->deleteImage($item->gambar, $kategori === 'ruangan' ? Ruangan::GAMBAR_DIR : AlatBahan::GAMBAR_DIR);
 
         return $back->with('success', self::KATEGORI[$kategori] . ' berhasil dihapus.');
     }
@@ -243,16 +248,20 @@ class KelolaKatalogController extends Controller
     {
         $squish = fn ($v) => trim(preg_replace('/\s+/u', ' ', (string) $v));
         if ($kategori === 'ruangan') {
-            $input = ['nama_ruangan' => $squish($request->input('nama_ruangan')), 'keterangan' => $request->input('keterangan')];
+            $input = ['nama_ruangan' => $squish($request->input('nama_ruangan')), 'keterangan' => $request->input('keterangan'), 'gambar' => $request->file('gambar')];
             $rules = [
                 'nama_ruangan' => ['bail', 'required', 'string', 'max:50', Rule::unique('ruangans', 'nama_ruangan')->ignore($item?->getKey(), 'id_ruangan')],
                 'keterangan' => ['nullable', 'string', 'max:2000'],
+                'gambar' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
             ];
 
             return Validator::make($input, $rules, [
                 'required' => ':attribute wajib diisi.', 'max' => ':attribute maksimal :max karakter.',
                 'nama_ruangan.unique' => 'Nama ruangan sudah terdaftar.',
-            ], ['nama_ruangan' => 'Nama', 'keterangan' => 'Keterangan']);
+                'gambar.image' => 'File harus berupa gambar.',
+                'gambar.mimes' => 'Gambar harus berformat JPG, PNG, atau WEBP.',
+                'gambar.max' => 'Ukuran gambar maksimal 2 MB.',
+            ], ['nama_ruangan' => 'Nama', 'keterangan' => 'Keterangan', 'gambar' => 'Gambar']);
         }
 
         $input = $request->only(['id_satuan', 'stok', 'harga', 'id_ruangan', 'keterangan']);
@@ -287,18 +296,18 @@ class KelolaKatalogController extends Controller
         ]);
     }
 
-    private function saveImage($file): string
+    private function saveImage($file, string $dir = AlatBahan::GAMBAR_DIR): string
     {
         $name = Str::uuid() . '.' . strtolower($file->getClientOriginalExtension() ?: 'jpg');
-        $file->move(public_path(AlatBahan::GAMBAR_DIR), $name);
+        $file->move(public_path($dir), $name);
 
         return $name;
     }
 
-    private function deleteImage(?string $name): void
+    private function deleteImage(?string $name, string $dir = AlatBahan::GAMBAR_DIR): void
     {
         if ($name) {
-            File::delete(public_path(AlatBahan::GAMBAR_DIR . '/' . basename($name)));
+            File::delete(public_path($dir . '/' . basename($name)));
         }
     }
 

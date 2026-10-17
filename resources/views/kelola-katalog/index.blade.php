@@ -15,7 +15,7 @@
     $sortLabels = collect($config['columns'])->filter(fn ($c) => $c[1])->map(fn ($c) => $c[0]);
     $modalQuery = request()->only(['search', 'sort', 'direction', 'per_page', 'page', 'kategori']);
     $fieldNames = array_column($fields, 'name');
-    $colspan = count($config['columns']) + ($isRoom ? 2 : 3);
+    $colspan = count($config['columns']) + 3;
 @endphp
 
 <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
@@ -221,9 +221,7 @@
                 <tr>
                     <th class="ps-4 col-no" style="width:56px;">No</th>
 
-                    @unless($isRoom)
-                        <th class="col-gambar" style="width:84px;">Gambar</th>
-                    @endunless
+                    <th class="col-gambar" style="width:84px;">Gambar</th>
 
                     @foreach($config['columns'] as $col => [$text, $sortable])
                         <th class="col-{{ $col }}">
@@ -275,7 +273,7 @@
                             ->mapWithKeys(fn ($n) => [$n => $item->{$n}])
                             ->all()
                             + [
-                                'gambar_url' => $isRoom ? null : $item->gambar_url
+                                'gambar_url' => $item->gambar_url
                             ];
                     @endphp
 
@@ -284,12 +282,11 @@
                             {{ $data->firstItem() + $loop->index }}
                         </td>
 
-                        @unless($isRoom)
                             <td class="col-gambar">
                                 @if($item->gambar_url)
                                     <img
                                         src="{{ $item->gambar_url }}"
-                                        alt="{{ $item->nama }}"
+                                        alt="{{ $item->nama ?? $item->nama_ruangan }}"
                                         class="thumb"
                                         loading="lazy"
                                         title="Klik untuk memperbesar"
@@ -300,7 +297,6 @@
                                     </span>
                                 @endif
                             </td>
-                        @endunless
 
                         @foreach($config['columns'] as $col => $meta)
                             <td class="col-{{ $col }}">
@@ -520,12 +516,11 @@
                         </div>
                     @endforeach
 
-                    @unless($isRoom)
                         <div class="col-12">
                             <label
                                 class="form-label"
                                 for="f_gambar">
-                                Gambar <span class="text-danger">*</span>
+                                Gambar @unless($isRoom)<span class="text-danger">*</span>@endunless
                             </label>
 
                             <div class="d-flex align-items-center gap-3">
@@ -555,7 +550,6 @@
                                 </div>
                             @enderror
                         </div>
-                    @endunless
                 </div>
             </div>
 
@@ -784,9 +778,7 @@
                 ).toString()
             : form.dataset.store;
 
-        @unless($isRoom)
-            const prev = document.getElementById('gambarPreview');
-        @endunless
+        const prev = document.getElementById('gambarPreview');
 
         if (!keepOld) {
             const item = edit ? JSON.parse(btn.dataset.item) : {};
@@ -799,7 +791,7 @@
                 }
             });
 
-            @unless($isRoom)
+            {
                 document.getElementById('f_gambar').value = '';
 
                 prev.src = item.gambar_url || '';
@@ -810,7 +802,7 @@
                         ? 'Pilih file baru untuk mengganti gambar. '
                         : '') +
                     'Format JPG, PNG, atau WEBP. Maksimal 2 MB.';
-            @endunless
+            }
 
             form.querySelectorAll('.is-invalid').forEach(el =>
                 el.classList.remove('is-invalid')
@@ -826,16 +818,14 @@
             .show();
     }
 
-    @unless($isRoom)
-        document.getElementById('f_gambar').addEventListener('change', function () {
-            const prev = document.getElementById('gambarPreview');
+    document.getElementById('f_gambar').addEventListener('change', function () {
+        const prev = document.getElementById('gambarPreview');
 
-            if (this.files[0]) {
-                prev.src = URL.createObjectURL(this.files[0]);
-                prev.style.display = '';
-            }
-        });
-    @endunless
+        if (this.files[0]) {
+            prev.src = URL.createObjectURL(this.files[0]);
+            prev.style.display = '';
+        }
+    });
 
     document.addEventListener('DOMContentLoaded', function () {
         @if(session('open_modal'))

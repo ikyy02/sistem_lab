@@ -28,7 +28,6 @@
 <!-- ========== SIDEBAR ========== -->
 <nav id="sidebar">
     <a href="{{ url('/') }}" class="sidebar-brand">
-        <div class="sidebar-brand-icon"><i class="bi bi-buildings"></i></div>
         <div class="sidebar-brand-text">
             <div class="brand-name">SIARKA</div>
             <div class="brand-sub" style="font-size:.6rem;line-height:1.25;">Sistem Informasi Administrasi, Reservasi, Katalog, dan Aktivitas Laboratorium</div>

@@ -33,8 +33,6 @@
     /* ===== Sidebar — terang, aksen emas sebagai identitas ===== */
     #sidebar { position: fixed; inset: 0 auto 0 0; width: var(--sidebar-width); background: #fff; z-index: 1040; display: flex; flex-direction: column; overflow-y: auto; border-right: 1px solid var(--border-color); transition: transform .3s ease; }
     .sidebar-brand { display: flex; align-items: center; gap: 13px; padding: 24px 22px 20px; border-bottom: 1px solid var(--border-color); text-decoration: none; }
-    .sidebar-brand-icon { width: 44px; height: 44px; background: linear-gradient(155deg, var(--gold-bright), var(--gold)); border-radius: 10px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(169,129,47,.28); }
-    .sidebar-brand-icon i { color: #fff; font-size: 1.2rem; }
     .brand-name { font-family: 'Fraunces', serif; color: var(--ink); font-size: 1.2rem; font-weight: 600; letter-spacing: .01em; line-height: 1.15; }
     .brand-sub { color: var(--text-muted); font-size: .68rem; font-weight: 500; }
     .sidebar-nav { padding: 18px 14px; flex: 1; }
