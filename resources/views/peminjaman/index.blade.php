@@ -11,17 +11,13 @@
     $hariKerja = $aturanJamKerja['hari'] ?? [];
     $fmt = fn ($v) => \Carbon\Carbon::parse($v)->format('Y-m-d\TH:i');
 
-    if ($roleDosen) {
-        $pinjamDefault = $awalIzin ? $awalIzin->format('Y-m-d\TH:i') : now()->format('Y-m-d\TH:i');
-        $mulai = \Carbon\Carbon::parse($pinjamDefault);
-        [$jTutup, $mTutup] = array_pad(explode(':', $jamTutup), 2, 0);
-        $batasTutup = $mulai->copy()->setTime((int) $jTutup, (int) $mTutup, 0);
-        $selesai = $mulai->copy()->addHour();
-        $kembaliDefault = ($selesai->greaterThan($batasTutup) ? $batasTutup : $selesai)->format('Y-m-d\TH:i');
-    } else {
-        $pinjamDefault = now()->addHour()->startOfHour()->format('Y-m-d\TH:i');
-        $kembaliDefault = now()->addDay()->startOfHour()->format('Y-m-d\TH:i');
-    }
+    // Default jadwal selalu satu hari operasional (semua role): mulai di waktu paling awal yang boleh, selesai +1 jam maksimal jam tutup.
+    $pinjamDefault = ($awalIzin ?? now()->addHour()->startOfHour())->format('Y-m-d\TH:i');
+    $mulai = \Carbon\Carbon::parse($pinjamDefault);
+    [$jTutup, $mTutup] = array_pad(explode(':', $jamTutup), 2, 0);
+    $batasTutup = $mulai->copy()->setTime((int) $jTutup, (int) $mTutup, 0);
+    $selesai = $mulai->copy()->addHour();
+    $kembaliDefault = ($selesai->greaterThan($batasTutup) ? $batasTutup : $selesai)->format('Y-m-d\TH:i');
     $nilaiPinjam = old('tanggal_peminjaman') ? $fmt(old('tanggal_peminjaman')) : $pinjamDefault;
     $nilaiKembali = old('tanggal_rencana_kembali') ? $fmt(old('tanggal_rencana_kembali')) : $kembaliDefault;
 
@@ -70,7 +66,7 @@
         @if($roleDosen)
             Peminjaman pembelajaran berlaku 1 hari dan hanya pada jam operasional laboratorium ({{ $jamBuka }} – {{ $jamTutup }}). Pengajuan akan berstatus <strong>Menunggu Persetujuan</strong>.
         @else
-            Tentukan jadwal sekali, lalu pilih ruangan, alat, atau bahan yang dibutuhkan. Pengajuan akan berstatus <strong>Menunggu Persetujuan</strong>.
+            Tentukan jadwal sekali (maksimal satu hari operasional, {{ $jamBuka }} – {{ $jamTutup }}), lalu pilih ruangan, alat, atau bahan yang dibutuhkan. Pengajuan akan berstatus <strong>Menunggu Persetujuan</strong>.
         @endif
     </p>
 </div>
@@ -245,15 +241,33 @@
         perbarui();
     }
 
-    function waktuKerja(nilai) {
+    // akhir=true: jam tutup masih boleh sebagai waktu selesai; waktu mulai harus sebelum jam tutup.
+    function waktuKerja(nilai, akhir) {
         const d = new Date(nilai);
         if (isNaN(d.getTime())) return false;
         if (!JAM_KERJA.hari.includes(NAMA_HARI[d.getDay()])) return false;
         const menit = d.getHours() * 60 + d.getMinutes();
         const [jBuka, mBuka] = JAM_KERJA.buka.split(':').map(Number);
         const [jTutup, mTutup] = JAM_KERJA.tutup.split(':').map(Number);
-        return menit >= (jBuka * 60 + mBuka) && menit <= (jTutup * 60 + mTutup);
+        return menit >= (jBuka * 60 + mBuka) && (akhir ? menit <= (jTutup * 60 + mTutup) : menit < (jTutup * 60 + mTutup));
     }
+
+    function fmtLokal(d) {
+        const p = n => String(n).padStart(2, '0');
+        return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + 'T' + p(d.getHours()) + ':' + p(d.getMinutes());
+    }
+
+    // Batas picker waktu selesai mengikuti waktu mulai: tanggal sama, paling cepat +1 menit, paling lambat jam tutup.
+    function aturBatasWaktu() {
+        const m = el('tanggal_peminjaman'), s = el('tanggal_rencana_kembali');
+        const d = new Date(m.value);
+        if (isNaN(d.getTime())) { s.removeAttribute('min'); s.removeAttribute('max'); return; }
+        s.min = fmtLokal(new Date(d.getTime() + 60000));
+        s.max = m.value.slice(0, 10) + 'T' + JAM_KERJA.tutup;
+        m.classList.toggle('is-invalid', !waktuKerja(m.value, false));
+        s.classList.toggle('is-invalid', !!s.value && (s.value < s.min || s.value > s.max || !waktuKerja(s.value, true)));
+    }
+    ['tanggal_peminjaman', 'tanggal_rencana_kembali'].forEach(id => el(id).addEventListener('input', aturBatasWaktu));
 
     // Mengembalikan daftar pesan kesalahan sisi klien (backend tetap memvalidasi ulang).
     function validasiForm() {
@@ -267,11 +281,13 @@
             galat.push('Waktu mulai dan waktu selesai wajib diisi.');
         } else {
             const dPinjam = new Date(pinjam), dKembali = new Date(kembali);
-            if (dKembali < dPinjam) galat.push('Waktu selesai tidak boleh sebelum waktu mulai.');
-            else if (document.querySelector('#ruanganRows tr') && dKembali <= dPinjam) galat.push('Waktu selesai harus setelah waktu mulai bila meminjam ruangan.');
-            if (ROLE_DOSEN) {
-                if (dPinjam.toDateString() !== dKembali.toDateString()) galat.push('Peminjaman Dosen hanya berlaku 1 hari: tanggal selesai harus sama dengan tanggal mulai.');
-                if (!waktuKerja(pinjam) || !waktuKerja(kembali)) galat.push('Jadwal harus berada dalam jam kerja laboratorium (' + JAM_KERJA.buka + ' – ' + JAM_KERJA.tutup + ') pada hari operasional.');
+            const rentang = JAM_KERJA.buka + ' – ' + JAM_KERJA.tutup;
+            if (isNaN(dPinjam.getTime()) || isNaN(dKembali.getTime())) galat.push('Format waktu tidak valid.');
+            else {
+                if (dKembali <= dPinjam) galat.push('Waktu selesai harus setelah waktu mulai.');
+                if (dPinjam.toDateString() !== dKembali.toDateString()) galat.push('Peminjaman hanya diperbolehkan dalam satu hari operasional: tanggal selesai harus sama dengan tanggal mulai.');
+                if (!waktuKerja(pinjam, false)) galat.push('Waktu mulai harus berada dalam jam operasional ' + rentang + ' pada hari operasional (' + JAM_KERJA.hari.join(', ') + ').');
+                if (!waktuKerja(kembali, true)) galat.push('Waktu selesai tidak boleh melewati jam tutup operasional (' + rentang + ') dan harus pada hari operasional.');
             }
         }
         const jenis = form.jenis_peminjaman;
@@ -286,6 +302,8 @@
         box.innerHTML = '<ul class="mb-0 ps-3"></ul>';
         galat.forEach(g => { const li = document.createElement('li'); li.textContent = g; box.firstChild.appendChild(li); });
         box.style.display = '';
+        box.setAttribute('tabindex', '-1');
+        box.focus({ preventScroll: true });
         box.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
 
@@ -316,6 +334,7 @@
         const kategoriDari = (id) => OPSI_KATALOG.find(k => String(k.id) === String(id))?.jenis;
         LAMA_BARANG.forEach(b => { const k = kategoriDari(b.id_katalog) || 'alat'; tambahBarang(k, b); });
         LAMA_RUANGAN.forEach(tambahRuangan);
+        aturBatasWaktu();
         perbarui();
         const galat = el('ringkasanError');
         if (galat) galat.scrollIntoView({ block: 'center' });

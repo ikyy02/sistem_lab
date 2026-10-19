@@ -42,7 +42,7 @@
         </div>
         <div class="col-6 col-lg-3 d-flex gap-2">
             <button type="submit" class="btn btn-primary flex-grow-1">Terapkan</button>
-            <a href="{{ route('pengembalian.index') }}" class="btn btn-outline-silab" title="Reset"><i class="bi bi-arrow-counterclockwise"></i></a>
+            <a href="{{ route('pengembalian.index') }}" class="btn btn-outline-silab" title="Reset" aria-label="Reset filter"><i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i></a>
         </div>
     </div>
 </form>
@@ -82,7 +82,7 @@
         <div class="p-4 pb-0">
             @if($adaInput)
             <form action="{{ route('pengembalian.store', $p->id_peminjaman) }}" method="POST"
-                  onsubmit="return confirm('Catat pengembalian peminjaman #{{ $p->id_peminjaman }}? Stok barang akan diperbarui sesuai jumlah yang diisi.');">
+                  data-konfirmasi="Catat pengembalian peminjaman #{{ $p->id_peminjaman }}? Stok barang akan diperbarui sesuai jumlah yang diisi.">
                 @csrf
             @endif
                 <div class="table-responsive">

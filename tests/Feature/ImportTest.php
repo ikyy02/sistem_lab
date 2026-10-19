@@ -113,9 +113,45 @@ class ImportTest extends TestCase
     public function test_template_katalog_dan_user_bisa_diunduh(): void
     {
         $admin = $this->admin();
-        $admin->get(route('kelola-katalog.template', ['kategori' => 'alat', 'format' => 'xlsx']))->assertOk();
-        $admin->get(route('kelola-katalog.template', ['kategori' => 'ruangan', 'format' => 'csv']))->assertOk();
-        $admin->get(route('kelola-user.template', ['kategori' => 'staff_prodi', 'format' => 'xlsx']))->assertOk();
+        $admin->get(route('kelola-katalog.template', ['kategori' => 'alat']))->assertOk();
+        $admin->get(route('kelola-katalog.template', ['kategori' => 'ruangan']))->assertOk();
+        $admin->get(route('kelola-user.template', ['kategori' => 'staff_prodi']))->assertOk();
         $admin->get(route('mahasiswa.template'))->assertOk();
+    }
+
+    public function test_import_hanya_menerima_excel_csv_dan_file_palsu_ditolak(): void
+    {
+        $admin = $this->admin();
+        $targets = [
+            route('kelola-katalog.import', 'ruangan'),
+            route('kelola-user.import', 'dosen'),
+            route('mahasiswa.import'),
+        ];
+        $csv = UploadedFile::fake()->createWithContent('data.csv', "Nama,Keterangan\nLab X,a\n");
+        $palsu = UploadedFile::fake()->createWithContent('data.xlsx', "Nama,Keterangan\nLab X,a\n"); // CSV di-rename
+        foreach ($targets as $url) {
+            $admin->post($url, ['file' => $csv])->assertSessionHasErrors('file');
+        }
+        foreach ($targets as $url) {
+            $admin->post($url, ['file' => $palsu])->assertSessionHas('error');
+        }
+        $this->assertDatabaseMissing('ruangans', ['nama_ruangan' => 'Lab X']);
+    }
+
+    public function test_import_xls_valid_dan_kolom_salah_ditolak(): void
+    {
+        $admin = $this->admin();
+        $book = new Spreadsheet();
+        $book->getActiveSheet()->fromArray([['Nama', 'Keterangan'], ['Lab Xls', 'Lt 1']]);
+        $path = tempnam(sys_get_temp_dir(), 'x');
+        (new \PhpOffice\PhpSpreadsheet\Writer\Xls($book))->save($path);
+        $xls = UploadedFile::fake()->createWithContent('data.xls', file_get_contents($path));
+        unlink($path);
+
+        $admin->post(route('kelola-katalog.import', 'ruangan'), ['file' => $xls])->assertSessionHas('success');
+        $this->assertDatabaseHas('ruangans', ['nama_ruangan' => 'Lab Xls']);
+
+        $salah = $this->excel(['Foo', 'Bar'], [['a', 'b']]);
+        $admin->post(route('kelola-katalog.import', 'ruangan'), ['file' => $salah])->assertSessionHas('error');
     }
 }

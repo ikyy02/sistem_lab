@@ -39,12 +39,12 @@ class Peminjaman extends Model
 
     protected $fillable = [
         'email_peminjam', 'jenis_peminjaman', 'email_dosen', 'tanggal_pengajuan', 'tanggal_peminjaman',
-        'tanggal_rencana_kembali', 'status', 'keterangan', 'email_pemroses', 'alasan_ditolak', 'tanggal_persetujuan',
+        'tanggal_rencana_kembali', 'status', 'keterangan', 'email_pemroses', 'alasan_ditolak', 'tanggal_persetujuan', 'tanggal_persetujuan_dosen',
     ];
 
     protected $casts = [
         'tanggal_pengajuan' => 'datetime', 'tanggal_peminjaman' => 'datetime', 'tanggal_rencana_kembali' => 'datetime',
-        'tanggal_persetujuan' => 'datetime',
+        'tanggal_persetujuan' => 'datetime', 'tanggal_persetujuan_dosen' => 'datetime',
     ];
 
     public function details()
@@ -101,6 +101,65 @@ class Peminjaman extends Model
     public function melibatkanBarang(): bool
     {
         return $this->details->isNotEmpty();
+    }
+
+    /** Pengajuan Kuliah/Praktikum yang masih menunggu keputusan Dosen penanggung jawab (tahap 1, SRS D.8). */
+    public function menungguDosen(): bool
+    {
+        return $this->status === 'menunggu' && $this->jenis_peminjaman === 'atas_dosen' && $this->tanggal_persetujuan_dosen === null;
+    }
+
+    /** Pengajuan Kuliah/Praktikum yang sudah disetujui Dosen dan menunggu keputusan akhir Laboran (tahap 2). */
+    public function diteruskanKeLaboran(): bool
+    {
+        return $this->status === 'menunggu' && $this->jenis_peminjaman === 'atas_dosen' && $this->tanggal_persetujuan_dosen !== null;
+    }
+
+    /**
+     * Pengajuan yang boleh DILIHAT di antrean sebuah role (satu-satunya sumber aturan kewenangan):
+     * - Laboran: semua jenis;
+     * - Dosen: hanya jenis "atas_dosen" (Kuliah/Praktikum) yang menunjuk dirinya, bukan miliknya sendiri;
+     * - role lain: tidak ada. Peminjaman Mandiri dan Pembelajaran Dosen hanya ditangani Laboran.
+     */
+    public function scopeDapatDiprosesOleh($q, string $email, string $role)
+    {
+        return match ($role) {
+            'laboran' => $q,
+            'dosen' => $q->where('jenis_peminjaman', 'atas_dosen')->where('email_dosen', $email)->where('email_peminjam', '!=', $email),
+            default => $q->whereRaw('1 = 0'),
+        };
+    }
+
+    /** Yang menunggu TINDAKAN role itu sekarang: Dosen = tahap 1; Laboran = semua kecuali yang masih menunggu Dosen. */
+    public function scopeMenungguTindakan($q, string $email, string $role)
+    {
+        $q = $q->dapatDiprosesOleh($email, $role)->where('status', 'menunggu');
+
+        return match ($role) {
+            'laboran' => $q->where(fn ($g) => $g->where('jenis_peminjaman', '!=', 'atas_dosen')->orWhereNotNull('tanggal_persetujuan_dosen')),
+            default => $q->whereNull('tanggal_persetujuan_dosen'),
+        };
+    }
+
+    /** Boleh memutuskan (setujui/tolak) pada tahapnya; status "menunggu" diperiksa tersendiri oleh pemanggil. */
+    public function bisaDiprosesOleh(string $email, string $role): bool
+    {
+        if ($this->email_peminjam === $email) {
+            return false;
+        }
+
+        return match ($role) {
+            'laboran' => $this->jenis_peminjaman !== 'atas_dosen' || $this->tanggal_persetujuan_dosen !== null,
+            'dosen' => $this->jenis_peminjaman === 'atas_dosen' && $this->email_dosen === $email && $this->tanggal_persetujuan_dosen === null,
+            default => false,
+        };
+    }
+
+    /** Detail boleh dibuka: peminjam sendiri, Laboran, atau Dosen penanggung jawab transaksinya. */
+    public function bisaDilihatOleh(string $email, string $role): bool
+    {
+        return $this->email_peminjam === $email || $role === 'laboran'
+            || ($role === 'dosen' && $this->email_dosen === $email);
     }
 
     /** Awal tanggal pelaksanaan: yang paling awal antara tanggal peminjaman dan mulai pemakaian ruangan. */

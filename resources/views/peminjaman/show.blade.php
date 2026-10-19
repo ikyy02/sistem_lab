@@ -34,14 +34,19 @@
         <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
             <div style="font-size:.85rem;color:#6E6142;">
                 <i class="bi bi-exclamation-circle me-1"></i>
-                Pengajuan ini <strong>menunggu persetujuan</strong>. Menyetujui akan memotong stok sesuai jumlah peminjaman; menolak tidak mengubah stok.
+                Pengajuan ini <strong>menunggu persetujuan</strong>.
+                @if($p->menungguDosen())
+                    Jika Anda setujui, pengajuan diteruskan ke Laboran untuk keputusan akhir; stok belum berubah.
+                @else
+                    Menyetujui akan memotong stok sesuai jumlah peminjaman; menolak tidak mengubah stok.
+                @endif
             </div>
             <div class="d-flex flex-wrap gap-2">
                 <button type="button" class="btn btn-del d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#tolakModal">
                     <i class="bi bi-x-lg"></i> Tolak
                 </button>
                 <form action="{{ route('pengajuan.setujui', $p->id_peminjaman) }}" method="POST" class="d-inline"
-                      onsubmit="return confirm('Setujui pengajuan peminjaman #{{ $p->id_peminjaman }}? Stok barang akan dipotong sesuai jumlah yang diajukan.')">
+                      data-konfirmasi="Setujui pengajuan peminjaman #{{ $p->id_peminjaman }}? {{ $p->menungguDosen() ? 'Pengajuan akan diteruskan ke Laboran.' : 'Stok barang akan dipotong sesuai jumlah yang diajukan.' }}">
                     @csrf
                     <button type="submit" class="btn btn-primary d-flex align-items-center gap-2"><i class="bi bi-check-lg"></i> Setujui</button>
                 </form>
@@ -67,12 +72,20 @@
         <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
             <div style="font-size:.85rem;color:var(--text-muted);">
                 <i class="bi bi-check2-circle me-1"></i>
-                Tekan <strong>Selesai</strong> setelah kegiatan berakhir{{ $p->melibatkanBarang() ? ' dan alat/bahan sudah dikembalikan' : '' }}.
+                @if($hambatanSelesai)
+                    {{ $hambatanSelesai }}
+                @else
+                    @if($p->melibatkanBarang())
+                        Pengembalian alat sudah tercatat. Tekan <strong>Selesai</strong> untuk menutup transaksi.
+                    @else
+                        Transaksi ruangan ini dapat ditandai <strong>Selesai</strong> kapan saja oleh pihak yang berwenang.
+                    @endif
+                @endif
             </div>
             <form action="{{ route('peminjaman.selesai', $p->id_peminjaman) }}" method="POST" class="d-inline"
-                  onsubmit="return confirm('Tandai peminjaman #{{ $p->id_peminjaman }} sebagai selesai?')">
+                  data-konfirmasi="Tandai peminjaman #{{ $p->id_peminjaman }} sebagai selesai?">
                 @csrf
-                <button type="submit" class="btn btn-primary d-flex align-items-center gap-2"><i class="bi bi-check2-circle"></i> Selesai</button>
+                <button type="submit" class="btn btn-primary d-flex align-items-center gap-2" @disabled($hambatanSelesai)><i class="bi bi-check2-circle"></i> Selesai</button>
             </form>
         </div>
     </div>
@@ -86,7 +99,7 @@
                 Peminjaman ini dapat dibatalkan sampai <strong>pukul 23.59 pada H-1</strong> ({{ $p->tanggalPelaksanaan()?->copy()->subDay()->format('d/m/Y') }}). Mulai tanggal pelaksanaan tidak dapat dibatalkan.
             </div>
             <form action="{{ route('peminjaman.batal', $p->id_peminjaman) }}" method="POST" class="d-inline"
-                  onsubmit="return confirm('Batalkan peminjaman #{{ $p->id_peminjaman }}? Tindakan ini tidak dapat dibatalkan.')">
+                  data-konfirmasi="Batalkan peminjaman #{{ $p->id_peminjaman }}? Tindakan ini tidak dapat dibatalkan.">
                 @csrf
                 <button type="submit" class="btn btn-del d-flex align-items-center gap-2"><i class="bi bi-x-lg"></i> Batalkan</button>
             </form>
@@ -257,7 +270,7 @@
 <div class="modal fade" id="tolakModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <form action="{{ route('pengajuan.tolak', $p->id_peminjaman) }}" method="POST" class="modal-content"
-              onsubmit="return confirm('Tolak pengajuan peminjaman #{{ $p->id_peminjaman }}? Stok barang tidak akan berubah.')">
+              >
             @csrf
             <div class="modal-header">
                 <h5 class="modal-title fw-semibold" style="font-size:1rem;">Tolak Pengajuan Peminjaman</h5>

@@ -77,7 +77,7 @@
         </div>
         <div class="col-6 col-lg-2 d-flex gap-2">
             <button type="submit" class="btn btn-primary flex-grow-1">Terapkan</button>
-            <a href="{{ route('jadwal.index') }}" class="btn btn-outline-silab" title="Reset"><i class="bi bi-arrow-counterclockwise"></i></a>
+            <a href="{{ route('jadwal.index') }}" class="btn btn-outline-silab" title="Reset" aria-label="Reset filter"><i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i></a>
         </div>
     </div>
 </form>
@@ -132,7 +132,7 @@
                                 <i class="bi bi-pencil"></i> Ubah
                             </a>
                             <form action="{{ route('jadwal.destroy', $j) }}" method="POST"
-                                  onsubmit="return confirm('Hapus jadwal {{ e($j->mataKuliah->nama_mk ?? '') }} pada {{ e($j->hari) }} {{ $jamTeks($j->jam_mulai) }}?')">
+                                  data-konfirmasi="Hapus jadwal {{ $j->mataKuliah->nama_mk ?? '' }} pada {{ $j->hari }} {{ $jamTeks($j->jam_mulai) }}?">
                                 @csrf @method('DELETE')
                                 <button type="submit" class="btn btn-del d-flex align-items-center gap-1"><i class="bi bi-trash"></i> Hapus</button>
                             </form>

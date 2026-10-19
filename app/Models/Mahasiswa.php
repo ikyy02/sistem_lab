@@ -28,9 +28,4 @@ class Mahasiswa extends Model
         return $this->belongsTo(Prodi::class, 'id_prodi', 'id_prodi');
     }
 
-    /** Keanggotaan kelas per semester (bukan kolom tetap di mahasiswas). */
-    public function kelasMahasiswas()
-    {
-        return $this->hasMany(KelasMahasiswa::class, 'nim', 'nim');
-    }
 }

@@ -30,7 +30,7 @@
     <a href="{{ url('/') }}" class="sidebar-brand">
         <div class="sidebar-brand-text">
             <div class="brand-name">SIARKA</div>
-            <div class="brand-sub" style="font-size:.6rem;line-height:1.25;">Sistem Informasi Administrasi, Reservasi, Katalog, dan Aktivitas Laboratorium</div>
+            <div class="brand-sub" style="font-size:.75rem;line-height:1.25;">Sistem Informasi Administrasi, Reservasi, Katalog, dan Aktivitas Laboratorium</div>
         </div>
     </a>
 
@@ -155,24 +155,12 @@
     </header>
 
     <main id="page-content">
-        @if(session('success'))
-            <div class="alert alert-success alert-dismissible d-flex align-items-center gap-2 mb-4" role="alert">
-                <i class="bi bi-check-circle-fill fs-5"></i><span>{{ session('success') }}</span>
-                <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        @endif
-        @if(session('error'))
-            <div class="alert alert-danger alert-dismissible d-flex align-items-center gap-2 mb-4" role="alert">
-                <i class="bi bi-x-circle-fill fs-5"></i><span>{{ session('error') }}</span>
-                <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        @endif
-
         @yield('content')
     </main>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+@include('layouts._notifikasi')
 <script>
     function toggleSidebar() {
         document.getElementById('sidebar').classList.toggle('show');

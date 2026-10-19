@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\AlatBahan;
 use App\Models\Jadwal;
 use App\Models\Kelas;
-use App\Models\KelasMahasiswa;
 use App\Models\Satuan;
 use App\Support\Options;
 use Illuminate\Database\QueryException;
@@ -33,8 +32,7 @@ class MasterDataController extends Controller
             'kelas' => ['model' => Kelas::class, 'pk' => 'id_kelas', 'name' => 'nama_kelas', 'max' => 100,
                 'select' => 'id_kelas as id, nama_kelas as nama, id_prodi as grup',
                 'grups' => Options::prodi(), 'grup_label' => 'Prodi',
-                'used' => fn ($r) => Jadwal::where('id_kelas', $r->id)->count()
-                    + KelasMahasiswa::where('id_kelas', $r->id)->count()],
+                'used' => fn ($r) => Jadwal::where('id_kelas', $r->id)->count()],
             default => abort(404),
         };
     }

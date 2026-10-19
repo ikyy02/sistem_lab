@@ -83,7 +83,7 @@
                     <span class="ms-auto align-self-center" style="font-size:.8rem;color:var(--text-muted);"><i class="bi bi-archive me-1"></i>Jadwal arsip hanya dapat dilihat.</span>
                 @else
                 <form action="{{ route('jadwal.destroy', $jadwal) }}" method="POST" class="ms-auto"
-                      onsubmit="return confirm('Hapus jadwal ini?')">
+                      data-konfirmasi="Hapus jadwal ini?">
                     @csrf @method('DELETE')
                     <button type="submit" class="btn btn-del d-flex align-items-center gap-2"><i class="bi bi-trash"></i> Hapus</button>
                 </form>

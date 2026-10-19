@@ -7,6 +7,7 @@ use App\Models\Ruangan;
 use App\Services\AuthService;
 use App\Support\Role;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\RateLimiter;
 
 class AuthController extends Controller
 {
@@ -44,13 +45,22 @@ class AuthController extends Controller
             'password.required' => 'Password wajib diisi.',
         ]);
 
+        $kunci = 'login:'.mb_strtolower($data['email']).'|'.$request->ip();
+        if (RateLimiter::tooManyAttempts($kunci, 5)) {
+            return back()->withInput($request->only('email'))
+                ->withErrors(['email' => 'Terlalu banyak percobaan login. Coba lagi dalam '.RateLimiter::availableIn($kunci).' detik.']);
+        }
+
         $identity = $auth->attempt($data['email'], $data['password']);
 
         if (! $identity) {
+            RateLimiter::hit($kunci, 300);
+
             return back()->withInput($request->only('email'))
                 ->withErrors(['email' => 'Email atau password salah.']);
         }
 
+        RateLimiter::clear($kunci);
         $auth->login($request, $identity);
 
         return redirect(Role::home($identity['role']));

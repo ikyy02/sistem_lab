@@ -24,7 +24,7 @@ class DashboardController extends Controller
             return view('dashboard.index', [
                 'me' => $me,
                 'isAdmin' => true,
-                'menunggu' => Peminjaman::where('status', 'menunggu')->count(),
+                'menunggu' => Peminjaman::menungguTindakan($me['email'], $me['role'])->count(),
                 'berlangsung' => Peminjaman::where('status', 'disetujui')->count(),
             ]);
         }
@@ -54,7 +54,7 @@ class DashboardController extends Controller
                 ->where('tanggal_peminjaman', '>=', now())
                 ->orderBy('tanggal_peminjaman')->first(),
             'menunggu' => $me['role'] === Role::DOSEN
-                ? Peminjaman::where('status', 'menunggu')->where('email_peminjam', '!=', $me['email'])->count()
+                ? Peminjaman::menungguTindakan($me['email'], $me['role'])->count()
                 : 0,
         ]);
     }

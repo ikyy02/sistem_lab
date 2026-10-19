@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\AlatBahan;
 use App\Models\Ruangan;
 use App\Services\KatalogImportService;
+use App\Support\ExcelFile;
 use App\Support\Options;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
@@ -205,26 +206,16 @@ class KelolaKatalogController extends Controller
         return $back->with('success', self::KATEGORI[$kategori] . ' berhasil dihapus.');
     }
 
-    public function template(Request $request, string $kategori, KatalogImportService $svc)
+    public function template(string $kategori, KatalogImportService $svc)
     {
-        [$content, $name] = $svc->template($kategori, $request->query('format') === 'csv' ? 'csv' : 'xlsx');
-        $contentType = str_ends_with($name, '.csv') 
-            ? 'text/csv; charset=UTF-8' 
-            : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+        [$writer, $name] = $svc->template($kategori);
 
-        return response($content, 200, [
-            'Content-Type' => $contentType,
-            'Content-Disposition' => 'attachment; filename="' . $name . '"',
-            'Cache-Control' => 'no-cache, must-revalidate',
-        ]);
+        return response()->streamDownload(fn () => $writer->save('php://output'), $name);
     }
 
     public function import(Request $request, string $kategori, KatalogImportService $svc)
     {
-        $request->validate(['file' => ['required', 'file', 'max:5120']], [
-            'file.required' => 'Pilih file Excel atau CSV terlebih dahulu.',
-            'file.max' => 'Ukuran file maksimal 5 MB.',
-        ]);
+        $request->validate(['file' => ExcelFile::rules(5120)], ExcelFile::messages(5120));
         $back = redirect()->route('kelola-katalog.index', ['kategori' => $kategori]);
         try {
             $result = $svc->import($request->file('file'), $kategori);

@@ -2,18 +2,28 @@
 
 @section('title', 'Pengajuan Peminjaman')
 @section('page-title', 'Pengajuan Peminjaman')
-@section('page-subtitle', 'Periksa, setujui, atau tolak pengajuan peminjaman oleh mahasiswa dan dosen.')
+@section('page-subtitle', (\App\Services\AuthService::user()['role'] ?? null) === \App\Support\Role::DOSEN
+    ? 'Setujui atau tolak pengajuan Kuliah/Praktikum yang ditujukan kepada Anda.'
+    : 'Periksa, setujui, atau tolak pengajuan peminjaman oleh mahasiswa dan dosen.')
 
 @section('content')
+@php
+    $me = \App\Services\AuthService::user();
+    $sebagaiDosen = $me['role'] === \App\Support\Role::DOSEN;
+@endphp
 
 <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
     <div>
         <h2 class="font-display fw-semibold mb-1" style="font-size:1.5rem;">Pengajuan Peminjaman</h2>
         <p class="mb-0" style="font-size:.83rem;color:var(--text-muted);">
-            {{ $jumlahMenunggu }} pengajuan menunggu persetujuan. Persetujuan memotong stok; penolakan tidak.
+            @if($sebagaiDosen)
+                {{ $jumlahMenunggu }} pengajuan menunggu keputusan Anda. Yang Anda setujui diteruskan ke Laboran untuk keputusan akhir.
+            @else
+                {{ $jumlahMenunggu }} pengajuan menunggu persetujuan. Persetujuan memotong stok; penolakan tidak.
+            @endif
         </p>
     </div>
-    @if((\App\Services\AuthService::user()['role'] ?? null) === \App\Support\Role::LABORAN)
+    @if($me['role'] === \App\Support\Role::LABORAN)
         <a href="{{ route('pengembalian.index') }}" class="btn btn-outline-silab d-flex align-items-center gap-2">
             <i class="bi bi-arrow-down-left-square"></i> Pengembalian
         </a>
@@ -49,7 +59,7 @@
         </div>
         <div class="col-6 col-lg-3 d-flex gap-2">
             <button type="submit" class="btn btn-primary flex-grow-1"><i class="bi bi-search me-1"></i> Terapkan</button>
-            <a href="{{ route('pengajuan.index') }}" class="btn btn-outline-silab" title="Reset"><i class="bi bi-arrow-counterclockwise"></i></a>
+            <a href="{{ route('pengajuan.index') }}" class="btn btn-outline-silab" title="Reset" aria-label="Reset filter"><i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i></a>
         </div>
     </div>
 </form>
@@ -89,15 +99,20 @@
                     </td>
                     <td>
                         @include('peminjaman._status', ['status' => $p->status, 'terlambat' => $p->terlambat])
+                        @if($p->menungguDosen())
+                            <div style="font-size:.72rem;color:var(--text-muted);">Menunggu keputusan Dosen</div>
+                        @elseif($p->diteruskanKeLaboran())
+                            <div style="font-size:.72rem;color:var(--text-muted);">Disetujui Dosen, menunggu Laboran</div>
+                        @endif
                         @if($p->status === 'ditolak' && $p->alasan_ditolak)
                             <div style="font-size:.72rem;color:var(--text-muted);" title="{{ $p->alasan_ditolak }}">Alasan: {{ \Illuminate\Support\Str::limit($p->alasan_ditolak, 40) }}</div>
                         @endif
                     </td>
                     <td class="text-end pe-4">
                         <div class="d-flex flex-wrap justify-content-end gap-2">
-                            @if($p->status === 'menunggu')
+                            @if($p->status === 'menunggu' && $p->bisaDiprosesOleh($me['email'], $me['role']))
                                 <form action="{{ route('pengajuan.setujui', $p->id_peminjaman) }}" method="POST" class="d-inline"
-                                      onsubmit="return confirm('Setujui pengajuan peminjaman #{{ $p->id_peminjaman }} oleh {{ $p->nama_peminjam }}? Stok barang akan dipotong sesuai jumlah yang diajukan.')">
+                                      data-konfirmasi="Setujui pengajuan peminjaman #{{ $p->id_peminjaman }} oleh {{ $p->nama_peminjam }}? {{ $sebagaiDosen ? 'Pengajuan akan diteruskan ke Laboran untuk keputusan akhir.' : 'Stok barang akan dipotong sesuai jumlah yang diajukan.' }}">
                                     @csrf
                                     <button type="submit" class="btn btn-edit d-flex align-items-center gap-1" style="padding:.3rem .65rem;font-size:.78rem;">
                                         <i class="bi bi-check-lg"></i> Setujui
@@ -143,7 +158,7 @@
 <div class="modal fade" id="tolakModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <form id="tolakForm" action="" method="POST" class="modal-content"
-              onsubmit="return confirm('Tolak pengajuan peminjaman ini? Stok barang tidak akan berubah.')">
+              >
             @csrf
             <div class="modal-header">
                 <h5 class="modal-title fw-semibold" style="font-size:1rem;">Tolak Pengajuan Peminjaman</h5>

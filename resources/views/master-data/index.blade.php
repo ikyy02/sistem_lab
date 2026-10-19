@@ -85,7 +85,7 @@
                                     data-item="{{ json_encode(['nama' => $item->nama, 'grup' => $item->grup ?? '']) }}"
                                     onclick="openMasterModal('edit', this)"><i class="bi bi-pencil"></i> Edit</button>
                             <form action="{{ route('master-data.destroy', ['kategori' => $kategori, 'id' => $item->id] + $listQuery) }}" method="POST"
-                                  onsubmit="return confirm('Hapus {{ strtolower($label) }} &quot;{{ e($item->nama) }}&quot;?')">
+                                  data-konfirmasi="Hapus {{ strtolower($label) }} &quot;{{ $item->nama }}&quot;?">
                                 @csrf @method('DELETE')
                                 <button type="submit" class="btn btn-del d-flex align-items-center gap-1"><i class="bi bi-trash"></i> Hapus</button>
                             </form>

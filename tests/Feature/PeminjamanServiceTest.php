@@ -36,7 +36,7 @@ class PeminjamanServiceTest extends TestCase
     private function data(array $o = []): array
     {
         return $o + [
-            'jenis_peminjaman' => 'pribadi', 'tanggal_peminjaman' => '2030-01-08 08:00', 'tanggal_rencana_kembali' => '2030-01-09 08:00',
+            'jenis_peminjaman' => 'pribadi', 'tanggal_peminjaman' => '2030-01-08 08:00', 'tanggal_rencana_kembali' => '2030-01-08 10:00',
             'detail' => [], 'ruangan' => [],
         ];
     }
@@ -126,7 +126,8 @@ class PeminjamanServiceTest extends TestCase
         $this->gagal(fn () => $this->svc->ajukan($m, $this->data($d + ['tanggal_rencana_kembali' => '2030-01-08 07:00'])), 'tanggal_rencana_kembali'); // sebelum pinjam
         $this->gagal(fn () => $this->svc->ajukan($m, $this->data($d + ['tanggal_peminjaman' => null])), 'tanggal_peminjaman'); // wajib
         $this->gagal(fn () => $this->svc->ajukan($m, $this->data($d + ['tanggal_peminjaman' => 'bukan tanggal'])), 'tanggal_peminjaman');
-        $ok = $this->svc->ajukan($m, $this->data($d + ['tanggal_peminjaman' => '2030-01-08 08:00', 'tanggal_rencana_kembali' => '2030-01-08 08:00']));
+        $this->gagal(fn () => $this->svc->ajukan($m, $this->data($d + ['tanggal_peminjaman' => '2030-01-08 08:00', 'tanggal_rencana_kembali' => '2030-01-08 08:00'])), 'tanggal_rencana_kembali'); // selesai harus > mulai
+        $ok = $this->svc->ajukan($m, $this->data($d + ['tanggal_peminjaman' => '2030-01-08 08:00', 'tanggal_rencana_kembali' => '2030-01-08 08:01']));
         $this->assertTrue($ok->tanggal_pengajuan->lte($ok->tanggal_peminjaman) && $ok->tanggal_peminjaman->lte($ok->tanggal_rencana_kembali));
     }
 
@@ -217,8 +218,14 @@ class PeminjamanServiceTest extends TestCase
         $this->gagal(fn () => $this->svc->setujui($p->id_peminjaman, $this->mahasiswa()->email), 'email_pemroses');
         $this->gagal(fn () => $this->svc->tolak($p->id_peminjaman, $this->staff()->email), 'email_pemroses');
 
-        // Dosen lain boleh menolak, lengkap dengan alasan dan waktu persetujuan.
+        // Peminjaman Mandiri hanya diproses Laboran: Dosen ditolak di service.
         $dosen = $this->dosen();
+        $this->gagal(fn () => $this->svc->setujui($p->id_peminjaman, $dosen->email), 'email_pemroses');
+        $this->gagal(fn () => $this->svc->tolak($p->id_peminjaman, $dosen->email), 'email_pemroses');
+        $this->assertSame('menunggu', $p->fresh()->status);
+
+        // Laboran menolak, lengkap dengan alasan dan waktu persetujuan.
+        $dosen = $this->laboran();
         $t = $this->svc->tolak($p->id_peminjaman, $dosen->email, '  Alasan   penolakan uji  ');
         $this->assertSame(['ditolak', $dosen->email, 'Alasan penolakan uji'], [$t->status, $t->email_pemroses, $t->alasan_ditolak]);
         $this->assertNotNull($t->tanggal_persetujuan);
@@ -335,12 +342,13 @@ class PeminjamanServiceTest extends TestCase
         $this->gagal(fn () => $this->svc->kembalikan($p->id_peminjaman, $this->staff()->email, $row($p)), 'email_pemroses');
         $this->gagal(fn () => $this->svc->kembalikan($p->id_peminjaman, $this->mahasiswa()->email, $row($p)), 'email_pemroses');
 
-        $this->svc->kembalikan($p->id_peminjaman, $dosen->email, $row($p)); // dosen menerima sebagian
+        $this->gagal(fn () => $this->svc->kembalikan($p->id_peminjaman, $dosen->email, $row($p)), 'email_pemroses'); // pengembalian hanya Laboran
+        $this->svc->kembalikan($p->id_peminjaman, $lab->email, $row($p)); // laboran menerima sebagian
         $this->assertSame('disetujui', $p->fresh()->status);
         $this->svc->kembalikan($p->id_peminjaman, $lab->email, $row($p));   // sisa oleh laboran -> selesai
         $this->assertSame('selesai', $p->fresh()->status);
         $this->gagal(fn () => $this->svc->kembalikan($p->id_peminjaman, $lab->email, $row($p)), 'status'); // sudah selesai
-        $this->assertSame($dosen->email, Pengembalian::first()->email_penerima);
+        $this->assertSame($lab->email, Pengembalian::first()->email_penerima);
         $this->assertSame($lab->email, Pengembalian::orderByDesc('id_pengembalian')->value('email_penerima'));
     }
 
@@ -362,7 +370,7 @@ class PeminjamanServiceTest extends TestCase
         $bahan = $this->katalog('bahan', 10);
         [$p] = $this->disetujui([$bahan->id_katalog => 3]);
         $this->assertSame('disetujui', $p->status); // masih bisa mengembalikan sisa bahan
-        $this->svc->evaluasiStatus($p, Carbon::parse('2030-01-08 12:00'));
+        $this->svc->evaluasiStatus($p, Carbon::parse('2030-01-08 09:00')); // sebelum rencana kembali (10:00)
         $this->assertSame('disetujui', $p->fresh()->status);
         $this->assertSame(1, $this->svc->sinkronSelesai(Carbon::parse('2030-01-09 08:00')));
         $this->assertSame('selesai', $p->fresh()->status);
@@ -381,13 +389,11 @@ class PeminjamanServiceTest extends TestCase
         $this->svc->setujui($p->id_peminjaman, $lab->email);
         $d = $this->detailId($p, $alat);
 
-        Carbon::setTestNow('2030-01-08 09:00');
+        Carbon::setTestNow('2030-01-08 09:00'); // kegiatan belum berakhir: bukan penghalang
+        $this->gagal(fn () => $this->svc->selesaikan($p->id_peminjaman, $lab->email), 'status'); // alat belum dikembalikan
         $this->svc->kembalikan($p->id_peminjaman, $lab->email, [['id_detail_peminjaman' => $d, 'jumlah_dikembalikan' => 1, 'kondisi' => 'baik']]);
         $this->assertSame(0, $this->svc->sinkronSelesai(Carbon::parse('2030-01-08 11:00'))); // ruangan: tidak otomatis
         $this->assertSame('disetujui', $p->fresh()->status);
-        $this->gagal(fn () => $this->svc->selesaikan($p->id_peminjaman, $lab->email), 'status'); // kegiatan belum berakhir
-
-        Carbon::setTestNow('2030-01-08 10:00');
         $this->gagal(fn () => $this->svc->selesaikan($p->id_peminjaman, $this->mahasiswa(['email' => 'lain@uji.test'])->email), 'status'); // bukan pihak berwenang
         $this->assertSame('selesai', $this->svc->selesaikan($p->id_peminjaman, $lab->email)->status);
     }
@@ -400,7 +406,7 @@ class PeminjamanServiceTest extends TestCase
         $p = $this->ajukanRuangan($m->email, $r, '2030-01-08 08:00', '2030-01-08 10:00');
         $this->svc->setujui($p->id_peminjaman, $lab->email);
         $this->assertSame(0, $this->svc->sinkronSelesai(Carbon::parse('2030-01-08 10:00')));
-        $this->assertSame('selesai', $this->svc->selesaikan($p->id_peminjaman, $m->email, Carbon::parse('2030-01-08 10:00'))->status);
+        $this->assertSame('selesai', $this->svc->selesaikan($p->id_peminjaman, $m->email)->status);
 
         $q = $this->ajukanRuangan($m->email, $r, '2030-01-10 08:00', '2030-01-10 10:00');
         $this->gagal(fn () => $this->svc->batalkan($q->id_peminjaman, $m->email, Carbon::parse('2030-01-10 00:00')), 'status');
@@ -479,13 +485,13 @@ class PeminjamanServiceTest extends TestCase
         $this->assertSame('disetujui', $this->svc->setujui($batal->id_peminjaman, $lab->email)->status);
     }
 
-    public function test_peminjaman_ruangan_beberapa_hari_dicek_per_hari(): void
+    public function test_peminjaman_ruangan_pada_hari_yang_sama_dicek_terhadap_jadwal_kuliah(): void
     {
         $r = $this->ruangan();
         $lab = $this->laboran();
         $this->jadwal($r, 'rabu', '08:00:00', '10:00:00', ['tahun_akademik' => '2029/2030', 'semester' => 'ganjil']);
-        // Selasa 18:00 s.d. Rabu 09:00 menabrak jadwal Rabu 08:00-10:00
-        $p = $this->ajukanRuangan($this->mahasiswa()->email, $r, '2030-01-08 18:00', '2030-01-09 09:00');
+        // Rabu 08:30 s.d. 09:00 menabrak jadwal Rabu 08:00-10:00 (peminjaman lintas hari sudah ditolak saat pengajuan)
+        $p = $this->ajukanRuangan($this->mahasiswa()->email, $r, '2030-01-09 08:30', '2030-01-09 09:00');
         $this->gagal(fn () => $this->svc->setujui($p->id_peminjaman, $lab->email), 'ruangan');
     }
 }

@@ -25,8 +25,11 @@ class PengajuanController extends Controller
         $perPage = (int) $request->query('per_page');
         $perPage = in_array($perPage, self::PER_PAGE, true) ? $perPage : self::PER_PAGE[0];
 
+        $me = AuthService::user();
         $query = Peminjaman::query()->with(Peminjaman::withProfil())
-            ->when($status !== 'semua', fn ($q) => $q->where('status', $status));
+            ->dapatDiprosesOleh($me['email'], $me['role'])
+            ->when($status === 'menunggu', fn ($q) => $q->menungguTindakan($me['email'], $me['role']))
+            ->when(! in_array($status, ['semua', 'menunggu'], true), fn ($q) => $q->where('status', $status));
         foreach (array_slice(preg_split('/\s+/u', $search, -1, PREG_SPLIT_NO_EMPTY) ?: [], 0, 5) as $word) {
             $like = '%'.str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $word).'%';
             $query->where(function ($g) use ($like) {
@@ -51,19 +54,23 @@ class PengajuanController extends Controller
             'perPage' => $perPage,
             'perPageOptions' => self::PER_PAGE,
             'labels' => Peminjaman::LABELS,
-            'jumlahMenunggu' => Peminjaman::where('status', 'menunggu')->count(),
+            'jumlahMenunggu' => Peminjaman::menungguTindakan($me['email'], $me['role'])->count(),
         ]);
     }
 
     public function setujui(int $id, PeminjamanService $service)
     {
-        $service->setujui($id, AuthService::user()['email']);
+        $this->otorisasi($id);
+        $p = $service->setujui($id, AuthService::user()['email']);
 
-        return redirect()->back()->with('success', 'Pengajuan peminjaman disetujui dan stok barang telah diperbarui.');
+        return redirect()->back()->with('success', $p->status === 'menunggu'
+            ? 'Pengajuan disetujui dan diteruskan ke Laboran untuk keputusan akhir.'
+            : 'Pengajuan peminjaman disetujui dan stok barang telah diperbarui.');
     }
 
     public function tolak(Request $request, int $id, PeminjamanService $service)
     {
+        $this->otorisasi($id);
         $data = $request->validate([
             'alasan' => ['required', 'string', 'max:500'],
         ], [
@@ -74,5 +81,12 @@ class PengajuanController extends Controller
         $service->tolak($id, AuthService::user()['email'], $data['alasan']);
 
         return redirect()->back()->with('success', 'Pengajuan peminjaman ditolak. Stok barang tidak berubah.');
+    }
+
+    /** Pengajuan di luar kewenangan role ditolak 403 sebelum diproses (bukan hanya disembunyikan dari daftar). */
+    private function otorisasi(int $id): void
+    {
+        $me = AuthService::user();
+        abort_unless(Peminjaman::whereKey($id)->dapatDiprosesOleh($me['email'], $me['role'])->exists(), 403);
     }
 }

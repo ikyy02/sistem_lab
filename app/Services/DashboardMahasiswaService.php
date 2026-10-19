@@ -3,8 +3,6 @@
 namespace App\Services;
 
 use App\Models\AlatBahan;
-use App\Models\Jadwal;
-use App\Models\KelasMahasiswa;
 use App\Models\Peminjaman;
 use App\Models\PengaturanOperasional;
 
@@ -16,7 +14,7 @@ use App\Models\PengaturanOperasional;
  */
 class DashboardMahasiswaService
 {
-    /** Urut hari untuk "hari ini dan sisa minggu ini" (Jadwal::HARI tidak memuat minggu). */
+    /** Nama hari (indeks date('w')) untuk status operasional laboratorium hari ini. */
     private const HARI = ['minggu', 'senin', 'selasa', 'rabu', 'kamis', 'jumat', 'sabtu'];
 
     /**
@@ -26,8 +24,6 @@ class DashboardMahasiswaService
     public function untuk(array $me): array
     {
         $email = $me['email'];
-        $nim = $me['key'];
-        [$tahun, $semester] = PeminjamanService::periodeAkademik(now());
 
         // a) ringkasan: satu query groupBy
         $hitung = Peminjaman::query()->selectRaw('status, COUNT(*) as jml')
@@ -55,21 +51,7 @@ class DashboardMahasiswaService
             ->where('email_peminjam', $email)
             ->orderByDesc('tanggal_pengajuan')->limit(5)->get();
 
-        // e) jadwal kuliah: kelas mahasiswa pada periode berjalan -> jadwal aktif hari ini dan sisa minggu ini
         $hariIni = self::HARI[(int) now()->format('w')];
-        $hariMingguIni = $this->hariMingguIni($hariIni);
-        $keanggotaan = KelasMahasiswa::query()->with('kelas')
-            ->where('nim', $nim)->where('tahun_akademik', $tahun)->where('semester', $semester)->get();
-        $jadwal = collect();
-        if ($keanggotaan->isNotEmpty()) {
-            $urut = array_flip($hariMingguIni);
-            $jadwal = Jadwal::query()->with(['kelas', 'ruangan', 'dosen'])
-                ->whereIn('id_kelas', $keanggotaan->pluck('id_kelas'))
-                ->berlaku()->where('status', 'aktif')->whereIn('hari', $hariMingguIni)
-                ->where('tahun_akademik', $tahun)->where('semester', $semester)
-                ->orderBy('jam_mulai')->get()
-                ->sortBy(fn ($j) => [$urut[$j->hari] ?? PHP_INT_MAX, $j->jam_mulai])->values();
-        }
 
         // f) status laboratorium hari ini
         $setting = PengaturanOperasional::ambil();
@@ -91,21 +73,10 @@ class DashboardMahasiswaService
             'terdekat' => $terdekat,
             'pembaruan' => $pembaruan,
             'terbaru' => $terbaru,
-            'keanggotaan' => $keanggotaan,
-            'jadwal' => $jadwal,
             'hariIni' => $hariIni,
-            'hariMingguIni' => $hariMingguIni,
             'lab' => $this->statusLaboratorium($setting),
             'katalogTersedia' => $katalogTersedia,
         ];
-    }
-
-    /** @return array<int,string> */
-    private function hariMingguIni(string $hariIni): array
-    {
-        $mulai = (int) array_search($hariIni, self::HARI, true);
-
-        return array_values(array_slice(self::HARI, $mulai, 7));
     }
 
     /** @return array{status:string,label:string,keterangan:string,jam:string} */

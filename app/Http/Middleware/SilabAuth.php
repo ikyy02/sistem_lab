@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Akun;
 use App\Services\AuthService;
 use Closure;
 use Illuminate\Http\Request;
@@ -11,7 +12,11 @@ class SilabAuth
 {
     public function handle(Request $request, Closure $next)
     {
-        if (! AuthService::user()) {
+        $user = AuthService::user();
+        // Sesi tidak berlaku lagi bila akun dihapus atau role-nya berubah.
+        if (! $user || ! Akun::where('email', $user['email'])->where('role', $user['role'])->exists()) {
+            $request->session()->forget('silab_user');
+
             return redirect()->route('login');
         }
 

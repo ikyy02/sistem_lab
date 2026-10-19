@@ -6,6 +6,7 @@ use App\Http\Requests\MahasiswaRequest;
 use App\Services\AkunService;
 use App\Services\AuthService;
 use App\Services\UserImportService;
+use App\Support\ExcelFile;
 use App\Support\Options;
 use App\Support\Role;
 use Illuminate\Validation\Rule;
@@ -154,20 +155,17 @@ class UserManagementController extends Controller
             ->with('success', 'Data ' . Role::LABELS[$kategori] . ' berhasil diperbarui.');
     }
 
-    /** Template Excel/CSV untuk Dosen, Staff Prodi, Laboran/Admin (Mahasiswa: lihat MahasiswaController). */
+    /** Template Excel untuk Dosen, Staff Prodi, Laboran/Admin (Mahasiswa: lihat MahasiswaController). */
     public function template(Request $request, string $kategori, UserImportService $svc)
     {
-        [$writer, $name] = $svc->template($kategori, $request->query('format') === 'csv' ? 'csv' : 'xlsx');
+        [$writer, $name] = $svc->template($kategori);
 
         return response()->streamDownload(fn () => $writer->save('php://output'), $name);
     }
 
     public function import(Request $request, string $kategori, UserImportService $svc)
     {
-        $request->validate(['file' => ['required', 'file', 'max:2048']], [
-            'file.required' => 'Pilih file Excel atau CSV terlebih dahulu.',
-            'file.max' => 'Ukuran file maksimal 2 MB.',
-        ]);
+        $request->validate(['file' => ExcelFile::rules(2048)], ExcelFile::messages(2048));
         $back = redirect()->route('kelola-user.index', ['kategori' => $kategori]);
 
         try {

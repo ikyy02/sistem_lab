@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Exceptions\MahasiswaImportException;
 use App\Services\MahasiswaImportService;
+use App\Support\ExcelFile;
 use App\Services\MahasiswaTemplateService;
 use Illuminate\Http\Request;
 use PhpOffice\PhpSpreadsheet\IOFactory;
@@ -23,12 +24,6 @@ class MahasiswaController extends Controller
             return $missing;
         }
 
-        if ($request->query('format') === 'csv') {
-            $writer = $template->buildCsv();
-
-            return response()->streamDownload(fn () => $writer->save('php://output'), 'template-mahasiswa.csv');
-        }
-
         $spreadsheet = $template->build();
 
         return response()->streamDownload(function () use ($spreadsheet) {
@@ -45,15 +40,7 @@ class MahasiswaController extends Controller
      */
     public function import(Request $request, MahasiswaImportService $importer)
     {
-        $request->validate([
-            'file' => ['required', 'file', 'extensions:xlsx,xls,csv', 'max:2048'],
-        ], [
-            'file.required' => 'Pilih file Excel atau CSV terlebih dahulu.',
-            'file.uploaded' => 'File gagal diunggah. Pastikan ukuran file tidak lebih dari 2 MB.',
-            'file.file' => 'File tidak valid.',
-            'file.extensions' => 'File harus berformat .xlsx, .xls, atau .csv.',
-            'file.max' => 'Ukuran file maksimal 2 MB.',
-        ]);
+        $request->validate(['file' => ExcelFile::rules(2048)], ExcelFile::messages(2048));
 
         if ($missing = $this->spreadsheetLibraryMissing()) {
             return $missing;

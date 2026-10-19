@@ -10,42 +10,41 @@
     $sapaan = $jam < 11 ? 'Selamat pagi' : ($jam < 15 ? 'Selamat siang' : ($jam < 18 ? 'Selamat sore' : 'Selamat malam'));
 @endphp
 
-<div class="mb-4">
-    <h2 class="font-display fw-semibold mb-1" style="font-size:1.7rem;">{{ $sapaan }}, {{ explode(' ', $me['nama'])[0] }}.</h2>
-    <p class="mb-0" style="color:var(--text-muted);font-size:.9rem;">{{ $isAdmin ? 'Ringkasan pengajuan dan peminjaman yang perlu ditangani.' : 'Ringkasan pengajuan peminjaman Anda dan pengajuan yang perlu Anda proses.' }}</p>
+<div class="d-flex flex-wrap align-items-start justify-content-between gap-3 mb-4">
+    <div>
+        <h2 class="font-display fw-semibold mb-1" style="font-size:1.7rem;">{{ $sapaan }}, {{ explode(' ', $me['nama'])[0] }}.</h2>
+        <p class="mb-0" style="color:var(--text-muted);font-size:.9rem;">{{ $isAdmin ? 'Ringkasan pengajuan dan peminjaman yang perlu ditangani.' : 'Ringkasan pengajuan peminjaman Anda dan pengajuan yang perlu Anda proses.' }}</p>
+    </div>
+    @unless($isAdmin)
+    <a href="{{ route('peminjaman.index') }}" class="btn btn-primary d-inline-flex align-items-center gap-2">
+        <i class="bi bi-plus-lg"></i> Ajukan Peminjaman
+    </a>
+    @endunless
 </div>
 
 @if($isAdmin)
     <div class="row g-3">
         <div class="col-12 col-md-6">
-            <a href="{{ route('pengajuan.index') }}" class="card-modern p-4 h-100 text-decoration-none d-block">
+            <div class="card-modern p-4 h-100">
                 <div class="d-flex align-items-center gap-3">
                     <div style="width:44px;height:44px;border-radius:10px;background:var(--gold-tint);color:var(--gold);display:flex;align-items:center;justify-content:center;"><i class="bi bi-hourglass-split fs-5"></i></div>
                     <div>
                         <div class="fw-bold" style="font-size:1.4rem;">{{ $menunggu }}</div>
                         <div style="font-size:.8rem;color:var(--text-muted);">Pengajuan menunggu persetujuan</div>
                     </div>
-                    <i class="bi bi-chevron-right ms-auto" style="color:var(--text-muted);"></i>
                 </div>
-            </a>
+            </div>
         </div>
         <div class="col-12 col-md-6">
-            <a href="{{ route('pengembalian.index') }}" class="card-modern p-4 h-100 text-decoration-none d-block">
+            <div class="card-modern p-4 h-100">
                 <div class="d-flex align-items-center gap-3">
                     <div style="width:44px;height:44px;border-radius:10px;background:var(--primary-soft);color:var(--ink);display:flex;align-items:center;justify-content:center;"><i class="bi bi-arrow-left-right fs-5"></i></div>
                     <div>
                         <div class="fw-bold" style="font-size:1.4rem;">{{ $berlangsung }}</div>
                         <div style="font-size:.8rem;color:var(--text-muted);">Peminjaman sedang berlangsung</div>
                     </div>
-                    <i class="bi bi-chevron-right ms-auto" style="color:var(--text-muted);"></i>
                 </div>
-            </a>
-        </div>
-    </div>
-    <div class="card-modern p-4 mt-3" style="background:var(--gold-tint);border-color:#EFE1C2;">
-        <div style="font-size:.82rem;color:#6E6142;">
-            <i class="bi bi-info-circle me-1"></i>
-            Setujui atau tolak pengajuan dari menu <strong>Pengajuan Peminjaman</strong>; catat pengembalian barang dari menu <strong>Pengembalian</strong>.
+            </div>
         </div>
     </div>
 @else
@@ -62,30 +61,25 @@
     @endif
 
     <div class="row g-3 mb-3">
-        <div class="col-6 col-lg-3">
+        <div class="col-12 col-sm-4">
             <div class="card-modern p-3 h-100">
                 <div class="fw-bold" style="font-size:1.3rem;">{{ $disetujui }}</div>
                 <div style="font-size:.78rem;color:var(--text-muted);">Pengajuan disetujui</div>
             </div>
         </div>
-        <div class="col-6 col-lg-3">
+        <div class="col-12 col-sm-4">
             <div class="card-modern p-3 h-100">
                 <div class="fw-bold" style="font-size:1.3rem;">{{ $selesai }}</div>
                 <div style="font-size:.78rem;color:var(--text-muted);">Pengajuan selesai</div>
             </div>
         </div>
-        <div class="col-6 col-lg-3">
+    </div>
+        <div class="col-12 col-sm-4">
             <div class="card-modern p-3 h-100">
                 <div class="fw-bold" style="font-size:1.3rem;">{{ $total }}</div>
                 <div style="font-size:.78rem;color:var(--text-muted);">Total riwayat Peminjaman</div>
             </div>
         </div>
-        <div class="col-6 col-lg-3 d-flex">
-            <a href="{{ route('peminjaman.index') }}" class="btn btn-primary w-100 h-100 d-flex align-items-center justify-content-center gap-2">
-                <i class="bi bi-plus-lg"></i> Ajukan Peminjaman
-            </a>
-        </div>
-    </div>
 
     <div class="row g-3">
         <div class="col-12 col-lg-6">

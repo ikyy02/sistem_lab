@@ -46,7 +46,7 @@
 
     <div class="col-12 {{ $berjalan ? 'col-lg-6' : '' }}">
         <form method="POST" action="{{ route('jadwal.periode.store') }}" class="card-modern p-4 h-100"
-              onsubmit="return confirm('Mulai periode baru? Periode berjalan akan diarsipkan dan jadwalnya tidak dapat diubah lagi.')">
+              data-konfirmasi="Mulai periode baru? Periode berjalan akan diarsipkan dan jadwalnya tidak dapat diubah lagi.">
             @csrf
             <h5 class="fw-bold mb-1" style="font-size:1rem;">Mulai Periode Baru</h5>
             <p class="mb-3" style="font-size:.8rem;color:var(--text-muted);">{{ $berjalan ? 'Periode berjalan saat ini akan diarsipkan.' : 'Belum ada periode berjalan.' }} Jadwal baru akan tercatat pada periode ini.</p>

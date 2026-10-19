@@ -1,12 +1,9 @@
 @php
     $isMhs = $kategori === 'mahasiswa';
 
-    $tplRoute = fn ($fmt) => $isMhs
-        ? route('mahasiswa.template', ['format' => $fmt])
-        : route('kelola-user.template', [
-            'kategori' => $kategori,
-            'format' => $fmt
-        ]);
+    $tplUrl = $isMhs
+        ? route('mahasiswa.template')
+        : route('kelola-user.template', ['kategori' => $kategori]);
 
     $importAction = $isMhs
         ? route('mahasiswa.import')
@@ -34,7 +31,7 @@
 
             <div class="modal-header">
                 <h5 class="modal-title fw-bold" style="font-size: 1rem;">
-                    Import Data {{ $label }}
+                    Import Excel {{ $label }}
                 </h5>
 
                 <button
@@ -51,12 +48,8 @@
 
                     <li>
                         Unduh template:
-                        <a href="{{ $tplRoute('xlsx') }}" class="fw-semibold">
-                            Excel (.xlsx)
-                        </a>
-                        atau
-                        <a href="{{ $tplRoute('csv') }}" class="fw-semibold">
-                            CSV
+                        <a href="{{ $tplUrl }}" class="fw-semibold">
+                            Template Excel (.xlsx)
                         </a>.
                     </li>
 
@@ -78,7 +71,7 @@
                 </ol>
 
                 <label class="form-label" for="importFile">
-                    File Excel / CSV
+                    File Excel
                     <span class="text-danger">*</span>
                 </label>
 
@@ -86,7 +79,7 @@
                     type="file"
                     id="importFile"
                     name="file"
-                    accept=".xlsx,.xls,.csv"
+                    accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
                     class="form-control @error('file') is-invalid @enderror"
                 >
 
@@ -97,7 +90,7 @@
                 @enderror
 
                 <div class="form-text">
-                    Maksimal 2 MB. Jika ada satu baris bermasalah,
+                    Format yang diterima: .xlsx dan .xls. Maksimal 2 MB. Jika ada satu baris bermasalah,
                     tidak ada data yang disimpan.
                 </div>
 

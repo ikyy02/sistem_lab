@@ -4,17 +4,16 @@ namespace App\Services;
 
 use App\Http\Controllers\UserManagementController;
 use App\Models\Akun;
+use App\Support\ExcelFile;
 use App\Support\Options;
 use App\Support\Role;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
-use PhpOffice\PhpSpreadsheet\Reader\Csv;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
-use PhpOffice\PhpSpreadsheet\Writer\Csv as CsvWriter;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 /**
- * Import & template untuk Dosen, Staff Prodi, Laboran/Admin (Excel .xlsx/.xls atau CSV).
+ * Import & template untuk Dosen, Staff Prodi, Laboran/Admin (Excel .xlsx/.xls).
  * (Mahasiswa memakai MahasiswaImportService sendiri karena aturan email institusi & kelas-nya lebih khusus.)
  * Kolom mengikuti field kategori pada UserManagementController::config() + kolom Password.
  * Semua-atau-tidak-sama-sekali: satu baris bermasalah -> tidak ada data yang disimpan.
@@ -35,7 +34,7 @@ class UserImportService
         return $map;
     }
 
-    public function template(string $kategori, string $format): array
+    public function template(string $kategori): array
     {
         $columns = self::columns($kategori);
         $book = new Spreadsheet();
@@ -44,12 +43,6 @@ class UserImportService
         $sheet->getStyle('A1:' . chr(64 + count($columns)) . '1')->getFont()->setBold(true);
         foreach (array_keys($columns) as $i => $label) {
             $sheet->getColumnDimensionByColumn($i + 1)->setWidth(max(16, min(40, mb_strlen($label) + 12)));
-        }
-
-        if ($format === 'csv') {
-            $writer = (new CsvWriter($book))->setUseBOM(true);
-
-            return [$writer, 'template-' . $kategori . '.csv'];
         }
 
         $guide = $book->createSheet()->setTitle('Petunjuk');
@@ -70,7 +63,7 @@ class UserImportService
     {
         $model = Role::MODELS[$kategori];
         $columns = self::columns($kategori);
-        $rows = $this->read($file);
+        $rows = ExcelFile::rows($file, self::MAX_ROWS + 50);
 
         $header = array_shift($rows) ?? [];
         $index = [];
@@ -197,30 +190,5 @@ class UserImportService
             }
         });
         return ['success' => true, 'total' => $total, 'inserted' => count($valid)];
-    }
-
-    private function read(UploadedFile $file): array
-    {
-        $ext = strtolower($file->getClientOriginalExtension());
-        if (! in_array($ext, ['xlsx', 'xls', 'csv', 'txt'], true)) {
-            throw new \RuntimeException('Format file harus .xlsx, .xls, atau .csv.');
-        }
-
-        try {
-            if ($ext === 'csv' || $ext === 'txt') {
-                $first = (string) strtok((string) file_get_contents($file->getRealPath(), false, null, 0, 4096), "\n");
-                $delimiter = substr_count($first, ';') > substr_count($first, ',') ? ';' : ',';
-                $reader = new Csv();
-                $reader->setDelimiter($delimiter)->setInputEncoding('UTF-8');
-            } else {
-                $reader = \PhpOffice\PhpSpreadsheet\IOFactory::createReaderForFile($file->getRealPath());
-                $reader->setReadDataOnly(true);
-            }
-            $data = $reader->load($file->getRealPath())->getSheet(0)->toArray(null, true, false, false);
-        } catch (\Throwable $e) {
-            throw new \RuntimeException('File tidak dapat dibaca. Pastikan file Excel/CSV valid.');
-        }
-
-        return array_slice($data, 0, self::MAX_ROWS + 50);
     }
 }

@@ -21,26 +21,10 @@
         <h2 class="font-display fw-semibold mb-1" style="font-size:1.5rem;">Kelola Data User</h2>
         <p class="mb-0" style="font-size:.83rem;color:var(--text-muted);">Data setiap kategori dikelola secara terpisah.</p>
     </div>
-    <div class="d-flex flex-wrap gap-2">
-        <button type="button" class="btn btn-outline-silab d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#importModal"><i class="bi bi-file-earmark-arrow-up"></i> Import</button>
-        <button type="button" class="btn btn-primary d-flex align-items-center gap-2" onclick="openUserModal('create')">
-            <i class="bi bi-plus-lg"></i> Tambah {{ $label }}
-        </button>
-    </div>
 </div>
 
-<!-- Kategori -->
-<ul class="nav nav-pills gap-2 mb-3">
-    @foreach($labels as $key => $text)
-        <li class="nav-item">
-            <a href="{{ route('kelola-user.index', ['kategori' => $key]) }}"
-               class="nav-link px-4 {{ $kategori === $key ? 'active-tab' : '' }}"
-               style="{{ $kategori === $key ? '' : 'background:#fff;border:1px solid var(--border-color);color:#3d475a;font-weight:500;' }} border-radius:8px;font-size:.87rem;">
-                {{ $text }}
-            </a>
-        </li>
-    @endforeach
-</ul>
+<x-tab-actions :tabs="$labels" :active="$kategori" route="kelola-user.index"
+    :add-label="'Tambah ' . $label" add-onclick="openUserModal('create')" />
 
 @include('kelola-user._import_report')
 
@@ -136,7 +120,7 @@
                                     data-id="{{ $item->getKey() }}" data-item="{{ json_encode($payload) }}"
                                     onclick="openUserModal('edit', this)"><i class="bi bi-pencil"></i> Edit</button>
                             <form action="{{ route('kelola-user.destroy', ['kategori' => $kategori, 'key' => $item->getKey()] + $listQuery) }}" method="POST"
-                                  onsubmit="return confirm('Hapus data {{ $label }} &quot;{{ e($item->nama) }}&quot;? Tindakan ini tidak dapat dibatalkan.')">
+                                  data-konfirmasi="Hapus data {{ $label }} &quot;{{ $item->nama }}&quot;? Tindakan ini tidak dapat dibatalkan.">
                                 @csrf @method('DELETE')
                                 <button type="submit" class="btn btn-del d-flex align-items-center gap-1"><i class="bi bi-trash"></i> Hapus</button>
                             </form>

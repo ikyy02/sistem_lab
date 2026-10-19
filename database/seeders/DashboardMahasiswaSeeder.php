@@ -7,7 +7,6 @@ use App\Models\AlatBahan;
 use App\Models\Dosen;
 use App\Models\Jadwal;
 use App\Models\Kelas;
-use App\Models\KelasMahasiswa;
 use App\Models\Mahasiswa;
 use App\Models\Peminjaman;
 use App\Models\PeminjamanDetail;
@@ -68,15 +67,6 @@ class DashboardMahasiswaSeeder extends Seeder
             $dosen = $this->dosen();
             $mhs1 = $this->mahasiswa('24110001', 'mhs1@silab.test', 'Rina Oktaviani', $prodi);
             $mhs2 = $this->mahasiswa('24110002', 'mhs2@silab.test', 'Bima Saputra', $prodi);
-
-            KelasMahasiswa::firstOrCreate(
-                ['nim' => $mhs1->nim, 'tahun_akademik' => $tahun, 'semester' => $semester],
-                ['id_kelas' => $kelasA->id_kelas]
-            );
-            KelasMahasiswa::firstOrCreate(
-                ['nim' => $mhs2->nim, 'tahun_akademik' => $tahun, 'semester' => $semester],
-                ['id_kelas' => $kelasB->id_kelas]
-            );
 
             $this->jadwal($dosen, $kelasA, $kelasB, $labJaringan, $labBasis, $tahun, $semester);
             $this->peminjamanMhs1($mhs1, $dosen, $katalog, $labJaringan);

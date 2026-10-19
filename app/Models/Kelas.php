@@ -2,12 +2,10 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * Kelas dipakai oleh Jadwal dan oleh relasi KelasMahasiswa (keanggotaan per semester).
- * Mahasiswa tidak menyimpan kelas sebagai kolom; hubungannya lewat kelas_mahasiswas.
+ * Kelas hanya dipakai oleh Jadwal (pengelolaan jadwal perkuliahan); tidak terhubung ke Mahasiswa.
  */
 class Kelas extends Model
 {
@@ -22,11 +20,5 @@ class Kelas extends Model
     public function prodi()
     {
         return $this->belongsTo(Prodi::class, 'id_prodi', 'id_prodi');
-    }
-
-    /** @return Collection<int,KelasMahasiswa> */
-    public function mahasiswas()
-    {
-        return $this->hasMany(KelasMahasiswa::class, 'id_kelas', 'id_kelas');
     }
 }

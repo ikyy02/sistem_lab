@@ -72,17 +72,12 @@ class PeminjamanService
             if ($pinjam->lt($sekarang->copy()->startOfMinute())) {
                 $err['tanggal_peminjaman'] = 'Tanggal peminjaman tidak boleh sebelum tanggal pengajuan.';
             }
-            if ($kembali->lt($pinjam)) {
-                $err['tanggal_rencana_kembali'] = 'Tanggal rencana kembali tidak boleh sebelum tanggal peminjaman.';
+            if ($kembali->lte($pinjam)) {
+                $err['tanggal_rencana_kembali'] = 'Waktu selesai harus setelah waktu mulai.';
             }
-            if ($roleDosen) {
-                // Peminjaman Dosen maksimal 1 hari: pengembalian harus pada hari yang sama.
-                if (! $kembali->isSameDay($pinjam)) {
-                    $err['tanggal_rencana_kembali'] = 'Peminjaman Dosen hanya berlaku 1 hari: pengembalian harus pada tanggal yang sama dengan peminjaman.';
-                }
-                if (! isset($err['tanggal_peminjaman']) && ($pesan = $this->cekJamKerja($pinjam)) !== null) {
-                    $err['tanggal_peminjaman'] = $pesan;
-                }
+            // Semua peminjaman (semua role & jenis sumber daya) maksimal satu hari operasional; dicek bersama urutan waktu.
+            if (($salah = $this->cekSatuHariOperasional($pinjam, $kembali)) !== null) {
+                $err[$salah[0]] ??= $salah[1];
             }
         }
 
@@ -90,10 +85,6 @@ class PeminjamanService
         $ruangan = array_values($data['ruangan'] ?? []);
         if ($barang === [] && $ruangan === []) {
             $err['detail'] = 'Pilih minimal satu ruangan, alat, atau bahan yang ingin dipinjam sebelum mengajukan peminjaman.';
-        }
-        // Jadwal tunggal: ruangan memakai periode yang sama dengan peminjaman, sehingga harus berdurasi.
-        if ($ruangan !== [] && $pinjam && $kembali && ! $pinjam->lt($kembali)) {
-            $err['tanggal_rencana_kembali'] = 'Waktu selesai harus setelah waktu mulai bila meminjam ruangan.';
         }
 
         $ids = [];
@@ -171,7 +162,17 @@ class PeminjamanService
             if ($p->email_peminjam === $pemroses->email) {
                 $this->gagal(['email_pemroses' => 'Tidak dapat memproses pengajuan peminjaman yang diajukan sendiri.']);
             }
+            $this->pastikanBerwenang($p, $pemroses);
+            // Tahap 1 (SRS D.8): persetujuan Dosen hanya meneruskan ke Laboran; stok & ruangan baru diputuskan Laboran.
+            if ($pemroses->role === 'dosen') {
+                $p->update(['tanggal_persetujuan_dosen' => now()]);
+
+                return $p->refresh();
+            }
             $details = $p->details()->orderBy('id_katalog')->get();
+
+            // Kunci baris ruangan (urut id) agar dua persetujuan bersamaan untuk ruangan yang sama diproses bergantian.
+            DB::table('ruangans')->whereIn('id_ruangan', $p->ruangans()->pluck('id_ruangan'))->orderBy('id_ruangan')->lockForUpdate()->get();
 
             // Lock baris katalog (urut id agar tidak deadlock), lalu cek ulang stok terbaru.
             $katalog = AlatBahan::whereIn('id_katalog', $details->pluck('id_katalog'))->orderBy('id_katalog')->lockForUpdate()->get()->keyBy('id_katalog');
@@ -225,6 +226,7 @@ class PeminjamanService
             if ($p->email_peminjam === $pemroses->email) {
                 $this->gagal(['email_pemroses' => 'Tidak dapat memproses pengajuan peminjaman yang diajukan sendiri.']);
             }
+            $this->pastikanBerwenang($p, $pemroses);
             $p->update([
                 'status' => 'ditolak',
                 'email_pemroses' => $pemroses->email,
@@ -319,14 +321,13 @@ class PeminjamanService
 
     /**
      * Tombol Selesai untuk peminjaman yang melibatkan ruangan. Pihak yang berhak: lihat Peminjaman::bisaDiselesaikanOleh().
-     * Syarat: seluruh periode ruangan sudah berakhir; bila ada Alat, seluruhnya sudah dikembalikan.
+     * Tidak ada syarat waktu (boleh kapan saja); bila ada Alat, seluruhnya harus sudah dikembalikan.
      */
-    public function selesaikan(int $idPeminjaman, string $email, ?CarbonInterface $sekarang = null): Peminjaman
+    public function selesaikan(int $idPeminjaman, string $email): Peminjaman
     {
-        $sekarang = $sekarang ? Carbon::instance($sekarang) : now();
         $akun = Akun::find($email) ?? $this->gagal(['status' => 'Akun tidak ditemukan.']);
 
-        return DB::transaction(function () use ($idPeminjaman, $akun, $sekarang) {
+        return DB::transaction(function () use ($idPeminjaman, $akun) {
             $p = Peminjaman::whereKey($idPeminjaman)->lockForUpdate()->firstOrFail();
             if ($p->status !== 'disetujui') {
                 $this->gagal(['status' => 'Hanya peminjaman berstatus disetujui yang dapat diselesaikan.']);
@@ -334,16 +335,23 @@ class PeminjamanService
             if (! $p->bisaDiselesaikanOleh($akun->email, $akun->role)) {
                 $this->gagal(['status' => 'Anda tidak berwenang menyelesaikan peminjaman ini.']);
             }
-            if ($p->ruangans()->where('tanggal_selesai', '>', $sekarang)->exists()) {
-                $this->gagal(['status' => 'Peminjaman baru dapat diselesaikan setelah kegiatan berakhir.']);
-            }
-            if ($this->alatBelumKembali($p)) {
-                $this->gagal(['status' => 'Masih ada alat yang belum dikembalikan. Catat pengembalian terlebih dahulu.']);
+            if ($pesan = $this->hambatanSelesai($p)) {
+                $this->gagal(['status' => $pesan]);
             }
             $p->update(['status' => 'selesai']);
 
             return $p->refresh();
         });
+    }
+
+    /** Alasan Selesai belum boleh ditekan (alat belum kembali); null bila boleh. Tanpa syarat waktu. Dipakai tombol & backend. */
+    public function hambatanSelesai(Peminjaman $p): ?string
+    {
+        if ($this->alatBelumKembali($p)) {
+            return 'Masih ada alat yang belum dikembalikan. Catat pengembalian terlebih dahulu.';
+        }
+
+        return null;
     }
 
     /** Evaluasi semua transaksi disetujui (dijadwalkan berkala). Mengembalikan jumlah transaksi yang menjadi selesai. */
@@ -366,6 +374,9 @@ class PeminjamanService
     public function kembalikan(int $idPeminjaman, string $emailPenerima, array $rows, ?string $keterangan = null): Pengembalian
     {
         $penerima = $this->pastikanPemroses($emailPenerima);
+        if ($penerima->role !== 'laboran') {
+            $this->gagal(['email_pemroses' => 'Pengembalian hanya dapat dicatat oleh Laboran.']);
+        }
 
         return DB::transaction(function () use ($idPeminjaman, $penerima, $rows, $keterangan) {
             $p = Peminjaman::whereKey($idPeminjaman)->lockForUpdate()->firstOrFail();
@@ -546,15 +557,27 @@ class PeminjamanService
         return null;
     }
 
-    /** Pesan bila $waktu di luar hari/jam operasional laboratorium; null bila masih dalam jam kerja. */
-    private function cekJamKerja(CarbonInterface $waktu): ?string
+    /**
+     * Aturan satu hari operasional: mulai dan selesai harus pada tanggal yang sama, pada hari operasional,
+     * dan di dalam jam buka–tutup (selesai tepat pada jam tutup masih boleh). null bila memenuhi.
+     *
+     * @return array{0:string,1:string}|null [nama field, pesan]
+     */
+    public function cekSatuHariOperasional(CarbonInterface $mulai, CarbonInterface $selesai): ?array
     {
         $aturan = $this->aturanJamKerja();
-        if (! in_array(self::HARI[(int) $waktu->format('w')], $aturan['hari'], true)) {
-            return 'Peminjaman hanya dapat dijadwalkan pada hari operasional laboratorium ('.implode(', ', $aturan['hari']).').';
+        $rentang = $aturan['jam_buka'].' – '.$aturan['jam_tutup'];
+        if (! $mulai->isSameDay($selesai)) {
+            return ['tanggal_rencana_kembali', "Peminjaman hanya berlaku dalam satu hari operasional: mulai dan selesai harus pada tanggal yang sama (jam operasional {$rentang})."];
         }
-        if ($waktu->format('H:i:s') < $aturan['jam_buka'].':00' || $waktu->format('H:i:s') >= $aturan['jam_tutup'].':00') {
-            return 'Waktu peminjaman harus berada dalam jam kerja laboratorium ('.$aturan['jam_buka'].' – '.$aturan['jam_tutup'].').';
+        if (! in_array(self::HARI[(int) $mulai->format('w')], $aturan['hari'], true)) {
+            return ['tanggal_peminjaman', 'Peminjaman hanya dapat dijadwalkan pada hari operasional laboratorium ('.implode(', ', $aturan['hari']).').'];
+        }
+        if ($mulai->format('H:i') < $aturan['jam_buka'] || $mulai->format('H:i') >= $aturan['jam_tutup']) {
+            return ['tanggal_peminjaman', "Waktu mulai harus berada dalam jam operasional laboratorium ({$rentang})."];
+        }
+        if ($selesai->format('H:i') > $aturan['jam_tutup']) {
+            return ['tanggal_rencana_kembali', "Waktu selesai tidak boleh melewati jam tutup laboratorium ({$rentang})."];
         }
 
         return null;
@@ -568,7 +591,22 @@ class PeminjamanService
         return [$bagian[0] ?? 0, $bagian[1] ?? 0, $bagian[2] ?? 0];
     }
 
-    /** Pemroses peminjaman: Dosen (persetujuan/pengembalian) atau Laboran/Admin. */
+    /** Kewenangan memutuskan menurut tahap alur persetujuan (Dosen tahap 1, Laboran tahap akhir). */
+    private function pastikanBerwenang(Peminjaman $p, Akun $akun): void
+    {
+        if ($p->bisaDiprosesOleh($akun->email, $akun->role)) {
+            return;
+        }
+        if ($akun->role === 'laboran' && $p->menungguDosen()) {
+            $this->gagal(['status' => 'Pengajuan ini menunggu persetujuan Dosen penanggung jawab terlebih dahulu.']);
+        }
+        if ($akun->role === 'dosen' && $p->diteruskanKeLaboran() && $p->email_dosen === $akun->email) {
+            $this->gagal(['status' => 'Pengajuan ini sudah Anda teruskan ke Laboran.']);
+        }
+        $this->gagal(['email_pemroses' => 'Anda tidak berwenang memproses pengajuan ini.']);
+    }
+
+    /** Pemroses peminjaman: Dosen (persetujuan, dibatasi bisaDiprosesOleh) atau Laboran/Admin. */
     private function pastikanPemroses(string $email): Akun
     {
         $akun = Akun::find($email);

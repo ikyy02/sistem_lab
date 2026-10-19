@@ -52,7 +52,7 @@
         </div>
         <div class="col-6 col-lg-3 d-flex gap-2">
             <button type="submit" class="btn btn-primary flex-grow-1">Terapkan</button>
-            <a href="{{ route('katalog') }}" class="btn btn-outline-silab" title="Reset"><i class="bi bi-arrow-counterclockwise"></i></a>
+            <a href="{{ route('katalog') }}" class="btn btn-outline-silab" title="Reset" aria-label="Reset filter"><i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i></a>
         </div>
     </div>
 </form>

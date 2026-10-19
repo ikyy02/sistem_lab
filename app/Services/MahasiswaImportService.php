@@ -12,6 +12,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
+use App\Support\ExcelFile;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use Throwable;
 
@@ -107,29 +108,20 @@ class MahasiswaImportService
     {
         $path = $file->getRealPath();
         $ext = strtolower($file->getClientOriginalExtension());
-        $isCsv = in_array($ext, ['csv', 'txt'], true);
 
         try {
-            if ($isCsv) {
-                $first = (string) strtok((string) file_get_contents($path, false, null, 0, 4096), "\n");
-                $delimiter = substr_count($first, ';') > substr_count($first, ',') ? ';' : ',';
-                $reader = new \PhpOffice\PhpSpreadsheet\Reader\Csv();
-                $reader->setDelimiter($delimiter)->setInputEncoding('UTF-8');
-            } else {
-                $reader = IOFactory::createReader(strtolower($ext) === 'xls' ? 'Xls' : 'Xlsx');
+            if (! in_array($ext, ExcelFile::EXTENSIONS, true)) {
+                throw new MahasiswaImportException(ExcelFile::NOT_EXCEL);
+            }
+            $reader = IOFactory::createReader(ucfirst($ext));
 
-                // Isi file harus benar-benar sesuai ekstensinya (bukan sekadar file yang di-rename).
-                if (! $reader->canRead($path)) {
-                    throw new MahasiswaImportException(
-                        'Isi file bukan format Excel yang valid. Gunakan file .xlsx, .xls, atau .csv, atau unduh template yang disediakan.'
-                    );
-                }
+            // Isi file harus benar-benar sesuai ekstensinya (bukan sekadar file yang di-rename).
+            if (! $reader->canRead($path)) {
+                throw new MahasiswaImportException(ExcelFile::NOT_EXCEL);
             }
 
             $reader->setReadDataOnly(true);   // abaikan style/gambar -> lebih hemat memori
-            if (! $isCsv) {
-                $reader->setReadEmptyCells(false); // sel kosong (mis. hanya berformat) tidak dibaca
-            }
+            $reader->setReadEmptyCells(false); // sel kosong (mis. hanya berformat) tidak dibaca
 
             $spreadsheet = $reader->load($path);
             $sheet = $spreadsheet->getSheetByName(self::SHEET_NAME) ?? $spreadsheet->getSheet(0);

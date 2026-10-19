@@ -46,8 +46,8 @@ class PeminjamanController extends Controller
             'me' => $me,
             'roleDosen' => $roleDosen,
             'aturanJamKerja' => $service->aturanJamKerja(),
-            // Batas waktu terendah untuk Dosen (hari & jam operasional pertama yang belum lewat).
-            'awalIzin' => $roleDosen ? $service->waktuPalingAwal() : null,
+            // Batas waktu terendah (hari & jam operasional pertama yang belum lewat).
+            'awalIzin' => $service->waktuPalingAwal(),
         ]);
     }
 
@@ -72,7 +72,8 @@ class PeminjamanController extends Controller
             'email_dosen' => $roleDosen ? ['nullable'] : ['required_if:jenis_peminjaman,atas_dosen', 'nullable', 'email', 'max:50',
                 Rule::exists('dosens', 'email')->where('status', 'aktif')],
             'tanggal_peminjaman' => ['required', 'date'],
-            'tanggal_rencana_kembali' => ['required', 'date', 'after_or_equal:tanggal_peminjaman'],
+            // Urutan waktu, satu hari, dan jam operasional dicek PeminjamanService (satu aturan untuk semua jalur) agar semua pesan muncul sekaligus.
+            'tanggal_rencana_kembali' => ['required', 'date'],
             'keterangan' => [$roleDosen ? 'nullable' : 'required', 'string', 'max:500'],
             // Ruangan, alat, dan bahan dapat dipilih sendiri-sendiri; minimal salah satu harus ada.
             'detail' => ['required_without:ruangan', 'nullable', 'array'],
@@ -85,7 +86,6 @@ class PeminjamanController extends Controller
             'required_if' => ':attribute wajib dipilih untuk peminjaman dengan penanggung jawab dosen.',
             'required_without' => self::PESAN_MINIMAL_ITEM,
             'date' => ':attribute tidak valid.',
-            'after_or_equal' => 'Tanggal pengembalian tidak boleh sebelum tanggal peminjaman.',
             'distinct' => 'Satu katalog/ruangan hanya boleh dipilih sekali.',
             'exists' => 'Data :attribute tidak ditemukan.',
             'detail.*.jumlah.min' => 'Jumlah peminjaman minimal 1.',
@@ -215,17 +215,14 @@ class PeminjamanController extends Controller
     }
 
     /** Detail satu transaksi: pemilik, pemroses, Dosen, dan Laboran/Admin. */
-    public function show(int $id)
+    public function show(int $id, PeminjamanService $service)
     {
         $p = Peminjaman::with(array_merge(Peminjaman::withProfil(), [
             'pengembalians.details.detailPeminjaman.katalog', 'pemroses',
         ]))->findOrFail($id);
 
         $me = AuthService::user();
-        $boleh = $p->email_peminjam === $me['email']
-            || $p->email_pemroses === $me['email']
-            || in_array($me['role'], [Role::DOSEN, Role::LABORAN], true);
-        abort_unless($boleh, 403);
+        abort_unless($p->bisaDilihatOleh($me['email'], $me['role']), 403);
 
         // Jumlah yang sudah dikembalikan per detail peminjaman.
         $sudah = DB::table('pengembalian_details as pd')
@@ -235,9 +232,7 @@ class PeminjamanController extends Controller
             ->selectRaw('pd.id_detail_peminjaman as id_detail, SUM(pd.jumlah_dikembalikan) as total')
             ->pluck('total', 'id_detail');
 
-        $dapatMemproses = $p->status === 'menunggu'
-            && in_array($me['role'], [Role::DOSEN, Role::LABORAN], true)
-            && $p->email_peminjam !== $me['email'];
+        $dapatMemproses = $p->status === 'menunggu' && $p->bisaDiprosesOleh($me['email'], $me['role']);
 
         return view('peminjaman.show', [
             'p' => $p,
@@ -246,7 +241,8 @@ class PeminjamanController extends Controller
             // Pengembalian hanya dicatat Laboran.
             'dapatKembalikan' => $p->status === 'disetujui' && $p->melibatkanBarang() && $me['role'] === Role::LABORAN,
             'dapatBatalkan' => $p->bisaDibatalkanOleh($me['email']),
-            'dapatSelesai' => $p->bisaDiselesaikanOleh($me['email'], $me['role']),
+            'dapatSelesai' => $dapatSelesai = $p->bisaDiselesaikanOleh($me['email'], $me['role']),
+            'hambatanSelesai' => $dapatSelesai ? $service->hambatanSelesai($p) : null,
         ]);
     }
 

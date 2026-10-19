@@ -23,13 +23,24 @@ class PeminjamanHttpTest extends TestCase
         ]]);
     }
 
+    /** Hari kerja berikutnya (setelah hari ini) pada jam tertentu: aman terhadap aturan satu hari operasional (Senin–Jumat 08–16). */
+    private function hariKerja(int $jam): string
+    {
+        $t = now()->addDay()->startOfDay();
+        while ($t->isWeekend()) {
+            $t->addDay();
+        }
+
+        return $t->setTime($jam, 0)->format('Y-m-d H:i:s');
+    }
+
     /** Input form pengajuan (dipakai controller maupun service). */
     private function dataPinjam(AlatBahan $k, int $jumlah, array $o = []): array
     {
         return $o + [
             'jenis_peminjaman' => 'pribadi',
-            'tanggal_peminjaman' => now()->addDay()->format('Y-m-d H:i:s'),
-            'tanggal_rencana_kembali' => now()->addDays(2)->format('Y-m-d H:i:s'),
+            'tanggal_peminjaman' => $this->hariKerja(9),
+            'tanggal_rencana_kembali' => $this->hariKerja(11),
             'keterangan' => 'Praktikum jaringan',
             'detail' => [['id_katalog' => $k->id_katalog, 'jumlah' => $jumlah]],
         ];
@@ -39,8 +50,8 @@ class PeminjamanHttpTest extends TestCase
     {
         return app(PeminjamanService::class)->ajukan($email, $o + [
             'jenis_peminjaman' => 'pribadi',
-            'tanggal_peminjaman' => now()->addDay()->format('Y-m-d H:i:s'),
-            'tanggal_rencana_kembali' => now()->addDays(2)->format('Y-m-d H:i:s'),
+            'tanggal_peminjaman' => $this->hariKerja(9),
+            'tanggal_rencana_kembali' => $this->hariKerja(11),
             'keterangan' => 'Praktikum jaringan',
             'detail' => $items,
             'ruangan' => [],
@@ -127,8 +138,8 @@ class PeminjamanHttpTest extends TestCase
         $this->get(route('peminjaman.riwayat'))->assertOk()->assertDontSee(route('peminjaman.show', $p->id_peminjaman), false);
         $this->get(route('peminjaman.show', $p->id_peminjaman))->assertForbidden();
 
-        // dosen & laboran boleh membuka detail
-        $this->sebagai('dosen', $this->dosen())->get(route('peminjaman.show', $p->id_peminjaman))->assertOk();
+        // Peminjaman Mandiri: Dosen tidak boleh membuka detail; Laboran boleh
+        $this->sebagai('dosen', $this->dosen())->get(route('peminjaman.show', $p->id_peminjaman))->assertForbidden();
         $this->sebagai('laboran', $this->laboran())->get(route('peminjaman.show', $p->id_peminjaman))->assertOk();
     }
 
@@ -180,7 +191,7 @@ class PeminjamanHttpTest extends TestCase
         $m = $this->mahasiswa();
         $r = $this->ruangan();
         $k = $this->katalog('alat', 5);
-        $waktu = ['tanggal_peminjaman' => now()->addDay()->format('Y-m-d H:i:s'), 'tanggal_rencana_kembali' => now()->addDay()->addHours(2)->format('Y-m-d H:i:s')];
+        $waktu = ['tanggal_peminjaman' => $this->hariKerja(9), 'tanggal_rencana_kembali' => $this->hariKerja(11)];
 
         $this->sebagai('mahasiswa', $m);
         $this->post(route('peminjaman.store'), $waktu + ['jenis_peminjaman' => 'pribadi', 'keterangan' => 'Rapat', 'ruangan' => [['id_ruangan' => $r->id_ruangan]]])
@@ -223,9 +234,9 @@ class PeminjamanHttpTest extends TestCase
         Carbon::setTestNow('2030-01-07 09:00:00'); // Senin
         $k = $this->katalog('alat', 10);
         $p = $this->ajukan([['id_katalog' => $k->id_katalog, 'jumlah' => 4]], $this->mahasiswa()->email);
-        $dosen = $this->dosen();
+        $dosen = $this->laboran(); // Peminjaman Mandiri diproses Laboran
 
-        $this->sebagai('dosen', $dosen)->get(route('pengajuan.index'))->assertOk();
+        $this->sebagai('laboran', $dosen)->get(route('pengajuan.index'))->assertOk();
         $this->post(route('pengajuan.setujui', $p->id_peminjaman))->assertSessionHas('success');
         $this->assertSame(['disetujui', $dosen->email], [$p->fresh()->status, $p->fresh()->email_pemroses]);
         $this->assertNotNull($p->fresh()->tanggal_persetujuan);
@@ -243,11 +254,11 @@ class PeminjamanHttpTest extends TestCase
         // pengaju tidak dapat memproses pengajuannya sendiri
         $dosenSendiri = $this->dosen();
         $own = $this->ajukan([['id_katalog' => $k->id_katalog, 'jumlah' => 1]], $dosenSendiri->email, [
-            'tanggal_peminjaman' => now()->addDay()->format('Y-m-d H:i:s'),
-            'tanggal_rencana_kembali' => now()->addDay()->addHours(2)->format('Y-m-d H:i:s'),
+            'tanggal_peminjaman' => $this->hariKerja(9),
+            'tanggal_rencana_kembali' => $this->hariKerja(11),
         ]);
         $this->sebagai('dosen', $dosenSendiri);
-        $this->post(route('pengajuan.setujui', $own->id_peminjaman))->assertSessionHasErrors('email_pemroses');
+        $this->post(route('pengajuan.setujui', $own->id_peminjaman))->assertForbidden();
         $this->assertSame('menunggu', $own->fresh()->status);
         Carbon::setTestNow();
     }

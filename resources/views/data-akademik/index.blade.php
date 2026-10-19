@@ -162,9 +162,9 @@
                         <td>{{ $item->no_whatsapp ?? '—' }}</td>
                         <td>
                             @if(($item->status ?? 'aktif') === 'nonaktif')
-                                <span class="badge-status badge-status-bad" style="font-size:.68rem;">Nonaktif</span>
+                                <span class="badge-status badge-status-bad" style="font-size:.75rem;">Nonaktif</span>
                             @else
-                                <span class="badge-status badge-tab" style="font-size:.68rem;">Aktif</span>
+                                <span class="badge-status badge-tab" style="font-size:.75rem;">Aktif</span>
                             @endif
                         </td>
                     @endif
@@ -175,7 +175,7 @@
                                     data-item="{{ json_encode($itemData) }}"
                                     onclick="openAkademikModal('edit', this)"><i class="bi bi-pencil"></i> Edit</button>
                             <form action="{{ route('data-akademik.destroy', ['tab' => $tab, 'id' => $itemKey] + $listQuery) }}" method="POST"
-                                  onsubmit="return confirm('Hapus {{ strtolower($label) }} &quot;{{ e($itemName) }}&quot;?')">
+                                  data-konfirmasi="Hapus {{ strtolower($label) }} &quot;{{ $itemName }}&quot;?">
                                 @csrf @method('DELETE')
                                 <button type="submit" class="btn btn-del d-flex align-items-center gap-1"><i class="bi bi-trash"></i> Hapus</button>
                             </form>
