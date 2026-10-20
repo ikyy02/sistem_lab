@@ -48,7 +48,7 @@ class KelolaHttpTest extends TestCase
     {
         $this->sebagai('mahasiswa', $this->mahasiswa())->get(route('kelola-user.index'))->assertForbidden();
         $this->sebagai('staff_prodi', $this->staff())->get(route('kelola-katalog.index'))->assertForbidden();
-        $this->sebagai('dosen', $this->dosen())->get(route('master-data.index'))->assertForbidden();
+        $this->sebagai('dosen', $this->dosen())->get(route('pengaturan-lab.index'))->assertForbidden();
         $this->sebagai('dosen', $this->dosen())->get(route('katalog'))->assertOk();
         $this->admin()->get(route('kelola-katalog.index'))->assertOk()->assertSee('Kelola Katalog')->assertDontSee('Inventaris');
     }
@@ -230,32 +230,69 @@ class KelolaHttpTest extends TestCase
 
     // ------------------------------------------------------------------ master
 
-    public function test_master_satuan_dan_kelas(): void
+    public function test_pengaturan_laboratorium_satuan_dan_tab_operasional(): void
     {
         $admin = $this->admin();
-        $prodi = $this->prodi();
-        $admin->post(route('master-data.store', 'satuan'), ['nama' => 'liter'])->assertSessionHasNoErrors();
-        $admin->post(route('master-data.store', 'satuan'), ['nama' => 'liter'])->assertSessionHasErrors('nama');
-        $admin->post(route('master-data.store', 'kelas'), ['nama' => '1A', 'grup' => $prodi->id_prodi])->assertSessionHasNoErrors();
-        $admin->post(route('master-data.store', 'kelas'), ['nama' => '1A', 'grup' => $prodi->id_prodi])->assertSessionHasErrors('nama');
-        $admin->post(route('master-data.store', 'kelas'), ['nama' => '1A', 'grup' => $this->prodi('Lain')->id_prodi])->assertSessionHasNoErrors(); // prodi lain boleh
-        $admin->post(route('master-data.store', 'kelas'), ['nama' => '2A'])->assertSessionHasErrors('grup');
-        $this->assertSame(2, Kelas::where('nama_kelas', '1A')->whereIn('id_prodi', [$prodi->id_prodi, $this->prodi('Lain')->id_prodi])->count());
-        foreach (['satuan', 'kelas'] as $tab) {
-            $admin->get(route('master-data.index', ['kategori' => $tab]))->assertOk();
+        $admin->post(route('pengaturan-lab.satuan.store'), ['nama' => 'liter'])->assertSessionHasNoErrors();
+        $admin->post(route('pengaturan-lab.satuan.store'), ['nama' => 'liter'])->assertSessionHasErrors('nama');
+        foreach (['satuan', 'operasional', 'kelas'] as $tab) { // tab tak dikenal (mis. kelas) jatuh ke Satuan
+            $admin->get(route('pengaturan-lab.index', ['tab' => $tab]))->assertOk()->assertDontSee('Kelas');
         }
+        $admin->put(route('pengaturan-lab.operasional.update'), ['jam_buka' => '09:00', 'jam_tutup' => '15:00', 'hari' => ['senin', 'selasa']])->assertSessionHasNoErrors();
+        $this->assertSame('09:00:00', \App\Models\PengaturanOperasional::ambil()->jam_buka);
+        $admin->put(route('pengaturan-lab.operasional.update'), ['jam_buka' => '15:00', 'jam_tutup' => '09:00', 'hari' => ['senin']])->assertSessionHasErrors('jam_tutup');
+    }
+
+    public function test_kelas_hanya_dikelola_di_data_akademik_dan_url_lama_hilang(): void
+    {
+        $prodi = $this->prodi();
+        $admin = $this->admin();
+        $admin->post(route('data-akademik.store', 'kelas'), ['nama_kelas' => '1A', 'id_prodi' => $prodi->id_prodi])->assertSessionHasNoErrors();
+        $this->assertSame(1, Kelas::where('nama_kelas', '1A')->count());
+        $admin->get('/master-data')->assertNotFound();
+        $admin->get('/pengaturan-operasional')->assertNotFound();
+        $admin->post('/pengaturan-lab/kelas', ['nama' => '2A'])->assertNotFound();
+    }
+
+    public function test_tab_dosen_data_akademik_tidak_untuk_laboran_tetapi_untuk_staf(): void
+    {
+        $dosen = $this->dosen();
+        $admin = $this->admin();
+        $admin->get(route('data-akademik.index'))->assertOk()->assertDontSee('tab=dosen', false);
+        $admin->get(route('data-akademik.index', ['tab' => 'dosen']))->assertOk()->assertDontSee($dosen->nama);
+        $admin->post(route('data-akademik.store', 'dosen'), [])->assertForbidden();
+        $admin->put(route('data-akademik.update', ['tab' => 'dosen', 'id' => $dosen->getKey()]), [])->assertForbidden();
+        $admin->delete(route('data-akademik.destroy', ['tab' => 'dosen', 'id' => $dosen->getKey()]))->assertForbidden();
+        $this->assertDatabaseHas('dosens', ['nuptk_nidn' => $dosen->nuptk_nidn]);
+
+        $staf = $this->sebagai('staff_prodi', $this->staff());
+        $staf->get(route('data-akademik.index'))->assertOk()->assertSee('tab=dosen', false);
+        $staf->get(route('data-akademik.index', ['tab' => 'dosen']))->assertOk()->assertSee($dosen->nama);
+    }
+
+    public function test_laboran_mengelola_status_dosen_lewat_kelola_data_user(): void
+    {
+        $dosen = $this->dosen();
+        $admin = $this->admin();
+        $admin->put(route('kelola-user.update', ['kategori' => 'dosen', 'key' => $dosen->getKey()]), [
+            'nuptk_nidn' => $dosen->nuptk_nidn, 'nama' => $dosen->nama, 'id_prodi' => $dosen->id_prodi, 'email' => $dosen->email, 'no_whatsapp' => '', 'status' => 'nonaktif',
+        ])->assertSessionHasNoErrors();
+        $this->assertSame('nonaktif', $dosen->fresh()->status);
+        $admin->put(route('kelola-user.update', ['kategori' => 'dosen', 'key' => $dosen->getKey()]), [
+            'nuptk_nidn' => $dosen->nuptk_nidn, 'nama' => $dosen->nama, 'id_prodi' => $dosen->id_prodi, 'email' => $dosen->email, 'status' => 'lain',
+        ])->assertSessionHasErrors('status');
     }
 
     public function test_master_yang_dipakai_tidak_dapat_dihapus(): void
     {
         $k = $this->katalog();
         $admin = $this->admin();
-        $admin->delete(route('master-data.destroy', ['kategori' => 'satuan', 'id' => $k->id_satuan]))->assertSessionHas('error');
+        $admin->delete(route('pengaturan-lab.satuan.destroy', ['id' => $k->id_satuan]))->assertSessionHas('error');
         $this->assertNotNull(Satuan::find($k->id_satuan));
 
         $kelas = $this->kelas();
         $this->jadwal($this->ruangan(), 'senin', '08:00:00', '09:00:00', ['id_kelas' => $kelas->id_kelas]);
-        $admin->delete(route('master-data.destroy', ['kategori' => 'kelas', 'id' => $kelas->id_kelas]))->assertSessionHas('error');
+        $admin->delete(route('data-akademik.destroy', ['tab' => 'kelas', 'id' => $kelas->id_kelas]))->assertSessionHas('error');
         $this->assertNotNull(Kelas::find($kelas->id_kelas));
     }
 }

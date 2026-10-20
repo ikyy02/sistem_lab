@@ -12,16 +12,6 @@
     $sortLabel = $jenis === 'ruangan' ? ['nama' => 'Nama'] : ['nama' => 'Nama', 'stok' => 'Stok', 'harga' => 'Harga'];
 @endphp
 
-<div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
-    <div>
-        <h2 class="font-display fw-semibold mb-1" style="font-size:1.5rem;">Katalog</h2>
-        <p class="mb-0" style="font-size:.83rem;color:var(--text-muted);">Daftar alat, bahan, dan ruangan yang tersedia.</p>
-    </div>
-    @if($isAdmin)
-        <a href="{{ route('kelola-katalog.index') }}" class="btn btn-primary d-flex align-items-center gap-2"><i class="bi bi-box-seam"></i> Kelola Katalog</a>
-    @endif
-</div>
-
 <form method="GET" action="{{ route('katalog') }}" class="card-modern p-3 mb-3">
     <div class="row g-2 align-items-end">
         <div class="col-12 col-lg-4">
@@ -70,7 +60,7 @@
                 <div class="card-modern h-100 overflow-hidden d-flex flex-column">
                     <div style="height:150px;background:var(--body-bg);display:flex;align-items:center;justify-content:center;border-bottom:1px solid var(--border-color);">
                         @if(! $room && $item->gambar_url)
-                            <img src="{{ $item->gambar_url }}" alt="{{ $nama }}" style="width:100%;height:100%;object-fit:cover;cursor:zoom-in;" loading="lazy" onclick="previewImage(this.src, this.alt)">
+                            <img src="{{ $item->gambar_url }}" alt="{{ $nama }}" style="width:100%;height:100%;object-fit:cover;cursor:zoom-in;" loading="lazy" tabindex="0" role="button" aria-label="Perbesar gambar {{ $nama }}" onclick="previewImage(this.src, this.alt)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
                         @else
                             <i class="bi {{ $room ? $jenisIcon['ruangan'] : ($jenisIcon[$item->jenis] ?? 'bi-box') }}" style="font-size:2.2rem;color:var(--muted-blue);"></i>
                         @endif
@@ -78,7 +68,7 @@
                     <div class="p-3 d-flex flex-column flex-grow-1">
                         <div class="d-flex align-items-start justify-content-between gap-2 mb-1">
                             <span class="fw-semibold" style="font-size:.95rem;">{{ $nama }}</span>
-                            <span class="badge badge-tab text-nowrap" style="font-weight:600;padding:4px 10px;font-size:.7rem;">{{ $room ? 'Ruangan' : ($jenisLabel[$item->jenis] ?? $item->jenis) }}</span>
+                            <span class="badge badge-tab text-nowrap" style="font-weight:600;padding:4px 10px;font-size:.75rem;">{{ $room ? 'Ruangan' : ($jenisLabel[$item->jenis] ?? $item->jenis) }}</span>
                         </div>
                         @unless($room)
                         <div class="mb-1" style="font-size:.82rem;color:var(--text-muted);">{{ $item->stok }} {{ $item->nama_satuan }} · Rp{{ number_format((float) $item->harga, 2, ',', '.') }} / {{ $item->nama_satuan }}</div>

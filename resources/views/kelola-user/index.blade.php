@@ -16,14 +16,7 @@
     $fieldNames = array_column($fields, 'name');
 @endphp
 
-<div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
-    <div>
-        <h2 class="font-display fw-semibold mb-1" style="font-size:1.5rem;">Kelola Data User</h2>
-        <p class="mb-0" style="font-size:.83rem;color:var(--text-muted);">Data setiap kategori dikelola secara terpisah.</p>
-    </div>
-</div>
-
-<x-tab-actions :tabs="$labels" :active="$kategori" route="kelola-user.index"
+<x-tab-actions :tabs="$labels" :active="$kategori" route="kelola-user.index" :import="true"
     :add-label="'Tambah ' . $label" add-onclick="openUserModal('create')" />
 
 @include('kelola-user._import_report')
@@ -84,7 +77,7 @@
                                 <a class="sort-link {{ $sort === $col ? 'active' : '' }}"
                                    href="{{ route('kelola-user.index', array_merge(request()->query(), ['kategori' => $kategori, 'sort' => $col, 'direction' => $next, 'page' => null])) }}">
                                     {{ $text }}
-                                    <i class="bi {{ $sort === $col ? ($direction === 'asc' ? 'bi-sort-up' : 'bi-sort-down') : 'bi-arrow-down-up' }}" style="font-size:.7rem;"></i>
+                                    <i class="bi {{ $sort === $col ? ($direction === 'asc' ? 'bi-sort-up' : 'bi-sort-down') : 'bi-arrow-down-up' }}" style="font-size:.75rem;"></i>
                                 </a>
                             @else
                                 {{ $text }}

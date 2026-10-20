@@ -112,15 +112,13 @@ class KelolaKatalogController extends Controller
             return $this->fail($v, $kategori, 'create', null);
         }
         $data = $v->validated();
-        if ($kategori === 'ruangan') {
-            unset($data['gambar']);
-            $data['gambar'] = $request->hasFile('gambar') ? $this->saveImage($request->file('gambar'), Ruangan::GAMBAR_DIR) : null;
+        $room = $kategori === 'ruangan';
+        $dir = $room ? Ruangan::GAMBAR_DIR : AlatBahan::GAMBAR_DIR;
+        $data['gambar'] = $request->hasFile('gambar') ? $this->saveImage($request->file('gambar'), $dir) : null; // alat/bahan: gambar wajib (validator)
+        if ($room) {
             Ruangan::create($data);
         } else {
-            unset($data['gambar']);
-            $data['jenis'] = $kategori;
-            $data['gambar'] = $this->saveImage($request->file('gambar'));
-            AlatBahan::create($data);
+            AlatBahan::create($data + ['jenis' => $kategori]);
         }
 
         return redirect()->route('kelola-katalog.index', ['kategori' => $kategori])
@@ -135,21 +133,13 @@ class KelolaKatalogController extends Controller
             return $this->fail($v, $kategori, 'edit', $id);
         }
         $data = $v->validated();
-        if ($kategori === 'ruangan') {
-            unset($data['gambar']);
-            if ($request->hasFile('gambar')) {
-                $this->deleteImage($item->gambar, Ruangan::GAMBAR_DIR);
-                $data['gambar'] = $this->saveImage($request->file('gambar'), Ruangan::GAMBAR_DIR);
-            }
-            $item->update($data);
-        } else {
-            unset($data['gambar']);
-            if ($request->hasFile('gambar')) {
-                $this->deleteImage($item->gambar);
-                $data['gambar'] = $this->saveImage($request->file('gambar'));
-            }
-            $item->update($data);
+        $dir = $kategori === 'ruangan' ? Ruangan::GAMBAR_DIR : AlatBahan::GAMBAR_DIR;
+        unset($data['gambar']);
+        if ($request->hasFile('gambar')) {
+            $this->deleteImage($item->gambar, $dir);
+            $data['gambar'] = $this->saveImage($request->file('gambar'), $dir);
         }
+        $item->update($data);
 
         return redirect()->route('kelola-katalog.index', $request->only(['search', 'sort', 'direction', 'per_page', 'page']) + ['kategori' => $kategori])
             ->with('success', self::KATEGORI[$kategori] . ' berhasil diperbarui.');
@@ -289,7 +279,7 @@ class KelolaKatalogController extends Controller
 
     private function saveImage($file, string $dir = AlatBahan::GAMBAR_DIR): string
     {
-        $name = Str::uuid() . '.' . strtolower($file->getClientOriginalExtension() ?: 'jpg');
+        $name = Str::uuid() . '.' . ($file->guessExtension() ?: 'jpg');
         $file->move(public_path($dir), $name);
 
         return $name;

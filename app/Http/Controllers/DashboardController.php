@@ -33,14 +33,14 @@ class DashboardController extends Controller
             return view('dashboard.mahasiswa', array_merge(['me' => $me, 'isAdmin' => false], $mahasiswa->untuk($me)));
         }
 
-        $dasar = fn () => Peminjaman::where('email_peminjam', $me['email']);
-        $terbaru = $dasar()->with(Peminjaman::withProfil())
-            ->orderByDesc('tanggal_pengajuan')->limit(5)->get();
-
         // Staf Prodi punya dashboard akademik tersendiri (jumlah data + jadwal terdekat).
         if ($me['role'] === Role::STAFF) {
             return app(DashboardControllerStaff::class)->index();
         }
+
+        $dasar = fn () => Peminjaman::where('email_peminjam', $me['email']);
+        $terbaru = $dasar()->with(Peminjaman::withProfil())
+            ->orderByDesc('tanggal_pengajuan')->limit(5)->get();
 
         return view('dashboard.index', [
             'me' => $me,

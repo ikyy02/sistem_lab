@@ -7,6 +7,7 @@
     <meta name="application-name" content="SIARKA">
     <meta name="description" content="SIARKA — Sistem Informasi Administrasi, Reservasi, Katalog, dan Aktivitas Laboratorium">
     <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
@@ -23,10 +24,11 @@
     $initial = mb_strtoupper(mb_substr($me['nama'] ?? 'U', 0, 1));
 @endphp
 
-<div id="sidebar-overlay" onclick="closeSidebar()"></div>
+<a href="#page-content" class="skip-link">Lewati ke konten utama</a>
+<div id="sidebar-overlay" onclick="closeSidebar()" aria-hidden="true"></div>
 
 <!-- ========== SIDEBAR ========== -->
-<nav id="sidebar">
+<nav id="sidebar" aria-label="Menu utama">
     <a href="{{ url('/') }}" class="sidebar-brand">
         <div class="sidebar-brand-text">
             <div class="brand-name">SIARKA</div>
@@ -34,99 +36,48 @@
         </div>
     </a>
 
+    @php
+        $R = \App\Support\Role::class;
+        // Satu sumber menu per role. r = nama route, is = pola URL.
+        $beranda = ['route' => 'dashboard', 'label' => 'Beranda', 'icon' => 'bi-speedometer2', 'r' => ['dashboard']];
+        $katalog = ['route' => 'katalog', 'label' => 'Katalog', 'icon' => 'bi-collection', 'r' => ['katalog']];
+        $ajukan = ['route' => 'peminjaman.index', 'label' => 'Peminjaman', 'icon' => 'bi-arrow-up-right-square', 'r' => ['peminjaman.index', 'peminjaman.show']];
+        $riwayat = ['route' => 'peminjaman.riwayat', 'label' => 'Riwayat Peminjaman', 'icon' => 'bi-clock-history', 'r' => ['peminjaman.riwayat']];
+        $pengajuan = ['route' => 'pengajuan.index', 'label' => 'Pengajuan Peminjaman', 'icon' => 'bi-clipboard2-check', 'r' => ['pengajuan.*']];
+        $pengembalian = ['route' => 'pengembalian.index', 'label' => 'Pengembalian', 'icon' => 'bi-arrow-down-left-square', 'r' => ['pengembalian.*']];
+        $kelolaKatalog = ['route' => 'kelola-katalog.index', 'label' => 'Kelola Katalog', 'icon' => 'bi-boxes', 'is' => ['kelola-katalog*']];
+        $dataAkademik = ['route' => 'data-akademik.index', 'label' => 'Data Akademik', 'icon' => 'bi-mortarboard', 'r' => ['data-akademik.index']];
+        $jadwal = ['route' => 'jadwal.index', 'label' => 'Jadwal Perkuliahan', 'icon' => 'bi-calendar-week', 'r' => ['jadwal.*']];
+        // Satu daftar datar per role, urut menurut alur kerja (tanpa kelompok).
+        $menus = [
+            $R::LABORAN => [
+                $beranda, $pengajuan, $pengembalian, $katalog, $kelolaKatalog, $dataAkademik, $jadwal,
+                ['route' => 'kelola-user.index', 'label' => 'Kelola Data User', 'icon' => 'bi-people', 'is' => ['kelola-user*']],
+                ['route' => 'pengaturan-lab.index', 'label' => 'Pengaturan Laboratorium', 'icon' => 'bi-sliders', 'is' => ['pengaturan-lab*']],
+            ],
+            $R::DOSEN => [$beranda, $katalog, $ajukan, $riwayat, $pengajuan],
+            $R::MAHASISWA => [$beranda, $katalog, $ajukan, $riwayat],
+            $R::STAFF => [$beranda, $katalog, $dataAkademik, $jadwal],
+        ][$role] ?? [$beranda];
+    @endphp
     <div class="sidebar-nav">
-        <div class="sidebar-section-label">Menu Utama</div>
         <ul class="nav flex-column">
+            @foreach($menus as $m)
+            @php $aktif = request()->routeIs(...($m['r'] ?? [])) || request()->is(...($m['is'] ?? ['-'])); @endphp
             <li class="nav-item">
-                <a href="{{ route('dashboard') }}" class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">
-                    <i class="bi bi-speedometer2"></i><span>Beranda</span>
+                <a href="{{ route($m['route']) }}" class="nav-link {{ $aktif ? 'active' : '' }}" {{ $aktif ? 'aria-current="page"' : '' }}>
+                    <i class="bi {{ $m['icon'] }}" aria-hidden="true"></i><span>{{ $m['label'] }}</span>
                 </a>
             </li>
-            <li class="nav-item">
-                <a href="{{ route('katalog') }}" class="nav-link {{ request()->routeIs('katalog') ? 'active' : '' }}">
-                    <i class="bi bi-collection"></i><span>Katalog</span>
-                </a>
-            </li>
-            @if($isStaff)
-            <li class="nav-item">
-                <a href="{{ route('data-akademik.index') }}" class="nav-link {{ request()->routeIs('data-akademik.index') ? 'active' : '' }}">
-                    <i class="bi bi-mortarboard"></i><span>Data Akademik</span>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a href="{{ route('jadwal.index') }}" class="nav-link {{ request()->routeIs('jadwal.*') ? 'active' : '' }}">
-                    <i class="bi bi-calendar-week"></i><span>Jadwal Perkuliahan</span>
-                </a>
-            </li>
-            @endif
-            @if($isAdmin)
-            <li class="nav-item">
-                <a href="{{ route('kelola-katalog.index') }}" class="nav-link {{ request()->is('kelola-katalog*') ? 'active' : '' }}">
-                    <i class="bi bi-boxes"></i><span>Kelola Katalog</span>
-                </a>
-            </li>
-            @endif
+            @endforeach
         </ul>
-
-        @unless($isStaff)
-        <div class="sidebar-section-label">Transaksi</div>
-        <ul class="nav flex-column">
-            @if($role === \App\Support\Role::MAHASISWA || $role === \App\Support\Role::DOSEN)
-            <li class="nav-item">
-                <a href="{{ route('peminjaman.index') }}" class="nav-link {{ request()->routeIs('peminjaman.index', 'peminjaman.show') ? 'active' : '' }}">
-                    <i class="bi bi-arrow-up-right-square"></i><span>Peminjaman</span>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a href="{{ route('peminjaman.riwayat') }}" class="nav-link {{ request()->routeIs('peminjaman.riwayat') ? 'active' : '' }}">
-                    <i class="bi bi-clock-history"></i><span>Riwayat Peminjaman</span>
-                </a>
-            </li>
-            @endif
-            @if($role === \App\Support\Role::DOSEN || $isAdmin)
-            <li class="nav-item">
-                <a href="{{ route('pengajuan.index') }}" class="nav-link {{ request()->routeIs('pengajuan.*') ? 'active' : '' }}">
-                    <i class="bi bi-clipboard2-check"></i><span>Pengajuan Peminjaman</span>
-                </a>
-            </li>
-            @endif
-            @if($isAdmin)
-            <li class="nav-item">
-                <a href="{{ route('pengembalian.index') }}" class="nav-link {{ request()->routeIs('pengembalian.*') ? 'active' : '' }}">
-                    <i class="bi bi-arrow-down-left-square"></i><span>Pengembalian</span>
-                </a>
-            </li>
-            @endif
-        </ul>
-        @endunless
-
-        @if($isAdmin)
-        <div class="sidebar-section-label">Administrasi</div>
-        <ul class="nav flex-column">
-            <li class="nav-item">
-                <a href="{{ route('kelola-user.index') }}" class="nav-link {{ request()->is('kelola-user*') ? 'active' : '' }}">
-                    <i class="bi bi-people"></i><span>Kelola Data User</span>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a href="{{ route('master-data.index') }}" class="nav-link {{ request()->is('master-data*') ? 'active' : '' }}">
-                    <i class="bi bi-diagram-3"></i><span>Kelola Data Master</span>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a href="{{ route('pengaturan-operasional.index') }}" class="nav-link {{ request()->is('pengaturan-operasional*') ? 'active' : '' }}">
-                    <i class="bi bi-clock-history"></i><span>Pengaturan Operasional</span>
-                </a>
-            </li>
-        </ul>
-        @endif
     </div>
 </nav>
 
 <!-- ========== MAIN ========== -->
 <div id="main-wrapper">
     <header id="topbar">
-        <button class="topbar-toggle" onclick="toggleSidebar()" aria-label="Toggle sidebar"><i class="bi bi-list"></i></button>
+        <button type="button" class="topbar-toggle" onclick="toggleSidebar()" aria-label="Buka menu" aria-controls="sidebar" aria-expanded="false"><i class="bi bi-list"></i></button>
 
         <div class="topbar-title">
             <h1 class="font-display">@yield('page-title', 'SIARKA')</h1>
@@ -134,11 +85,11 @@
         </div>
 
         <div class="topbar-right dropdown">
-            <button class="topbar-user dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+            <button type="button" class="topbar-user dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Menu akun {{ $me['nama'] ?? '' }}">
                 <span class="topbar-avatar">{{ $initial }}</span>
                 <span class="d-none d-sm-block text-start lh-sm">
                     <span class="d-block fw-semibold" style="font-size:.82rem">{{ $me['nama'] ?? '' }}</span>
-                    <span class="d-block" style="font-size:.7rem;color:var(--text-muted)">{{ $roleLabel }}</span>
+                    <span class="d-block" style="font-size:.75rem;color:var(--text-muted)">{{ $roleLabel }}</span>
                 </span>
             </button>
             <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
@@ -154,7 +105,7 @@
         </div>
     </header>
 
-    <main id="page-content">
+    <main id="page-content" tabindex="-1">
         @yield('content')
     </main>
 </div>
@@ -162,14 +113,25 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 @include('layouts._notifikasi')
 <script>
-    function toggleSidebar() {
-        document.getElementById('sidebar').classList.toggle('show');
-        document.getElementById('sidebar-overlay').classList.toggle('show');
+    function setSidebar(buka) {
+        document.getElementById('sidebar').classList.toggle('show', buka);
+        document.getElementById('sidebar-overlay').classList.toggle('show', buka);
+        const t = document.querySelector('.topbar-toggle');
+        if (t) { t.setAttribute('aria-expanded', buka ? 'true' : 'false'); t.setAttribute('aria-label', buka ? 'Tutup menu' : 'Buka menu'); if (!buka) t.focus({ preventScroll: true }); }
     }
-    function closeSidebar() {
-        document.getElementById('sidebar').classList.remove('show');
-        document.getElementById('sidebar-overlay').classList.remove('show');
-    }
+    function toggleSidebar() { setSidebar(!document.getElementById('sidebar').classList.contains('show')); }
+    function closeSidebar() { setSidebar(false); }
+    // Setiap modal diberi nama aksesibel dari judulnya (aria-labelledby) dan role dialog
+    document.querySelectorAll('.modal:not([aria-labelledby])').forEach(function (m, i) {
+        const j = m.querySelector('.modal-title');
+        if (!j) return;
+        if (!j.id) j.id = 'modalJudul' + i;
+        m.setAttribute('aria-labelledby', j.id);
+    });
+    // Escape menutup sidebar mobile; fokus kembali ke tombol menu
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && document.getElementById('sidebar').classList.contains('show')) closeSidebar();
+    });
 
     // Satu mekanisme untuk semua form POST: cegah kirim ganda dan beri umpan balik "memproses"
     // tanpa mengubah ukuran tombol (lebar dikunci). Form dapat memilih keluar dengan atribut data-no-lock.

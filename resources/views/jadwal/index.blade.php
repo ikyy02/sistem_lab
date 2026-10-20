@@ -11,11 +11,7 @@
 
 @section('content')
 
-<div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
-    <div>
-        <h2 class="font-display fw-semibold mb-1" style="font-size:1.5rem;">Jadwal Perkuliahan</h2>
-        <p class="mb-0" style="font-size:.83rem;color:var(--text-muted);">Kelola jadwal kuliah: tambah, lihat detail, ubah, dan hapus.</p>
-    </div>
+<div class="d-flex flex-wrap justify-content-end mb-4">
     <div class="d-flex flex-wrap gap-2">
         <a href="{{ route('jadwal.periode.index') }}" class="btn btn-outline-silab d-flex align-items-center gap-2">
             <i class="bi bi-calendar-range"></i> Periode Jadwal
@@ -103,13 +99,13 @@
                     <td class="ps-4 text-muted">{{ $data->firstItem() + $loop->index }}</td>
                     <td>
                         <div class="fw-semibold text-capitalize">{{ $j->hari }}</div>
-                        <div style="font-size:.78rem;color:var(--text-muted);">{{ $jamTeks($j->jam_mulai) }} - {{ $jamTeks($j->jam_selesai) }}</div>
-                        <div style="font-size:.72rem;color:var(--text-muted);">{{ $j->tahun_akademik }} · {{ ucfirst($j->semester) }}</div>
-                        @if($j->periode)<div style="font-size:.72rem;color:var(--text-muted);">{{ $j->periode->nama }}@if($j->terarsip()) <span class="badge-status" style="background:#f1f5f9;color:#475569;">Arsip</span>@endif</div>@endif
+                        <div style="font-size:.8rem;color:var(--text-muted);">{{ $jamTeks($j->jam_mulai) }} - {{ $jamTeks($j->jam_selesai) }}</div>
+                        <div style="font-size:.75rem;color:var(--text-muted);">{{ $j->tahun_akademik }} · {{ ucfirst($j->semester) }}</div>
+                        @if($j->periode)<div style="font-size:.75rem;color:var(--text-muted);">{{ $j->periode->nama }}@if($j->terarsip()) <span class="badge-status" style="background:#f1f5f9;color:#475569;">Arsip</span>@endif</div>@endif
                     </td>
                     <td>
                         <div class="fw-semibold">{{ $j->mataKuliah->nama_mk ?? '—' }}</div>
-                        <div style="font-size:.78rem;color:var(--text-muted);">{{ $j->mataKuliah->kode_mk ?? 'Tanpa mata kuliah' }}@if($j->mataKuliah) · {{ $j->mataKuliah->sks }} SKS @endif</div>
+                        <div style="font-size:.8rem;color:var(--text-muted);">{{ $j->mataKuliah->kode_mk ?? 'Tanpa mata kuliah' }}@if($j->mataKuliah) · {{ $j->mataKuliah->sks }} SKS @endif</div>
                     </td>
                     <td>{{ $j->kelas->nama_kelas ?? '—' }}</td>
                     <td>
@@ -124,11 +120,11 @@
                     </td>
                     <td class="text-end pe-4">
                         <div class="d-flex justify-content-end gap-2">
-                            <a href="{{ route('jadwal.show', $j) }}" class="btn btn-edit d-flex align-items-center gap-1" title="Lihat detail">
+                            <a href="{{ route('jadwal.show', $j) }}" class="btn btn-edit d-flex align-items-center gap-1" title="Lihat detail" aria-label="Lihat detail jadwal">
                                 <i class="bi bi-eye"></i> Lihat
                             </a>
                             @unless($j->terarsip())
-                            <a href="{{ route('jadwal.edit', $j) }}" class="btn btn-edit d-flex align-items-center gap-1" title="Ubah jadwal">
+                            <a href="{{ route('jadwal.edit', $j) }}" class="btn btn-edit d-flex align-items-center gap-1" title="Ubah jadwal" aria-label="Ubah jadwal">
                                 <i class="bi bi-pencil"></i> Ubah
                             </a>
                             <form action="{{ route('jadwal.destroy', $j) }}" method="POST"

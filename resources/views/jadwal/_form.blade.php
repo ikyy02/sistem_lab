@@ -41,7 +41,7 @@
         </select>
         @error('nuptk_nidn')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
         @if(empty($dosenOptions))
-            <div class="form-text">Belum ada data dosen. Tambahkan terlebih dahulu pada menu <a href="{{ route('data-akademik.index', ['tab' => 'dosen']) }}">Data Akademik</a>.</div>
+            <div class="form-text">Belum ada data dosen. Tambahkan terlebih dahulu pada menu @if(\App\Services\AuthService::user()['role'] === \App\Support\Role::LABORAN)<a href="{{ route('kelola-user.index', ['kategori' => 'dosen']) }}">Kelola Data User</a>@else<a href="{{ route('data-akademik.index', ['tab' => 'dosen']) }}">Data Akademik</a>@endif.</div>
         @endif
     </div>
 

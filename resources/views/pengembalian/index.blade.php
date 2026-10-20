@@ -6,15 +6,7 @@
 
 @section('content')
 
-<div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
-    <div>
-        <h2 class="font-display fw-semibold mb-1" style="font-size:1.5rem;">Pengembalian Barang</h2>
-        <p class="mb-0" style="font-size:.83rem;color:var(--text-muted);">Peminjaman berstatus <strong>Disetujui</strong> dapat dicatat pengembaliannya. Pengembalian sebagian diperbolehkan.</p>
-    </div>
-    <a href="{{ route('pengajuan.index') }}" class="btn btn-outline-silab d-flex align-items-center gap-2">
-        <i class="bi bi-arrow-up-right-square"></i> Pengajuan Peminjaman
-    </a>
-</div>
+<p class="mb-3" style="font-size:.83rem;color:var(--text-muted);">Peminjaman berstatus <strong>Disetujui</strong> dapat dicatat pengembaliannya. Pengembalian sebagian diperbolehkan.</p>
 
 @if($errors->any())
     <div class="alert alert-danger mb-3">
@@ -167,7 +159,7 @@
                             </button>
                         </div>
                     </div>
-                    <p class="mb-0 mt-2" style="font-size:.73rem;color:var(--text-muted);">
+                    <p class="mb-0 mt-2" style="font-size:.75rem;color:var(--text-muted);">
                         Kosongkan kolom jumlah agar barang tidak dikembalikan. Stok hanya bertambah untuk barang <strong>baik</strong> dan bahan.
                     </p>
                 @endif

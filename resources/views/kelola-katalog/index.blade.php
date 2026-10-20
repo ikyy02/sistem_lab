@@ -18,18 +18,13 @@
     $colspan = count($config['columns']) + 3;
 @endphp
 
-<div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
-    <div>
-        <h2 class="font-display fw-semibold mb-1" style="font-size:1.5rem;">Kelola {{ $label }}</h2>
-        <p class="mb-0" style="font-size:.83rem;color:var(--text-muted);">
-            {{ $isRoom
-                ? 'Ruangan dipakai sebagai lokasi penyimpanan alat/bahan dan untuk peminjaman ruangan.'
-                : 'Harga adalah harga untuk 1 satuan. Lokasi penyimpanan dipilih pada form dan ditampilkan di kolom Keterangan.' }}
-        </p>
-    </div>
-</div>
+<p class="mb-3" style="font-size:.83rem;color:var(--text-muted);">
+    {{ $isRoom
+        ? 'Ruangan dipakai sebagai lokasi penyimpanan alat/bahan dan untuk peminjaman ruangan.'
+        : 'Harga adalah harga untuk 1 satuan. Lokasi penyimpanan dipilih pada form dan ditampilkan di kolom Keterangan.' }}
+</p>
 
-<x-tab-actions :tabs="$labels" :active="$kategori" route="kelola-katalog.index"
+<x-tab-actions :tabs="$labels" :active="$kategori" route="kelola-katalog.index" :import="true"
     :add-label="'Tambah ' . $label" add-onclick="openItemModal('create')" />
 
 @if($report && !empty($report['errors']))
@@ -220,7 +215,7 @@
                                                 ? 'bi-sort-up'
                                                 : 'bi-sort-down')
                                             : 'bi-arrow-down-up' }}"
-                                        style="font-size:.7rem;">
+                                        style="font-size:.75rem;">
                                     </i>
                                 </a>
                             @else
@@ -258,8 +253,11 @@
                                         alt="{{ $item->nama ?? $item->nama_ruangan }}"
                                         class="thumb"
                                         loading="lazy"
+                                        width="56" height="56"
+                                        tabindex="0" role="button" aria-label="Perbesar gambar {{ $item->nama ?? $item->nama_ruangan }}"
                                         title="Klik untuk memperbesar"
-                                        onclick="previewImage(this.src, this.alt)">
+                                        onclick="previewImage(this.src, this.alt)"
+                                        onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
                                 @else
                                     <span class="thumb-empty">
                                         <i class="bi bi-image"></i>

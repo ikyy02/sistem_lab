@@ -25,7 +25,7 @@
         </table>
     </div>
     @if($report['error_count'] > count($report['errors']))
-    <div class="px-4 py-2" style="font-size:.78rem;color:var(--text-muted);border-top:1px solid #F1F1EF;">
+    <div class="px-4 py-2" style="font-size:.8rem;color:var(--text-muted);border-top:1px solid #F1F1EF;">
         Menampilkan {{ count($report['errors']) }} dari {{ $report['error_count'] }} baris bermasalah. Perbaiki lalu unggah ulang untuk melihat sisanya.
     </div>
     @endif

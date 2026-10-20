@@ -21,15 +21,15 @@ class NotifikasiTest extends TestCase
     public function test_sukses_menjadi_popup_sekali_saja(): void
     {
         $a = $this->admin();
-        $a->post(route('master-data.store', 'satuan'), ['nama' => 'liter'])->assertSessionHas('success');
+        $a->post(route('pengaturan-lab.satuan.store'), ['nama' => 'liter'])->assertSessionHas('success');
 
-        $a->get(route('master-data.index'))->assertOk()
+        $a->get(route('pengaturan-lab.index'))->assertOk()
             ->assertSee('id="notifModal"', false)
             ->assertSee('SIARKA_FLASH = [', false)
             ->assertSee('"tipe":"success"', false)
             ->assertDontSee('class="alert alert-success', false);
         // refresh/navigasi berikutnya: tidak ada pesan, tidak ada popup
-        $a->get(route('master-data.index'))->assertDontSee('SIARKA_FLASH = [', false);
+        $a->get(route('pengaturan-lab.index'))->assertDontSee('SIARKA_FLASH = [', false);
     }
 
     public function test_gagal_ditampilkan_sebagai_error_bukan_sukses(): void
@@ -38,9 +38,9 @@ class NotifikasiTest extends TestCase
         $satuan = \App\Models\Satuan::create(['nama_satuan' => 'dipakai']);
         $this->katalog('alat', 1, ['id_satuan' => $satuan->id_satuan]);
 
-        $a->delete(route('master-data.destroy', ['kategori' => 'satuan', 'id' => $satuan->id_satuan]))
+        $a->delete(route('pengaturan-lab.satuan.destroy', ['id' => $satuan->id_satuan]))
             ->assertSessionHas('error')->assertSessionMissing('success');
-        $a->get(route('master-data.index'))->assertOk()
+        $a->get(route('pengaturan-lab.index'))->assertOk()
             ->assertSee('"tipe":"error"', false)
             ->assertDontSee('"tipe":"success"', false);
         $this->assertDatabaseHas('satuans', ['id_satuan' => $satuan->id_satuan]);
@@ -54,7 +54,7 @@ class NotifikasiTest extends TestCase
     public function test_penghapusan_meminta_konfirmasi_lewat_atribut_dan_tanpa_confirm_bawaan(): void
     {
         $this->satuan('meter');
-        $this->admin()->get(route('master-data.index'))->assertOk()
+        $this->admin()->get(route('pengaturan-lab.index'))->assertOk()
             ->assertSee('data-konfirmasi="Hapus', false)
             ->assertDontSee('confirm(', false);
     }
@@ -78,7 +78,7 @@ class NotifikasiTest extends TestCase
         // Konfirmasi hanya lapisan UI; backend tetap menolak hak akses dan data terpakai.
         $s = $this->satuan('terpakai');
         $this->katalog('alat', 1, ['id_satuan' => $s->id_satuan]);
-        $this->admin()->delete(route('master-data.destroy', ['kategori' => 'satuan', 'id' => $s->id_satuan]))->assertSessionHas('error');
+        $this->admin()->delete(route('pengaturan-lab.satuan.destroy', ['id' => $s->id_satuan]))->assertSessionHas('error');
         $this->assertDatabaseHas('satuans', ['id_satuan' => $s->id_satuan]);
     }
 }

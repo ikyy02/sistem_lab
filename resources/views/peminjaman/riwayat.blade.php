@@ -6,11 +6,7 @@
 
 @section('content')
 
-<div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
-    <div>
-        <h2 class="font-display fw-semibold mb-1" style="font-size:1.5rem;">Riwayat Peminjaman</h2>
-        <p class="mb-0" style="font-size:.83rem;color:var(--text-muted);">Semua pengajuan peminjaman yang pernah Anda ajukan.</p>
-    </div>
+<div class="d-flex flex-wrap justify-content-end mb-4">
     <a href="{{ route('peminjaman.index') }}" class="btn btn-primary d-flex align-items-center gap-2"><i class="bi bi-plus-lg"></i> Ajukan Peminjaman</a>
 </div>
 
@@ -64,21 +60,21 @@
                     <th class="ps-4" style="width:56px;">No</th>
                     <th style="width:170px;">
                         @php $next = ($sort === 'tanggal_pengajuan' && $direction === 'asc') ? 'desc' : 'asc'; @endphp
-                        <a class="sort-link {{ $sort === 'tanggal_pengajuan' ? 'active' : '' }}" href="{{ route('peminjaman.riwayat', array_merge(request()->query(), ['sort' => 'tanggal_pengajuan', 'direction' => $next, 'page' => null])) }}">Pengajuan <i class="bi {{ $sort === 'tanggal_pengajuan' ? ($direction === 'asc' ? 'bi-sort-up' : 'bi-sort-down') : 'bi-arrow-down-up' }}" style="font-size:.7rem;"></i></a>
+                        <a class="sort-link {{ $sort === 'tanggal_pengajuan' ? 'active' : '' }}" href="{{ route('peminjaman.riwayat', array_merge(request()->query(), ['sort' => 'tanggal_pengajuan', 'direction' => $next, 'page' => null])) }}">Pengajuan <i class="bi {{ $sort === 'tanggal_pengajuan' ? ($direction === 'asc' ? 'bi-sort-up' : 'bi-sort-down') : 'bi-arrow-down-up' }}" style="font-size:.75rem;"></i></a>
                     </th>
                     <th>Barang / Ruangan</th>
                     <th style="width:80px;">Jumlah</th>
                     <th style="width:150px;">
                         @php $next = ($sort === 'tanggal_peminjaman' && $direction === 'asc') ? 'desc' : 'asc'; @endphp
-                        <a class="sort-link {{ $sort === 'tanggal_peminjaman' ? 'active' : '' }}" href="{{ route('peminjaman.riwayat', array_merge(request()->query(), ['sort' => 'tanggal_peminjaman', 'direction' => $next, 'page' => null])) }}">Peminjaman <i class="bi {{ $sort === 'tanggal_peminjaman' ? ($direction === 'asc' ? 'bi-sort-up' : 'bi-sort-down') : 'bi-arrow-down-up' }}" style="font-size:.7rem;"></i></a>
+                        <a class="sort-link {{ $sort === 'tanggal_peminjaman' ? 'active' : '' }}" href="{{ route('peminjaman.riwayat', array_merge(request()->query(), ['sort' => 'tanggal_peminjaman', 'direction' => $next, 'page' => null])) }}">Peminjaman <i class="bi {{ $sort === 'tanggal_peminjaman' ? ($direction === 'asc' ? 'bi-sort-up' : 'bi-sort-down') : 'bi-arrow-down-up' }}" style="font-size:.75rem;"></i></a>
                     </th>
                     <th style="width:150px;">
                         @php $next = ($sort === 'tanggal_rencana_kembali' && $direction === 'asc') ? 'desc' : 'asc'; @endphp
-                        <a class="sort-link {{ $sort === 'tanggal_rencana_kembali' ? 'active' : '' }}" href="{{ route('peminjaman.riwayat', array_merge(request()->query(), ['sort' => 'tanggal_rencana_kembali', 'direction' => $next, 'page' => null])) }}">Pengembalian <i class="bi {{ $sort === 'tanggal_rencana_kembali' ? ($direction === 'asc' ? 'bi-sort-up' : 'bi-sort-down') : 'bi-arrow-down-up' }}" style="font-size:.7rem;"></i></a>
+                        <a class="sort-link {{ $sort === 'tanggal_rencana_kembali' ? 'active' : '' }}" href="{{ route('peminjaman.riwayat', array_merge(request()->query(), ['sort' => 'tanggal_rencana_kembali', 'direction' => $next, 'page' => null])) }}">Pengembalian <i class="bi {{ $sort === 'tanggal_rencana_kembali' ? ($direction === 'asc' ? 'bi-sort-up' : 'bi-sort-down') : 'bi-arrow-down-up' }}" style="font-size:.75rem;"></i></a>
                     </th>
                     <th style="width:180px;">
                         @php $next = ($sort === 'status' && $direction === 'asc') ? 'desc' : 'asc'; @endphp
-                        <a class="sort-link {{ $sort === 'status' ? 'active' : '' }}" href="{{ route('peminjaman.riwayat', array_merge(request()->query(), ['sort' => 'status', 'direction' => $next, 'page' => null])) }}">Status <i class="bi {{ $sort === 'status' ? ($direction === 'asc' ? 'bi-sort-up' : 'bi-sort-down') : 'bi-arrow-down-up' }}" style="font-size:.7rem;"></i></a>
+                        <a class="sort-link {{ $sort === 'status' ? 'active' : '' }}" href="{{ route('peminjaman.riwayat', array_merge(request()->query(), ['sort' => 'status', 'direction' => $next, 'page' => null])) }}">Status <i class="bi {{ $sort === 'status' ? ($direction === 'asc' ? 'bi-sort-up' : 'bi-sort-down') : 'bi-arrow-down-up' }}" style="font-size:.75rem;"></i></a>
                     </th>
                     <th class="text-end pe-4" style="width:100px;">Aksi</th>
                 </tr>

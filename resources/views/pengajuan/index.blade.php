@@ -12,23 +12,13 @@
     $sebagaiDosen = $me['role'] === \App\Support\Role::DOSEN;
 @endphp
 
-<div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
-    <div>
-        <h2 class="font-display fw-semibold mb-1" style="font-size:1.5rem;">Pengajuan Peminjaman</h2>
-        <p class="mb-0" style="font-size:.83rem;color:var(--text-muted);">
-            @if($sebagaiDosen)
-                {{ $jumlahMenunggu }} pengajuan menunggu keputusan Anda. Yang Anda setujui diteruskan ke Laboran untuk keputusan akhir.
-            @else
-                {{ $jumlahMenunggu }} pengajuan menunggu persetujuan. Persetujuan memotong stok; penolakan tidak.
-            @endif
-        </p>
-    </div>
-    @if($me['role'] === \App\Support\Role::LABORAN)
-        <a href="{{ route('pengembalian.index') }}" class="btn btn-outline-silab d-flex align-items-center gap-2">
-            <i class="bi bi-arrow-down-left-square"></i> Pengembalian
-        </a>
+<p class="mb-3" style="font-size:.83rem;color:var(--text-muted);">
+    @if($sebagaiDosen)
+        {{ $jumlahMenunggu }} pengajuan menunggu keputusan Anda. Yang Anda setujui diteruskan ke Laboran untuk keputusan akhir.
+    @else
+        {{ $jumlahMenunggu }} pengajuan menunggu persetujuan. Persetujuan memotong stok; penolakan tidak.
     @endif
-</div>
+</p>
 
 @if($errors->any())
     <div class="alert alert-danger mb-3">
@@ -100,12 +90,12 @@
                     <td>
                         @include('peminjaman._status', ['status' => $p->status, 'terlambat' => $p->terlambat])
                         @if($p->menungguDosen())
-                            <div style="font-size:.72rem;color:var(--text-muted);">Menunggu keputusan Dosen</div>
+                            <div style="font-size:.75rem;color:var(--text-muted);">Menunggu keputusan Dosen</div>
                         @elseif($p->diteruskanKeLaboran())
-                            <div style="font-size:.72rem;color:var(--text-muted);">Disetujui Dosen, menunggu Laboran</div>
+                            <div style="font-size:.75rem;color:var(--text-muted);">Disetujui Dosen, menunggu Laboran</div>
                         @endif
                         @if($p->status === 'ditolak' && $p->alasan_ditolak)
-                            <div style="font-size:.72rem;color:var(--text-muted);" title="{{ $p->alasan_ditolak }}">Alasan: {{ \Illuminate\Support\Str::limit($p->alasan_ditolak, 40) }}</div>
+                            <div style="font-size:.75rem;color:var(--text-muted);" title="{{ $p->alasan_ditolak }}">Alasan: {{ \Illuminate\Support\Str::limit($p->alasan_ditolak, 40) }}</div>
                         @endif
                     </td>
                     <td class="text-end pe-4">
@@ -114,18 +104,18 @@
                                 <form action="{{ route('pengajuan.setujui', $p->id_peminjaman) }}" method="POST" class="d-inline"
                                       data-konfirmasi="Setujui pengajuan peminjaman #{{ $p->id_peminjaman }} oleh {{ $p->nama_peminjam }}? {{ $sebagaiDosen ? 'Pengajuan akan diteruskan ke Laboran untuk keputusan akhir.' : 'Stok barang akan dipotong sesuai jumlah yang diajukan.' }}">
                                     @csrf
-                                    <button type="submit" class="btn btn-edit d-flex align-items-center gap-1" style="padding:.3rem .65rem;font-size:.78rem;">
+                                    <button type="submit" class="btn btn-edit d-flex align-items-center gap-1" style="padding:.3rem .65rem;font-size:.8rem;">
                                         <i class="bi bi-check-lg"></i> Setujui
                                     </button>
                                 </form>
-                                <button type="button" class="btn btn-del d-flex align-items-center gap-1" style="padding:.3rem .65rem;font-size:.78rem;"
+                                <button type="button" class="btn btn-del d-flex align-items-center gap-1" style="padding:.3rem .65rem;font-size:.8rem;"
                                         data-bs-toggle="modal" data-bs-target="#tolakModal"
                                         data-url="{{ route('pengajuan.tolak', $p->id_peminjaman) }}"
                                         data-info="#{{ $p->id_peminjaman }} — {{ $p->nama_peminjam }}">
                                     <i class="bi bi-x-lg"></i> Tolak
                                 </button>
                             @endif
-                            <a href="{{ route('peminjaman.show', $p->id_peminjaman) }}" class="btn btn-outline-silab d-flex align-items-center gap-1" style="padding:.3rem .65rem;font-size:.78rem;">
+                            <a href="{{ route('peminjaman.show', $p->id_peminjaman) }}" class="btn btn-outline-silab d-flex align-items-center gap-1" style="padding:.3rem .65rem;font-size:.8rem;">
                                 <i class="bi bi-eye"></i> Detail
                             </a>
                         </div>

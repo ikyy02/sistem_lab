@@ -21,7 +21,7 @@
     <div class="col-12 col-lg-9 col-xl-8">
         <div class="card-modern overflow-hidden">
             <div class="px-4 py-3 d-flex align-items-center gap-3" style="border-bottom:1px solid var(--border-color);background:var(--body-bg);">
-                <div style="width:38px;height:38px;background:var(--gold-tint);border-radius:10px;display:flex;align-items:center;justify-content:center;color:var(--gold);flex-shrink:0;">
+                <div style="width:38px;height:38px;background:var(--gold-tint);border-radius:10px;display:flex;align-items:center;justify-content:center;color: var(--gold-text);flex-shrink:0;">
                     <i class="bi bi-plus-circle-fill"></i>
                 </div>
                 <div>

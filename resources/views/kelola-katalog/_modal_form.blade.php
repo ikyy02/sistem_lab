@@ -111,7 +111,9 @@
                                     alt=""
                                     class="thumb"
                                     style="display:none;"
-                                    onclick="previewImage(this.src, 'Gambar {{ $label }}')">
+                                    width="56" height="56" tabindex="0" role="button" aria-label="Perbesar pratinjau gambar {{ $label }}"
+                                    onclick="previewImage(this.src, 'Gambar {{ $label }}')"
+                                    onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
 
                                 <input
                                     type="file"

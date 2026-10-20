@@ -9,12 +9,12 @@
             {{-- Previous --}}
             @if ($paginator->onFirstPage())
                 <li class="page-item disabled" aria-disabled="true">
-                    <span class="page-link"><i class="bi bi-chevron-left" style="font-size:0.7rem;"></i> Previous</span>
+                    <span class="page-link"><i class="bi bi-chevron-left" style="font-size:.75rem;"></i> Previous</span>
                 </li>
             @else
                 <li class="page-item">
                     <a class="page-link" href="{{ $paginator->previousPageUrl() }}" rel="prev">
-                        <i class="bi bi-chevron-left" style="font-size:0.7rem;"></i> Previous
+                        <i class="bi bi-chevron-left" style="font-size:.75rem;"></i> Previous
                     </a>
                 </li>
             @endif
@@ -40,12 +40,12 @@
             @if ($paginator->hasMorePages())
                 <li class="page-item">
                     <a class="page-link" href="{{ $paginator->nextPageUrl() }}" rel="next">
-                        Next <i class="bi bi-chevron-right" style="font-size:0.7rem;"></i>
+                        Next <i class="bi bi-chevron-right" style="font-size:.75rem;"></i>
                     </a>
                 </li>
             @else
                 <li class="page-item disabled" aria-disabled="true">
-                    <span class="page-link">Next <i class="bi bi-chevron-right" style="font-size:0.7rem;"></i></span>
+                    <span class="page-link">Next <i class="bi bi-chevron-right" style="font-size:.75rem;"></i></span>
                 </li>
             @endif
         </ul>

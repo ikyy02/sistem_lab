@@ -2,7 +2,7 @@
 
 @section('title', 'Data Akademik')
 @section('page-title', 'Data Akademik')
-@section('page-subtitle', 'Kelola mata kuliah, kelas, semester, dan dosen Program Studi.')
+@section('page-subtitle', 'Mata kuliah, kelas, semester'.(isset($tabs['dosen']) ? ', dan dosen' : '').' dipakai pada form Jadwal Perkuliahan; perubahan langsung mengikuti dropdown jadwal.'.(isset($tabs['dosen']) ? '' : ' Data dosen dikelola di Kelola Data User.'))
 
 @php
     $label = $tabs[$tab];
@@ -13,29 +13,8 @@
 
 @section('content')
 
-<div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
-    <div>
-        <h2 class="font-display fw-semibold mb-1" style="font-size:1.5rem;">Data Akademik</h2>
-        <p class="mb-0" style="font-size:.83rem;color:var(--text-muted);">
-            Mata kuliah, kelas, dan dosen dipakai pada form Jadwal Perkuliahan; perubahan di sini langsung mengikuti dropdown jadwal.
-        </p>
-    </div>
-    @unless($isSemester)
-    <button type="button" class="btn btn-primary d-flex align-items-center gap-2"
-            onclick="openAkademikModal('create')"><i class="bi bi-plus-lg"></i> Tambah {{ $label }}</button>
-    @endunless
-</div>
-
-{{-- Tab --}}
-<ul class="nav nav-pills gap-2 mb-3">
-    @foreach($tabs as $key => $text)
-        <li class="nav-item">
-            <a href="{{ route('data-akademik.index', ['tab' => $key]) }}"
-               class="nav-link px-4 {{ $tab === $key ? 'active-tab' : '' }}"
-               style="{{ $tab === $key ? '' : 'background:#fff;border:1px solid var(--border-color);color:#3d475a;font-weight:500;' }} border-radius:8px;font-size:.87rem;">{{ $text }}</a>
-        </li>
-    @endforeach
-</ul>
+<x-tab-actions :tabs="$tabs" :active="$tab" route="data-akademik.index" param="tab"
+    :add-label="$isSemester ? null : 'Tambah ' . $label" add-onclick="openAkademikModal('create')" />
 
 @if($isSemester)
 
@@ -45,12 +24,12 @@
         <div class="col-12 col-md-6">
             <div class="card-modern p-4 h-100">
                 <div class="d-flex align-items-center gap-3 mb-3">
-                    <div style="width:44px;height:44px;border-radius:10px;background:var(--gold-tint);color:var(--gold);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                    <div style="width:44px;height:44px;border-radius:10px;background:var(--gold-tint);color: var(--gold-text);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
                         <i class="bi bi-calendar2 fs-5"></i>
                     </div>
                     <div>
                         <div class="fw-bold" style="font-size:1.1rem;">Semester {{ $s['label'] }}</div>
-                        <div style="font-size:.78rem;color:var(--text-muted);">Nilai tetap sistem</div>
+                        <div style="font-size:.8rem;color:var(--text-muted);">Nilai tetap sistem</div>
                     </div>
                 </div>
                 <div class="d-flex align-items-center justify-content-between py-2" style="border-top:1px solid #EDF1F6;">
@@ -68,7 +47,7 @@
 
     <div class="card-modern p-4">
         <div class="d-flex gap-3">
-            <i class="bi bi-info-circle-fill fs-5" style="color:var(--gold);"></i>
+            <i class="bi bi-info-circle-fill fs-5" style="color: var(--gold-text);"></i>
             <div style="font-size:.85rem;color:var(--text-muted);">
                 Semester hanya bernilai <strong>Ganjil</strong> atau <strong>Genap</strong> dan ditetapkan oleh sistem,
                 sehingga tidak dapat ditambah atau diubah. Nilai ini dipakai pada setiap data Jadwal Perkuliahan
@@ -143,7 +122,7 @@
                 <tr>
                     <td class="ps-4 text-muted">{{ $data->firstItem() + $loop->index }}</td>
                     @if($tab === 'mata-kuliah')
-                        <td><span class="badge-status badge-tab" style="font-size:.72rem;">{{ $item->kode_mk }}</span></td>
+                        <td><span class="badge-status badge-tab" style="font-size:.75rem;">{{ $item->kode_mk }}</span></td>
                         <td>
                             <span class="fw-semibold">{{ $item->nama_mk }}</span>
                         </td>
@@ -153,7 +132,7 @@
                         <td><span class="fw-semibold">{{ $item->nama_kelas }}</span></td>
                         <td>{{ $item->nama_prodi ?? '—' }}</td>
                     @else
-                        <td><span class="badge-status badge-tab" style="font-size:.72rem;">{{ $item->nuptk_nidn }}</span></td>
+                        <td><span class="badge-status badge-tab" style="font-size:.75rem;">{{ $item->nuptk_nidn }}</span></td>
                         <td>
                             <span class="fw-semibold">{{ $item->nama }}</span>
                         </td>

@@ -7,11 +7,8 @@
 @section('content')
 @php $tgl = fn ($d) => $d?->format('d/m/Y'); @endphp
 
-<div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
-    <div>
-        <h2 class="font-display fw-semibold mb-1" style="font-size:1.5rem;">Periode Jadwal Perkuliahan</h2>
-        <p class="mb-0" style="font-size:.83rem;color:var(--text-muted);">Perbarui periode setiap pergantian periode atau setengah semester. Jadwal periode sebelumnya disimpan sebagai arsip dan tidak dapat diubah.</p>
-    </div>
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <p class="mb-0" style="font-size:.83rem;color:var(--text-muted);">Perbarui periode setiap pergantian periode atau setengah semester. Jadwal periode sebelumnya disimpan sebagai arsip dan tidak dapat diubah.</p>
     <a href="{{ route('jadwal.index') }}" class="btn btn-outline-silab d-flex align-items-center gap-2"><i class="bi bi-arrow-left"></i> Jadwal Perkuliahan</a>
 </div>
 

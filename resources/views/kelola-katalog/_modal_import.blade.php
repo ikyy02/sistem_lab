@@ -62,7 +62,7 @@
 
                 <div
                     class="d-flex align-items-start gap-2 mt-3 p-3"
-                    style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; font-size:.78rem; color:#64748b;"
+                    style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; font-size:.8rem; color:#64748b;"
                 >
                     <i class="bi bi-info-circle-fill" style="color:#2563eb; margin-top:2px;"></i>
                     <span>

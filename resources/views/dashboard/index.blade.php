@@ -27,7 +27,7 @@
         <div class="col-12 col-md-6">
             <div class="card-modern p-4 h-100">
                 <div class="d-flex align-items-center gap-3">
-                    <div style="width:44px;height:44px;border-radius:10px;background:var(--gold-tint);color:var(--gold);display:flex;align-items:center;justify-content:center;"><i class="bi bi-hourglass-split fs-5"></i></div>
+                    <div style="width:44px;height:44px;border-radius:10px;background:var(--gold-tint);color: var(--gold-text);display:flex;align-items:center;justify-content:center;"><i class="bi bi-hourglass-split fs-5"></i></div>
                     <div>
                         <div class="fw-bold" style="font-size:1.4rem;">{{ $menunggu }}</div>
                         <div style="font-size:.8rem;color:var(--text-muted);">Pengajuan menunggu persetujuan</div>
@@ -64,29 +64,29 @@
         <div class="col-12 col-sm-4">
             <div class="card-modern p-3 h-100">
                 <div class="fw-bold" style="font-size:1.3rem;">{{ $disetujui }}</div>
-                <div style="font-size:.78rem;color:var(--text-muted);">Pengajuan disetujui</div>
+                <div style="font-size:.8rem;color:var(--text-muted);">Pengajuan disetujui</div>
             </div>
         </div>
         <div class="col-12 col-sm-4">
             <div class="card-modern p-3 h-100">
                 <div class="fw-bold" style="font-size:1.3rem;">{{ $selesai }}</div>
-                <div style="font-size:.78rem;color:var(--text-muted);">Pengajuan selesai</div>
+                <div style="font-size:.8rem;color:var(--text-muted);">Pengajuan selesai</div>
             </div>
         </div>
-    </div>
         <div class="col-12 col-sm-4">
             <div class="card-modern p-3 h-100">
                 <div class="fw-bold" style="font-size:1.3rem;">{{ $total }}</div>
-                <div style="font-size:.78rem;color:var(--text-muted);">Total riwayat Peminjaman</div>
+                <div style="font-size:.8rem;color:var(--text-muted);">Total riwayat Peminjaman</div>
             </div>
         </div>
+    </div>
 
     <div class="row g-3">
         <div class="col-12 col-lg-6">
             <div class="card-modern p-4 h-100">
                 <div class="d-flex align-items-center justify-content-between mb-2">
                     <h3 class="font-display fw-semibold mb-0" style="font-size:1.05rem;">Pengajuan terbaru</h3>
-                    <a href="{{ route('peminjaman.riwayat') }}" style="font-size:.78rem;">Lihat semua</a>
+                    <a href="{{ route('peminjaman.riwayat') }}" style="font-size:.8rem;">Lihat semua</a>
                 </div>
                 @if($terbaru->isEmpty())
                     <div class="text-center py-4" style="color:var(--text-muted);font-size:.85rem;">
@@ -99,7 +99,7 @@
                         <a href="{{ route('peminjaman.show', $p->id_peminjaman) }}" class="list-group-item list-group-item-action px-0 py-2 d-flex align-items-center gap-3">
                             <div class="min-w-0 flex-grow-1">
                                 <div class="fw-semibold text-truncate" style="font-size:.86rem;">#{{ $p->id_peminjaman }} · {{ $p->ringkasan }}</div>
-                                <div style="font-size:.73rem;color:var(--text-muted);">{{ $p->tanggal_pengajuan?->format('d/m/Y H:i') }}</div>
+                                <div style="font-size:.75rem;color:var(--text-muted);">{{ $p->tanggal_pengajuan?->format('d/m/Y H:i') }}</div>
                             </div>
                             @include('peminjaman._status', ['status' => $p->status, 'terlambat' => $p->terlambat])
                         </a>
@@ -118,7 +118,7 @@
                             <div class="fw-semibold" style="font-size:.9rem;">Peminjaman #{{ $terdekat->id_peminjaman }}</div>
                             <div style="font-size:.8rem;color:var(--text-muted);">Mulai {{ $terdekat->tanggal_peminjaman?->format('d/m/Y H:i') }} · Batas kembali {{ $terdekat->tanggal_rencana_kembali?->format('d/m/Y H:i') }}</div>
                             <div class="text-truncate" style="font-size:.8rem;" title="{{ $terdekat->ringkasan }}">{{ $terdekat->ringkasan }}</div>
-                            <a href="{{ route('peminjaman.show', $terdekat->id_peminjaman) }}" class="btn btn-outline-silab mt-2 d-inline-flex align-items-center gap-1" style="font-size:.78rem;">
+                            <a href="{{ route('peminjaman.show', $terdekat->id_peminjaman) }}" class="btn btn-outline-silab mt-2 d-inline-flex align-items-center gap-1" style="font-size:.8rem;">
                                 <i class="bi bi-eye"></i> Lihat Detail
                             </a>
                         </div>

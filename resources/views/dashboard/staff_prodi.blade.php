@@ -19,8 +19,7 @@
 
 {{-- Header sapaan --}}
 <div class="mb-4">
-    <h2 class="font-display fw-semibold mb-1" style="font-size:1.7rem;">{{ $sapaan }}, {{ $me['nama'] }}.</h2>
-    <p class="mb-0" style="color:var(--text-muted);font-size:.9rem;">Ringkasan data akademik Program Studi.</p>
+    <h2 class="font-display fw-semibold mb-0" style="font-size:1.7rem;">{{ $sapaan }}, {{ $me['nama'] }}.</h2>
 </div>
 
 {{-- Ringkasan --}}
@@ -29,7 +28,7 @@
     <div class="col-12 col-sm-4">
         <div class="card-modern p-3 h-100">
             <div class="fw-bold" style="font-size:1.3rem;">{{ number_format($k['nilai']) }}</div>
-            <div style="font-size:.78rem;color:var(--text-muted);">{{ $k['label'] }}</div>
+            <div style="font-size:.8rem;color:var(--text-muted);">{{ $k['label'] }}</div>
         </div>
     </div>
     @endforeach
@@ -42,7 +41,7 @@
             <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
                 <h3 class="font-display fw-semibold mb-0" style="font-size:1.05rem;">Jadwal Perkuliahan
                 </h3>
-                <a href="{{ route('jadwal.index') }}" style="font-size:.78rem;">
+                <a href="{{ route('jadwal.index') }}" style="font-size:.8rem;">
                     Lihat semua
                 </a>
             </div>
@@ -51,7 +50,7 @@
             <div class="d-flex gap-3 py-3" style="{{ $loop->first ? '' : 'border-top:1px solid #EDF1F6;' }}">
                 <div class="text-center flex-shrink-0" style="width:92px;">
                     <div class="fw-bold" style="font-size:.92rem;">{{ $jamTeks($j->jam_mulai) }} - {{ $jamTeks($j->jam_selesai) }}</div>
-                    <div style="font-size:.72rem;color:var(--text-muted);text-transform:capitalize;">{{ $j->hari }}{{ $j->hari === $hariIni ? ' (hari ini)' : '' }}</div>
+                    <div style="font-size:.75rem;color:var(--text-muted);text-transform:capitalize;">{{ $j->hari }}{{ $j->hari === $hariIni ? ' (hari ini)' : '' }}</div>
                 </div>
                 <div class="min-w-0 flex-grow-1">
                     <div class="fw-semibold" style="font-size:.95rem;">
@@ -82,14 +81,14 @@
             <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
                 <h3 class="font-display fw-semibold mb-0" style="font-size:1.05rem;">Mata Kuliah
                 </h3>
-                <a href="{{ route('data-akademik.index', ['tab' => 'mata-kuliah']) }}" style="font-size:.78rem;">
+                <a href="{{ route('data-akademik.index', ['tab' => 'mata-kuliah']) }}" style="font-size:.8rem;">
                     Lihat semua
                 </a>
             </div>
 
             @forelse($mataKuliah as $mk)
             <div class="d-flex align-items-center gap-3 py-2" style="{{ $loop->first ? '' : 'border-top:1px solid #EDF1F6;' }}">
-                <span class="badge-status badge-tab flex-shrink-0" style="font-size:.7rem;">{{ $mk->kode_mk }}</span>
+                <span class="badge-status badge-tab flex-shrink-0" style="font-size:.75rem;">{{ $mk->kode_mk }}</span>
                 <div class="min-w-0 flex-grow-1">
                     <div class="fw-semibold text-truncate" style="font-size:.88rem;">{{ $mk->nama_mk }}</div>
                     <div style="font-size:.75rem;color:var(--text-muted);">{{ $mk->sks }} SKS · Semester {{ ucfirst($mk->semester) }}</div>

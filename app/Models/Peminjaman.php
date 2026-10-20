@@ -130,13 +130,13 @@ class Peminjaman extends Model
         };
     }
 
-    /** Yang menunggu TINDAKAN role itu sekarang: Dosen = tahap 1; Laboran = semua kecuali yang masih menunggu Dosen. */
+    /** Yang menunggu TINDAKAN role itu sekarang: Dosen = tahap 1; Laboran = semua yang menunggu. */
     public function scopeMenungguTindakan($q, string $email, string $role)
     {
         $q = $q->dapatDiprosesOleh($email, $role)->where('status', 'menunggu');
 
         return match ($role) {
-            'laboran' => $q->where(fn ($g) => $g->where('jenis_peminjaman', '!=', 'atas_dosen')->orWhereNotNull('tanggal_persetujuan_dosen')),
+            'laboran' => $q,
             default => $q->whereNull('tanggal_persetujuan_dosen'),
         };
     }
@@ -149,7 +149,7 @@ class Peminjaman extends Model
         }
 
         return match ($role) {
-            'laboran' => $this->jenis_peminjaman !== 'atas_dosen' || $this->tanggal_persetujuan_dosen !== null,
+            'laboran' => true, // Super Admin dapat memutuskan di tahap mana pun, termasuk menggantikan tahap Dosen
             'dosen' => $this->jenis_peminjaman === 'atas_dosen' && $this->email_dosen === $email && $this->tanggal_persetujuan_dosen === null,
             default => false,
         };

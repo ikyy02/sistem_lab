@@ -16,7 +16,8 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 
 /**
- * Data Akademik (khusus Staf Prodi): Mata Kuliah, Kelas, Semester, dan Dosen.
+ * Data Akademik (Staf Prodi dan Laboran/Admin): Mata Kuliah, Kelas, Semester, dan Dosen.
+ * Tab Dosen hanya untuk Staf Prodi; Laboran/Admin mengelola dosen lewat Kelola Data User (lihat tabs()).
  * Mata Kuliah, Kelas, dan Dosen dikelola penuh; Semester bernilai tetap sistem (ganjil/genap)
  * sehingga ditampilkan sebagai ringkasan, bukan data yang dapat diubah.
  * Dosen dibuat/diubah/dihapus bersama akun login-nya lewat AkunService (relasi 1:1 dengan akuns).
@@ -29,9 +30,16 @@ class DataAkademikController extends Controller
 
     public const STATUS_DOSEN = ['aktif', 'nonaktif'];
 
+    /** Tab yang boleh dipakai role saat ini. Satu sumber untuk tampilan dan akses langsung lewat URL. */
+    private function tabs(): array
+    {
+        return (AuthService::user()['role'] ?? null) === Role::LABORAN ? array_diff_key(self::TABS, ['dosen' => 1]) : self::TABS;
+    }
+
     public function index(Request $request)
     {
-        $tab = array_key_exists((string) $request->query('tab'), self::TABS) ? $request->query('tab') : 'mata-kuliah';
+        $tabs = $this->tabs();
+        $tab = array_key_exists((string) $request->query('tab'), $tabs) ? $request->query('tab') : 'mata-kuliah';
         $search = mb_substr(trim((string) $request->query('search', '')), 0, 100);
         $perPage = (int) $request->query('per_page');
         $perPage = in_array($perPage, self::PER_PAGE, true) ? $perPage : self::PER_PAGE[0];
@@ -61,7 +69,7 @@ class DataAkademikController extends Controller
 
         return view('data-akademik.index', [
             'tab' => $tab,
-            'tabs' => self::TABS,
+            'tabs' => $tabs,
             'data' => $data,
             'search' => $search,
             'perPage' => $perPage,
@@ -76,6 +84,8 @@ class DataAkademikController extends Controller
 
     public function store(Request $request, string $tab)
     {
+        abort_unless(isset($this->tabs()[$tab]), 403);
+
         if ($tab === 'dosen') {
             return $this->storeDosen($request);
         }
@@ -92,6 +102,8 @@ class DataAkademikController extends Controller
 
     public function update(Request $request, string $tab, string $id)
     {
+        abort_unless(isset($this->tabs()[$tab]), 403);
+
         if ($tab === 'dosen') {
             return $this->updateDosen($request, $id);
         }
@@ -109,6 +121,8 @@ class DataAkademikController extends Controller
 
     public function destroy(Request $request, string $tab, string $id)
     {
+        abort_unless(isset($this->tabs()[$tab]), 403);
+
         if ($tab === 'dosen') {
             return $this->destroyDosen($request, $id);
         }

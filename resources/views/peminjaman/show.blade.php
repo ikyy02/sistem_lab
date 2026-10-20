@@ -9,7 +9,6 @@
 
 <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
     <div>
-        <h2 class="font-display fw-semibold mb-2" style="font-size:1.5rem;">Peminjaman #{{ $p->id_peminjaman }}</h2>
         @include('peminjaman._status', ['status' => $p->status, 'terlambat' => $p->terlambat])
     </div>
     <div class="d-flex flex-wrap gap-2">
@@ -35,7 +34,7 @@
             <div style="font-size:.85rem;color:#6E6142;">
                 <i class="bi bi-exclamation-circle me-1"></i>
                 Pengajuan ini <strong>menunggu persetujuan</strong>.
-                @if($p->menungguDosen())
+                @if($p->menungguDosen() && (\App\Services\AuthService::user()['role'] ?? null) === 'dosen')
                     Jika Anda setujui, pengajuan diteruskan ke Laboran untuk keputusan akhir; stok belum berubah.
                 @else
                     Menyetujui akan memotong stok sesuai jumlah peminjaman; menolak tidak mengubah stok.
@@ -46,7 +45,7 @@
                     <i class="bi bi-x-lg"></i> Tolak
                 </button>
                 <form action="{{ route('pengajuan.setujui', $p->id_peminjaman) }}" method="POST" class="d-inline"
-                      data-konfirmasi="Setujui pengajuan peminjaman #{{ $p->id_peminjaman }}? {{ $p->menungguDosen() ? 'Pengajuan akan diteruskan ke Laboran.' : 'Stok barang akan dipotong sesuai jumlah yang diajukan.' }}">
+                      data-konfirmasi="Setujui pengajuan peminjaman #{{ $p->id_peminjaman }}? {{ $p->menungguDosen() && (\App\Services\AuthService::user()['role'] ?? null) === 'dosen' ? 'Pengajuan akan diteruskan ke Laboran.' : 'Stok barang akan dipotong sesuai jumlah yang diajukan.' }}">
                     @csrf
                     <button type="submit" class="btn btn-primary d-flex align-items-center gap-2"><i class="bi bi-check-lg"></i> Setujui</button>
                 </form>
@@ -62,7 +61,6 @@
                 <i class="bi bi-arrow-down-left-square me-1"></i>
                 Peminjaman aktif. Catat pengembalian barang untuk mengembalikan stok.
             </div>
-            <a href="{{ route('pengembalian.index') }}" class="btn btn-gold d-flex align-items-center gap-2"><i class="bi bi-box-arrow-in-down"></i> Catat Pengembalian</a>
         </div>
     </div>
 @endif

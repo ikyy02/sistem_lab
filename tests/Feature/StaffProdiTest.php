@@ -68,8 +68,7 @@ class StaffProdiTest extends TestCase
             ->assertDontSee('Usulan Pengadaan')
             ->assertDontSee('Kelola Katalog')
             ->assertDontSee('Kelola Data User')
-            ->assertDontSee('Kelola Data Master')
-            ->assertDontSee('Pengaturan Operasional')
+            ->assertDontSee('Pengaturan Laboratorium')
             ->assertDontSee('Peminjaman');
     }
 
@@ -84,8 +83,6 @@ class StaffProdiTest extends TestCase
         $this->sebagaiStaff()->get(route('kelola-katalog.index'))->assertForbidden();
         $this->sebagaiStaff()->get(route('kelola-user.index'))->assertForbidden();
 
-        $this->sebagai('laboran', $this->laboran())->get(route('data-akademik.index'))->assertForbidden();
-        $this->sebagai('laboran', $this->laboran())->get(route('jadwal.index'))->assertForbidden();
         $this->sebagai('dosen', $this->dosen())->get(route('jadwal.index'))->assertForbidden();
 
         $this->flushSession();

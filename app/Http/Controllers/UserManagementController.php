@@ -50,12 +50,13 @@ class UserManagementController extends Controller
                 ],
             ],
             Role::DOSEN => [
-                'columns' => ['nuptk_nidn' => ['NUPTK/NIDN', true], 'nama' => ['Nama', true], 'nama_prodi' => ['Prodi', true], 'email' => ['Email', true], 'no_whatsapp' => ['WhatsApp', false]],
+                'columns' => ['nuptk_nidn' => ['NUPTK/NIDN', true], 'nama' => ['Nama', true], 'nama_prodi' => ['Prodi', true], 'email' => ['Email', true], 'no_whatsapp' => ['WhatsApp', false], 'status' => ['Status', false]],
                 'search' => ['dosens.nuptk_nidn', 'dosens.nama', 'prodis.nama_prodi', 'dosens.email', 'dosens.no_whatsapp'],
                 'default_sort' => 'nama',
                 'fields' => [
                     ['name' => 'nuptk_nidn', 'label' => 'NUPTK/NIDN', 'type' => 'text', 'placeholder' => 'NUPTK atau NIDN', 'required' => true],
                     $nama, $prodi, $email(), $wa,
+                    ['name' => 'status', 'label' => 'Status', 'type' => 'select', 'options' => ['aktif' => 'Aktif', 'nonaktif' => 'Nonaktif'], 'placeholder' => 'Pilih Status', 'required' => true],
                 ],
             ],
             Role::STAFF => [
@@ -222,6 +223,7 @@ class UserManagementController extends Controller
             Role::DOSEN => [
                 'nuptk_nidn' => ['bail', 'required', 'string', 'max:30', 'regex:/^[A-Za-z0-9]+$/', Rule::unique($table, 'nuptk_nidn')->ignore($id, 'nuptk_nidn')],
                 'nama' => $nama, 'id_prodi' => $prodi, 'email' => $email, 'no_whatsapp' => $wa,
+                'status' => ['bail', 'required', Rule::in(['aktif', 'nonaktif'])], // dosen nonaktif tidak muncul sebagai penanggung jawab
             ],
             Role::STAFF => ['id_pegawai' => $pegawaiRule, 'nama' => $nama, 'id_prodi' => $prodi, 'email' => $email, 'no_whatsapp' => $wa],
             default => ['id_pegawai' => $pegawaiRule, 'nama' => $nama, 'email' => $email, 'no_whatsapp' => $wa],
@@ -236,6 +238,8 @@ class UserManagementController extends Controller
             'password.min' => 'Password minimal :min karakter.',
             'id_prodi.exists' => 'Pilih Prodi dari daftar.',
             'id_prodi.integer' => 'Pilih Prodi dari daftar.',
+            'status.required' => 'Pilih status dosen.',
+            'status.in' => 'Pilih status dosen.',
             'email.unique' => 'Email sudah terdaftar di sistem.',
         ], MahasiswaRequest::attributeNames() + ['nuptk_nidn' => 'NUPTK/NIDN', 'id_pegawai' => 'ID Pegawai/NIP', 'password' => 'Password']);
         if ($validator->fails()) {

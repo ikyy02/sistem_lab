@@ -61,7 +61,6 @@
 @endif
 
 <div class="mb-3">
-    <h2 class="font-display fw-semibold mb-1" style="font-size:1.5rem;">Ajukan Peminjaman</h2>
     <p class="mb-0" style="font-size:.83rem;color:var(--text-muted);">
         @if($roleDosen)
             Peminjaman pembelajaran berlaku 1 hari dan hanya pada jam operasional laboratorium ({{ $jamBuka }} – {{ $jamTutup }}). Pengajuan akan berstatus <strong>Menunggu Persetujuan</strong>.
@@ -83,7 +82,6 @@
     <div class="pj-bar">
         <div class="pj-hint" id="hintAjukan" aria-live="polite">Tambahkan minimal satu ruangan, alat, atau bahan untuk mengaktifkan tombol Ajukan Peminjaman.</div>
         <div class="d-flex flex-wrap gap-2 justify-content-end">
-            <a href="{{ route('katalog') }}" class="btn btn-outline-silab"><i class="bi bi-collection me-1"></i> Lihat Katalog</a>
             <button type="submit" id="btnAjukan" class="btn btn-primary d-inline-flex align-items-center justify-content-center gap-2" disabled>
                 <i class="bi bi-send" id="ikonAjukan"></i><span id="teksAjukan">Ajukan Peminjaman</span>
             </button>

@@ -99,9 +99,9 @@ class MahasiswaMandiriTest extends TestCase
         $this->assertSame(1, Jadwal::where('id_kelas', $kelas->id_kelas)->count());
 
         $admin = $this->sebagai('laboran', $this->laboran());
-        $admin->delete(route('master-data.destroy', ['kategori' => 'kelas', 'id' => $bebas->id_kelas]))->assertSessionHasNoErrors();
+        $admin->delete(route('data-akademik.destroy', ['tab' => 'kelas', 'id' => $bebas->id_kelas]))->assertSessionHasNoErrors();
         $this->assertDatabaseMissing('kelas', ['id_kelas' => $bebas->id_kelas]);
-        $admin->delete(route('master-data.destroy', ['kategori' => 'kelas', 'id' => $kelas->id_kelas])); // masih dipakai jadwal
+        $admin->delete(route('data-akademik.destroy', ['tab' => 'kelas', 'id' => $kelas->id_kelas])); // masih dipakai jadwal
         $this->assertDatabaseHas('kelas', ['id_kelas' => $kelas->id_kelas]);
 
         $this->sebagai('staff_prodi', $this->staff())->get(route('jadwal.index'))->assertOk();

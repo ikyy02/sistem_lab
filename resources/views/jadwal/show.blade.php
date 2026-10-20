@@ -27,7 +27,7 @@
             <div class="px-4 py-3 d-flex flex-wrap align-items-center justify-content-between gap-2"
                  style="border-bottom:1px solid var(--border-color);background:var(--body-bg);">
                 <div class="d-flex align-items-center gap-3">
-                    <div style="width:38px;height:38px;background:var(--gold-tint);border-radius:10px;display:flex;align-items:center;justify-content:center;color:var(--gold);flex-shrink:0;">
+                    <div style="width:38px;height:38px;background:var(--gold-tint);border-radius:10px;display:flex;align-items:center;justify-content:center;color: var(--gold-text);flex-shrink:0;">
                         <i class="bi bi-calendar2-check-fill"></i>
                     </div>
                     <div>
@@ -60,7 +60,7 @@
                     @foreach($baris as $b)
                     <div class="col-12 col-md-6">
                         <div class="p-3 h-100" style="background:var(--body-bg);border:1px solid var(--border-color);border-radius:10px;">
-                            <div class="d-flex align-items-center gap-2 mb-1" style="font-size:.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;">
+                            <div class="d-flex align-items-center gap-2 mb-1" style="font-size:.75rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;">
                                 <i class="bi {{ $b['icon'] }}"></i> {{ $b['label'] }}
                             </div>
                             <div class="fw-semibold" style="font-size:.9rem;">{{ $b['nilai'] }}</div>

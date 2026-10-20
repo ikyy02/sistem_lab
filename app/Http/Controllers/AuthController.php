@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\PengaturanOperasional;
 use App\Models\Ruangan;
 use App\Services\AuthService;
-use App\Support\Role;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 
@@ -15,7 +14,7 @@ class AuthController extends Controller
     public function landing()
     {
         if ($user = AuthService::user()) {
-            return redirect(Role::home($user['role']));
+            return redirect()->route('dashboard');
         }
 
         return view('landing', [
@@ -28,7 +27,7 @@ class AuthController extends Controller
     public function showLogin()
     {
         if ($user = AuthService::user()) {
-            return redirect(Role::home($user['role']));
+            return redirect()->route('dashboard');
         }
 
         return view('auth.login');
@@ -46,15 +45,17 @@ class AuthController extends Controller
         ]);
 
         $kunci = 'login:'.mb_strtolower($data['email']).'|'.$request->ip();
-        if (RateLimiter::tooManyAttempts($kunci, 5)) {
+        $kunciIp = 'login-ip:'.$request->ip(); // banyak email dari satu IP (password spraying)
+        if (RateLimiter::tooManyAttempts($kunci, 5) || RateLimiter::tooManyAttempts($kunciIp, 30)) {
             return back()->withInput($request->only('email'))
-                ->withErrors(['email' => 'Terlalu banyak percobaan login. Coba lagi dalam '.RateLimiter::availableIn($kunci).' detik.']);
+                ->withErrors(['email' => 'Terlalu banyak percobaan login. Coba lagi dalam '.max(RateLimiter::availableIn($kunci), RateLimiter::availableIn($kunciIp)).' detik.']);
         }
 
         $identity = $auth->attempt($data['email'], $data['password']);
 
         if (! $identity) {
             RateLimiter::hit($kunci, 300);
+            RateLimiter::hit($kunciIp, 300);
 
             return back()->withInput($request->only('email'))
                 ->withErrors(['email' => 'Email atau password salah.']);
@@ -63,7 +64,7 @@ class AuthController extends Controller
         RateLimiter::clear($kunci);
         $auth->login($request, $identity);
 
-        return redirect(Role::home($identity['role']));
+        return redirect()->route('dashboard');
     }
 
     public function logout(Request $request, AuthService $auth)

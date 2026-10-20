@@ -597,9 +597,6 @@ class PeminjamanService
         if ($p->bisaDiprosesOleh($akun->email, $akun->role)) {
             return;
         }
-        if ($akun->role === 'laboran' && $p->menungguDosen()) {
-            $this->gagal(['status' => 'Pengajuan ini menunggu persetujuan Dosen penanggung jawab terlebih dahulu.']);
-        }
         if ($akun->role === 'dosen' && $p->diteruskanKeLaboran() && $p->email_dosen === $akun->email) {
             $this->gagal(['status' => 'Pengajuan ini sudah Anda teruskan ke Laboran.']);
         }

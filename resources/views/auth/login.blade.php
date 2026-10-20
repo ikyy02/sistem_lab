@@ -23,7 +23,7 @@
         .lg-main { display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 40px 24px; }
         .lg-top { width: 100%; max-width: 440px; margin-bottom: 16px; }
         .lg-back { display: inline-flex; align-items: center; gap: 8px; color: var(--ink); text-decoration: none; font-size: .86rem; font-weight: 600; padding: 6px 2px; }
-        .lg-back:hover { color: var(--gold); }
+        .lg-back:hover { color: var(--gold-text); }
         .lg-card { width: 100%; max-width: 440px; background: #fff; border: 1px solid var(--border-color); border-radius: 16px; padding: 34px; box-shadow: 0 18px 40px rgba(43,42,40,.08); }
         .lg-card h2 { font-family: 'Fraunces', serif; font-weight: 600; font-size: 1.7rem; margin-bottom: 4px; }
         .lg-error { min-height: 0; }
@@ -47,7 +47,7 @@
             <h1>Laboratorium Komputer Politala <em>dalam satu sistem</em>.</h1>
             <p>Sistem Informasi Administrasi, Reservasi, Katalog, dan Aktivitas Laboratorium — Jurusan Komputer dan Bisnis.</p>
         </div>
-        <div style="font-size:.78rem;color:#9C988C;">&copy; {{ date('Y') }} SIARKA &middot; Politeknik Negeri Tanah Laut</div>
+        <div style="font-size:.8rem;color:#9C988C;">&copy; {{ date('Y') }} SIARKA &middot; Politeknik Negeri Tanah Laut</div>
     </aside>
 
     <main class="lg-main">
@@ -77,10 +77,10 @@
                     <input type="password" id="password" name="password" class="form-control" required autocomplete="current-password">
                     <button type="button" class="btn btn-outline-silab" id="togglePassword" aria-label="Tampilkan password"><i class="bi bi-eye"></i></button>
                 </div>
-                @error('password')<div class="text-danger mt-1" style="font-size:.78rem">{{ $message }}</div>@enderror
+                @error('password')<div class="text-danger mt-1" style="font-size:.8rem">{{ $message }}</div>@enderror
             </div>
             <button type="submit" class="btn btn-primary w-100 py-2">Masuk</button>
-            <p class="mt-4 mb-0 text-center" style="font-size:.76rem;color:var(--text-muted)">Akun dikelola oleh Laboran/Admin. Tidak tersedia pendaftaran mandiri.</p>
+            <p class="mt-4 mb-0 text-center" style="font-size:.8rem;color:var(--text-muted)">Akun dikelola oleh Laboran/Admin. Tidak tersedia pendaftaran mandiri.</p>
         </form>
     </main>
 </div>

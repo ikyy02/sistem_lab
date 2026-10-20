@@ -6,13 +6,12 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DataAkademikController;
 use App\Http\Controllers\JadwalController;
 use App\Http\Controllers\KelolaKatalogController;
-use App\Http\Controllers\MasterDataController;
 use App\Http\Controllers\MahasiswaController;
 use App\Http\Controllers\PengajuanController;
 use App\Http\Controllers\PeriodeJadwalController;
 use App\Http\Controllers\PengembalianController;
 use App\Http\Controllers\PeminjamanController;
-use App\Http\Controllers\PengaturanOperasionalController;
+use App\Http\Controllers\PengaturanLaboratoriumController;
 use App\Http\Controllers\UserManagementController;
 use App\Services\AuthService;
 use App\Support\Role;
@@ -41,8 +40,8 @@ Route::middleware('silab.auth')->group(function () {
 
     // Kelola Profil dinonaktifkan sementara (route, menu, dan halaman dihapus; data & kolom profil tetap ada).
 
-    // Khusus Staf Prodi
-    Route::middleware('silab.role:' . Role::STAFF)->group(function () {
+    // Staf Prodi dan Laboran/Admin (Super Admin)
+    Route::middleware('silab.role:' . Role::STAFF . ',' . Role::LABORAN)->group(function () {
 
         // Data Akademik: Mata Kuliah, Kelas, Semester, dan Dosen (satu menu, empat tab)
         $tabAkademik = ['mata-kuliah', 'kelas', 'dosen'];
@@ -107,18 +106,12 @@ Route::middleware('silab.auth')->group(function () {
         Route::get('kelola-katalog/{kategori}/template', [KelolaKatalogController::class, 'template'])->whereIn('kategori', $kat['kategori'])->name('kelola-katalog.template');
         Route::post('kelola-katalog/{kategori}/import', [KelolaKatalogController::class, 'import'])->whereIn('kategori', $kat['kategori'])->name('kelola-katalog.import');
 
-        // Pengaturan Operasional: jam dan hari operasional
-        Route::get('pengaturan-operasional', [PengaturanOperasionalController::class, 'index'])->name('pengaturan-operasional.index');
-        Route::put('pengaturan-operasional', [PengaturanOperasionalController::class, 'update'])->name('pengaturan-operasional.update');
-
-        // Kelola Data Master: Satuan dan Kelas
-        Route::get('master-data', [MasterDataController::class, 'index'])->name('master-data.index');
-        Route::post('master-data/{kategori}', [MasterDataController::class, 'store'])
-            ->whereIn('kategori', array_keys(MasterDataController::KATEGORI))->name('master-data.store');
-        Route::put('master-data/{kategori}/{id}', [MasterDataController::class, 'update'])
-            ->whereIn('kategori', array_keys(MasterDataController::KATEGORI))->whereNumber('id')->name('master-data.update');
-        Route::delete('master-data/{kategori}/{id}', [MasterDataController::class, 'destroy'])
-            ->whereIn('kategori', array_keys(MasterDataController::KATEGORI))->whereNumber('id')->name('master-data.destroy');
+        // Pengaturan Laboratorium: tab Satuan (dropdown alat/bahan) dan tab Operasional (jam & hari buka)
+        Route::get('pengaturan-lab', [PengaturanLaboratoriumController::class, 'index'])->name('pengaturan-lab.index');
+        Route::post('pengaturan-lab/satuan', [PengaturanLaboratoriumController::class, 'store'])->name('pengaturan-lab.satuan.store');
+        Route::put('pengaturan-lab/satuan/{id}', [PengaturanLaboratoriumController::class, 'update'])->whereNumber('id')->name('pengaturan-lab.satuan.update');
+        Route::delete('pengaturan-lab/satuan/{id}', [PengaturanLaboratoriumController::class, 'destroy'])->whereNumber('id')->name('pengaturan-lab.satuan.destroy');
+        Route::put('pengaturan-lab/operasional', [PengaturanLaboratoriumController::class, 'updateOperasional'])->name('pengaturan-lab.operasional.update');
 
         // Kelola Data User (satu menu, 4 kategori)
         Route::get('kelola-user', [UserManagementController::class, 'index'])->name('kelola-user.index');

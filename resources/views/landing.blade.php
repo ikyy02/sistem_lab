@@ -56,29 +56,29 @@
         .lp-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
         .lp-photo .lp-fallback { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: rgba(255,255,255,.35); font-size: 2.6rem; z-index: 0; }
         .lp-photo img { position: relative; z-index: 1; }
-        .lp-photo-cap { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; padding: 22px 14px 12px; font-size: .72rem; color: #fff; background: linear-gradient(transparent, rgba(0,0,0,.65)); }
+        .lp-photo-cap { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; padding: 22px 14px 12px; font-size:.75rem; color: #fff; background: linear-gradient(transparent, rgba(0,0,0,.65)); }
 
 
         /* Section */
         .lp-section { padding: 84px 0; }
         .lp-band { background: #FAF7F0; border-top: 1px solid #EFE1C2; border-bottom: 1px solid #EFE1C2; }
-        .lp-kicker { font-size: .74rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--gold); margin-bottom: 8px; }
+        .lp-kicker { font-size:.75rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--gold-text); margin-bottom: 8px; }
         .lp-h2 { font-family: 'Fraunces', serif; font-weight: 600; font-size: clamp(1.6rem, 3vw, 2.2rem); color: var(--ink); margin-bottom: 12px; }
         .lp-sub { color: var(--text-muted); max-width: 640px; line-height: 1.7; }
         .lp-card { height: 100%; background: #fff; border: 1px solid var(--border-color); border-radius: 14px; padding: 26px; }
         .lp-card:hover { border-color: var(--gold); }
-        .lp-icon { width: 48px; height: 48px; border-radius: 12px; background: var(--gold-tint); border: 1px solid #EFE1C2; color: var(--gold); display: flex; align-items: center; justify-content: center; font-size: 1.3rem; margin-bottom: 16px; }
+        .lp-icon { width: 48px; height: 48px; border-radius: 12px; background: var(--gold-tint); border: 1px solid #EFE1C2; color: var(--gold-text); display: flex; align-items: center; justify-content: center; font-size: 1.3rem; margin-bottom: 16px; }
         .lp-card h3 { font-size: 1.02rem; font-weight: 700; margin-bottom: 8px; }
         .lp-card p { font-size: .88rem; color: var(--text-muted); margin: 0; line-height: 1.65; }
         .lp-lab { display: block; background: #fff; border: 1px solid var(--border-color); border-radius: 12px; overflow: hidden; height: 100%; }
-        .lp-lab .foto { aspect-ratio: 16 / 10; background: var(--gold-tint); display: flex; align-items: center; justify-content: center; color: var(--gold); font-size: 2.2rem; overflow: hidden; }
+        .lp-lab .foto { aspect-ratio: 16 / 10; background: var(--gold-tint); display: flex; align-items: center; justify-content: center; color: var(--gold-text); font-size: 2.2rem; overflow: hidden; }
         .lp-lab .foto img { width: 100%; height: 100%; object-fit: cover; display: block; }
         .lp-lab .nama { padding: 14px 18px; font-weight: 600; font-size: .98rem; color: var(--ink); }
         .lp-all { display: inline-flex; align-items: center; gap: 8px; margin-top: 32px; padding: 11px 22px; border: 1px solid var(--ink); border-radius: 8px; color: var(--ink); text-decoration: none; font-weight: 600; font-size: .88rem; }
         .lp-all:hover { background: var(--ink); color: #fff; }
         .lp-index { list-style: none; margin: 0; padding: 0; columns: 3; column-gap: 32px; }
         .lp-index li { break-inside: avoid; padding: 12px 0; border-top: 1px solid var(--border-color); font-weight: 500; }
-        .lp-index li span { color: var(--gold); font-weight: 600; font-size: .8rem; margin-right: 12px; }
+        .lp-index li span { color: var(--gold-text); font-weight: 600; font-size: .8rem; margin-right: 12px; }
         @media (max-width: 991.98px) { .lp-index { columns: 2; } }
         @media (max-width: 575.98px) { .lp-index { columns: 1; } }
         .lp-step { position: relative; padding-top: 4px; }
@@ -86,7 +86,7 @@
         .lp-step h3 { font-size: 1rem; font-weight: 700; }
         .lp-step p { font-size: .87rem; color: var(--text-muted); line-height: 1.65; margin: 0; }
         .lp-jam { background: #fff; border: 1px solid var(--border-color); border-radius: 14px; padding: 26px; }
-        .lp-jam .k { font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; color: var(--text-muted); }
+        .lp-jam .k { font-size:.75rem; text-transform: uppercase; letter-spacing: .08em; color: var(--text-muted); }
         .lp-cta { background: var(--ink); color: #fff; border-radius: 18px; padding: 44px; }
         .lp-cta h2 { font-family: 'Fraunces', serif; font-weight: 600; font-size: clamp(1.4rem, 2.6vw, 1.9rem); }
 
@@ -96,7 +96,7 @@
         .lp-footer a { color: #E7E4DB; text-decoration: none; }
         .lp-footer a:hover { color: var(--gold-bright); }
         .lp-footer li { margin-bottom: 8px; }
-        .lp-copy { border-top: 1px solid rgba(255,255,255,.12); margin-top: 36px; padding-top: 20px; font-size: .78rem; }
+        .lp-copy { border-top: 1px solid rgba(255,255,255,.12); margin-top: 36px; padding-top: 20px; font-size:.8rem; }
 
         @media (max-width: 991.98px) {
             .lp-hero .container { padding-top: calc(var(--lp-nav-h) + 32px); padding-bottom: 56px; }
