@@ -182,7 +182,7 @@ class DataAkademikController extends Controller
             ];
         } else {
             $rules = [
-                'kode_mk' => ['required', 'string', 'max:15', Rule::unique('mata_kuliahs', 'kode_mk')->ignore($record?->getKey(), 'id_mata_kuliah')],
+                'kode_mk' => [ 'string', 'max:15', Rule::unique('mata_kuliahs', 'kode_mk')->ignore($record?->getKey(), 'id_mata_kuliah')],
                 'nama_mk' => ['required', 'string', 'max:100', Rule::unique('mata_kuliahs', 'nama_mk')->ignore($record?->getKey(), 'id_mata_kuliah')],
                 'sks' => ['required', 'integer', 'min:1', 'max:10'],
                 'semester' => ['required', Rule::in(Jadwal::SEMESTER)],

@@ -39,7 +39,7 @@
     <div class="col-12 col-lg-7">
         <div class="card-modern p-4 h-100">
             <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
-                <h3 class="font-display fw-semibold mb-0" style="font-size:1.05rem;">Jadwal Perkuliahan
+                <h3 class="font-display fw-semibold mb-0" style="font-size:1.05rem;">Jadwal Kuliah
                 </h3>
                 <a href="{{ route('jadwal.index') }}" style="font-size:.8rem;">
                     Lihat semua
