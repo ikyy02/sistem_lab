@@ -2,7 +2,7 @@
 
 @section('title', 'Kelola ' . $labels[$kategori])
 @section('page-title', 'Kelola Katalog')
-@section('page-subtitle', 'Alat, Bahan, dan Ruangan laboratorium.')
+@section('page-subtitle', 'Alat, Bahan, & Ruangan laboratorium.')
 
 @section('content')
 @php
