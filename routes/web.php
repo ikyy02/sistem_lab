@@ -49,6 +49,12 @@ Route::middleware('silab.auth')->group(function () {
         // Data Akademik: Mata Kuliah, Kelas, Semester, dan Dosen (satu menu, empat tab)
         $tabAkademik = ['mata-kuliah', 'kelas', 'dosen'];
         Route::get('data-akademik', [DataAkademikController::class, 'index'])->name('data-akademik.index');
+        // Import/template hanya untuk Mata Kuliah dan Kelas; tab dosen ditolak 404 di controller
+        // (bila tidak terdaftar di sini, POST .../dosen/import jatuh ke route PUT/DELETE dan jadi 405).
+        Route::get('data-akademik/{tab}/template', [DataAkademikController::class, 'template'])
+            ->whereIn('tab', $tabAkademik)->name('data-akademik.template');
+        Route::post('data-akademik/{tab}/import', [DataAkademikController::class, 'import'])
+            ->whereIn('tab', $tabAkademik)->name('data-akademik.import');
         Route::post('data-akademik/{tab}', [DataAkademikController::class, 'store'])
             ->whereIn('tab', $tabAkademik)->name('data-akademik.store');
         Route::put('data-akademik/{tab}/{id}', [DataAkademikController::class, 'update'])

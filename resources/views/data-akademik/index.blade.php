@@ -11,12 +11,18 @@
     $open = $openModal;
     $isDosen = $tab === 'dosen'; // tab Dosen hanya-baca (pengelolaan akun dosen ada di Kelola Data User, khusus Laboran)
     $sembunyiTambah = $isSemester || $isDosen;
+    $bisaImport = in_array($tab, ['mata-kuliah', 'kelas'], true);
 @endphp
 
 @section('content')
 
 <x-tab-actions :tabs="$tabs" :active="$tab" route="data-akademik.index" param="tab"
-    :add-label="$sembunyiTambah ? null : 'Tambah ' . $label" add-onclick="openAkademikModal('create')" />
+    :import="$bisaImport" :add-label="$sembunyiTambah ? null : 'Tambah ' . $label" add-onclick="openAkademikModal('create')" />
+
+@if($bisaImport)
+    @include('kelola-user._import_report', ['kategori' => $tab])
+    @include('data-akademik._import_modal')
+@endif
 
 @if($isSemester)
 

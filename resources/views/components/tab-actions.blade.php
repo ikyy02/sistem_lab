@@ -1,10 +1,6 @@
 @props(['tabs', 'active', 'route', 'param' => 'kategori', 'import' => false, 'addLabel' => null, 'addOnclick' => null])
 
-<<<<<<< HEAD
-{{-- Satu baris horizontal: tab di kiri, tombol aksi di kanan (desktop). Layar sempit: tombol turun rapi. Dipakai semua halaman bertab. --}}
-=======
 {{-- Baris tab (atas) lalu tombol aksi (baris sendiri di bawah tab, rata kiri sejajar tab pertama). Dipakai semua halaman bertab. --}}
->>>>>>> c4ec5d9 (refactor: rapikan SIARKA dan perbaiki akses serta peminjaman)
 <div class="tab-action-bar mb-3">
     <ul class="nav nav-pills gap-2 mb-0">
         @foreach($tabs as $key => $text)

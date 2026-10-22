@@ -84,22 +84,11 @@
     .btn-primary:hover, .btn-silab:hover, .btn-primary:focus, .btn-silab:focus { background: var(--ink-dark); border-color: var(--ink-dark); color: #fff; }
     .btn-outline-silab { background: #fff; color: var(--ink); border: 1px solid var(--border-color); }
     .btn-outline-silab:hover { background: var(--body-bg); border-color: var(--muted-blue); color: var(--ink); }
-<<<<<<< HEAD
-    /* Tab di kiri, tombol aksi di kanan, satu baris di desktop; membungkus rapi di layar sempit. */
-    .tab-action-bar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
-    .tab-action-bar .nav { flex: 0 1 auto; min-width: 0; flex-wrap: wrap; }
+    .tab-action-bar { display: flex; flex-flow: row wrap; align-items: center; justify-content: space-between; gap: 12px; } /* tab di kiri, tombol aksi di kanan, satu baris */
     .tab-action-bar .nav-link, .tab-action-bar .btn { min-height: 42px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
     .tab-action-bar .btn i { font-size: 1rem; line-height: 1; }
-    .tab-action-bar__actions { display: flex; flex: 0 0 auto; flex-wrap: nowrap; gap: 8px; margin-left: auto; }
-    .tab-action-bar__actions .btn { white-space: nowrap; }
-    @media (max-width: 575.98px) { .tab-action-bar { align-items: stretch; } .tab-action-bar__actions { flex-wrap: wrap; width: 100%; margin-left: 0; } .tab-action-bar__actions .btn { flex: 1 1 0; } }
-=======
-    .tab-action-bar { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; }
-    .tab-action-bar .nav-link, .tab-action-bar .btn { min-height: 42px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
-    .tab-action-bar .btn i { font-size: 1rem; line-height: 1; }
-    .tab-action-bar__actions { display: flex; flex-wrap: wrap; gap: 8px; }
+    .tab-action-bar__actions { display: flex; flex-wrap: wrap; gap: 8px; margin-left: auto; }
     @media (max-width: 575.98px) { .tab-action-bar { align-items: stretch; } .tab-action-bar__actions .btn { flex: 1 1 0; } }
->>>>>>> c4ec5d9 (refactor: rapikan SIARKA dan perbaiki akses serta peminjaman)
     .btn-gold { background: #8A6A22; border-color: #8A6A22; color: #fff; }
     .btn-gold:hover { background: #6F551B; border-color: #6F551B; color: #fff; }
     .btn-edit { background: var(--body-bg); color: var(--ink); border: 1px solid var(--border-color); font-size: .8rem; padding: 5px 12px; min-height: 36px; }

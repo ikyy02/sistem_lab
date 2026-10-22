@@ -7,6 +7,10 @@ use App\Models\Jadwal;
 use App\Models\MataKuliah;
 use App\Models\StaffProdi;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use PhpOffice\PhpSpreadsheet\Cell\DataType;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Tests\Concerns\MembuatData;
 use Tests\TestCase;
 
@@ -247,6 +251,56 @@ class StaffProdiTest extends TestCase
         $this->sebagaiStaff()->get(route('jadwal.index'))->assertOk();
         $this->sebagaiStaff()->delete(route('data-akademik.destroy', ['tab' => 'dosen', 'id' => $dosen->getKey()]))->assertForbidden();
         $this->assertNotNull(\App\Models\Dosen::find($dosen->getKey()));
+    }
+
+    // ------------------------------------------------------------------ data akademik: import
+
+    private function excel(array $header, array $rows): UploadedFile
+    {
+        $book = new Spreadsheet();
+        $sheet = $book->getActiveSheet();
+        foreach (array_merge([$header], $rows) as $r => $cells) {
+            foreach (array_values($cells) as $c => $v) {
+                $sheet->setCellValueExplicit(chr(65 + $c) . ($r + 1), (string) $v, DataType::TYPE_STRING);
+            }
+        }
+        $path = tempnam(sys_get_temp_dir(), 'x');
+        (new Xlsx($book))->save($path);
+        $content = file_get_contents($path);
+        unlink($path);
+
+        return UploadedFile::fake()->createWithContent('data.xlsx', $content);
+    }
+
+    public function test_import_mata_kuliah_dan_kelas_dari_data_akademik(): void
+    {
+        $prodi = $this->prodi('D3 Uji');
+
+        $this->sebagaiStaff()->get(route('data-akademik.index'))->assertOk()->assertSee('importModal');
+        $this->sebagaiStaff()->get(route('data-akademik.template', ['tab' => 'kelas']))->assertOk();
+
+        $this->sebagaiStaff()->post(route('data-akademik.import', ['tab' => 'mata-kuliah']), ['file' => $this->excel(
+            ['Kode', 'Mata Kuliah', 'SKS', 'Semester'],
+            [['if-101', 'Basis Data', '3', 'Ganjil'], ['IF-102', 'Jaringan', '2', 'genap']],
+        )])->assertSessionHas('success');
+        $this->assertSame('IF-101', MataKuliah::where('nama_mk', 'Basis Data')->value('kode_mk'));
+        $this->assertSame(2, MataKuliah::count());
+
+        // satu baris salah (kode sudah ada, SKS 0) -> tidak ada yang tersimpan
+        $this->sebagaiStaff()->post(route('data-akademik.import', ['tab' => 'mata-kuliah']), ['file' => $this->excel(
+            ['Kode', 'Mata Kuliah', 'SKS', 'Semester'],
+            [['IF-103', 'Algoritma', '3', 'Ganjil'], ['IF-101', 'Lain', '0', 'Ganjil']],
+        )])->assertSessionHas('import_report', fn ($r) => $r['error_count'] === 1 && $r['errors'][0]['row'] === 3);
+        $this->assertSame(2, MataKuliah::count());
+
+        $this->sebagaiStaff()->post(route('data-akademik.import', ['tab' => 'kelas']), ['file' => $this->excel(
+            ['Nama Kelas', 'Prodi'],
+            [['1A', 'D3 Uji'], ['1B', 'D3 Uji']],
+        )])->assertSessionHas('success');
+        $this->assertSame(2, \App\Models\Kelas::where('id_prodi', $prodi->id_prodi)->whereIn('nama_kelas', ['1A', '1B'])->count());
+
+        // tab dosen tidak punya import
+        $this->sebagaiStaff()->post(route('data-akademik.import', ['tab' => 'dosen']), ['file' => $this->excel(['Nama'], [['x']])])->assertNotFound();
     }
 
     // ------------------------------------------------------------------ jadwal

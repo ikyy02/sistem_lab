@@ -47,11 +47,7 @@ class HalamanTidakErrorTest extends TestCase
             ->assertSee('Pengaturan Laboratorium')
             ->assertDontSee('Kelola Data Master')->assertDontSee('Pengaturan Operasional')
             ->assertDontSee('sidebar-section-label', false)->getContent();
-<<<<<<< HEAD
-        foreach (['Layanan Peminjaman', 'Katalog &amp; Stok', 'Administrasi'] as $grup) {
-=======
         foreach (['Layanan Peminjaman', 'Katalog &amp; Stok', '>Administrasi<'] as $grup) {
->>>>>>> c4ec5d9 (refactor: rapikan SIARKA dan perbaiki akses serta peminjaman)
             $this->assertStringNotContainsString($grup, $html);
         }
         $this->assertSame(1, substr_count($html, 'Pengaturan Laboratorium</span>'));
