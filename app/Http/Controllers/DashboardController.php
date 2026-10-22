@@ -40,10 +40,7 @@ class DashboardController extends Controller
             return app(DashboardControllerStaff::class)->index();
         }
 
-<<<<<<< HEAD
-=======
         // Query dasar: semua peminjaman milik pengguna ini (dipakai berulang untuk hitungan).
->>>>>>> c4ec5d9 (refactor: rapikan SIARKA dan perbaiki akses serta peminjaman)
         $dasar = fn () => Peminjaman::where('email_peminjam', $me['email']);
         $terbaru = $dasar()->with(Peminjaman::withProfil())
             ->orderByDesc('tanggal_pengajuan')->limit(5)->get();

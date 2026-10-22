@@ -16,11 +16,7 @@
 @section('content')
 
 <x-tab-actions :tabs="$tabs" :active="$tab" route="data-akademik.index" param="tab"
-<<<<<<< HEAD
-    :add-label="$isSemester ? null : 'Tambah ' . $label" add-onclick="openAkademikModal('create')" />
-=======
     :add-label="$sembunyiTambah ? null : 'Tambah ' . $label" add-onclick="openAkademikModal('create')" />
->>>>>>> c4ec5d9 (refactor: rapikan SIARKA dan perbaiki akses serta peminjaman)
 
 @if($isSemester)
 

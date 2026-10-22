@@ -118,10 +118,7 @@ class KelolaKatalogController extends Controller
         $data = $v->validated();
         $room = $kategori === 'ruangan';
         $dir = $room ? Ruangan::GAMBAR_DIR : AlatBahan::GAMBAR_DIR;
-<<<<<<< HEAD
-=======
         // Nama file gambar yang disimpan ke database hanya nama acak (uuid), bukan path penuh.
->>>>>>> c4ec5d9 (refactor: rapikan SIARKA dan perbaiki akses serta peminjaman)
         $data['gambar'] = $request->hasFile('gambar') ? $this->saveImage($request->file('gambar'), $dir) : null; // alat/bahan: gambar wajib (validator)
         if ($room) {
             Ruangan::create($data);
@@ -144,10 +141,7 @@ class KelolaKatalogController extends Controller
         $data = $v->validated();
         $dir = $kategori === 'ruangan' ? Ruangan::GAMBAR_DIR : AlatBahan::GAMBAR_DIR;
         unset($data['gambar']);
-<<<<<<< HEAD
-=======
         // Urutan: hapus gambar lama, simpan gambar baru, simpan namanya ke database.
->>>>>>> c4ec5d9 (refactor: rapikan SIARKA dan perbaiki akses serta peminjaman)
         if ($request->hasFile('gambar')) {
             $this->deleteImage($item->gambar, $dir);
             $data['gambar'] = $this->saveImage($request->file('gambar'), $dir);
@@ -300,11 +294,7 @@ class KelolaKatalogController extends Controller
     private function saveImage($file, string $dir = AlatBahan::GAMBAR_DIR): string
     {
         $name = Str::uuid() . '.' . ($file->guessExtension() ?: 'jpg');
-<<<<<<< HEAD
-        $file->move(public_path($dir), $name);
-=======
         $file->storeAs($dir, $name, 'public'); // storage/app/public/{dir}; tampil lewat public/storage (storage:link)
->>>>>>> c4ec5d9 (refactor: rapikan SIARKA dan perbaiki akses serta peminjaman)
 
         return $name;
     }

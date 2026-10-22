@@ -135,10 +135,7 @@ class Peminjaman extends Model
     }
 
     /** Yang menunggu TINDAKAN role itu sekarang: Dosen = tahap 1; Laboran = semua yang menunggu. */
-<<<<<<< HEAD
-=======
     // Scope: pengajuan yang menunggu tindakan role tersebut sekarang.
->>>>>>> c4ec5d9 (refactor: rapikan SIARKA dan perbaiki akses serta peminjaman)
     public function scopeMenungguTindakan($q, string $email, string $role)
     {
         $q = $q->dapatDiprosesOleh($email, $role)->where('status', 'menunggu');
