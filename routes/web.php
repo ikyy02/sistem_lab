@@ -13,7 +13,6 @@ use App\Http\Controllers\PengembalianController;
 use App\Http\Controllers\PeminjamanController;
 use App\Http\Controllers\PengaturanLaboratoriumController;
 use App\Http\Controllers\UserManagementController;
-use App\Services\AuthService;
 use App\Support\Role;
 use Illuminate\Support\Facades\Route;
 
