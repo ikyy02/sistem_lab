@@ -31,11 +31,11 @@ class AlatBahanController extends Controller
             $pk = 'id_ruangan';
         } else {
             $query = AlatBahan::query()
-                ->select('alat_bahans.*', 'satuans.nama_satuan', 'ruangans.nama_ruangan')
+                ->select('alat_bahans.*', 'satuans.nama_satuan', 'ruangans.nama_ruangan', 'satuans.id_satuan', 'ruangans.id_ruangan')
                 ->join('satuans', 'satuans.id_satuan', '=', 'alat_bahans.id_satuan')
                 ->join('ruangans', 'ruangans.id_ruangan', '=', 'alat_bahans.id_ruangan')
                 ->when($jenis, fn ($q) => $q->where('alat_bahans.jenis', $jenis));
-            $columns = ['alat_bahans.nama', 'satuans.nama_satuan', 'ruangans.nama_ruangan', 'alat_bahans.keterangan'];
+            $columns = ['alat_bahans.nama', 'satuans.nama_satuan','satuans.id_satuan', 'ruangans.nama_ruangan', 'ruangans.id_ruangan', 'alat_bahans.keterangan'];
             $sortColumn = 'alat_bahans.' . $sort;
             $pk = 'alat_bahans.id_katalog';
         }
