@@ -9,12 +9,18 @@
     $listQuery = request()->only(['tab', 'search', 'per_page', 'page']);
     $isSemester = $tab === 'semester';
     $open = $openModal;
+    $isDosen = $tab === 'dosen'; // tab Dosen hanya-baca (pengelolaan akun dosen ada di Kelola Data User, khusus Laboran)
+    $sembunyiTambah = $isSemester || $isDosen;
 @endphp
 
 @section('content')
 
 <x-tab-actions :tabs="$tabs" :active="$tab" route="data-akademik.index" param="tab"
+<<<<<<< HEAD
     :add-label="$isSemester ? null : 'Tambah ' . $label" add-onclick="openAkademikModal('create')" />
+=======
+    :add-label="$sembunyiTambah ? null : 'Tambah ' . $label" add-onclick="openAkademikModal('create')" />
+>>>>>>> c4ec5d9 (refactor: rapikan SIARKA dan perbaiki akses serta peminjaman)
 
 @if($isSemester)
 
@@ -101,23 +107,20 @@
                         <th style="width:150px;">NUPTK/NIDN</th>
                         <th>Nama Dosen</th>
                         <th>Prodi</th>
-                        <th>Email</th>
                         <th style="width:150px;">No. Telepon</th>
                         <th style="width:100px;">Status</th>
                     @endif
-                    <th class="text-end pe-4">Aksi</th>
+                    @unless($isDosen)<th class="text-end pe-4">Aksi</th>@endunless
                 </tr>
             </thead>
             <tbody>
             @forelse($data as $item)
                 @php
                     $itemKey = $item->getKey();
-                    $itemName = $tab === 'mata-kuliah' ? $item->nama_mk : ($tab === 'kelas' ? $item->nama_kelas : $item->nama);
+                    $itemName = $tab === 'mata-kuliah' ? $item->nama_mk : $item->nama_kelas;
                     $itemData = $tab === 'mata-kuliah'
                         ? ['kode_mk' => $item->kode_mk, 'nama_mk' => $item->nama_mk, 'sks' => $item->sks, 'semester' => $item->semester]
-                        : ($tab === 'kelas'
-                            ? ['nama_kelas' => $item->nama_kelas, 'id_prodi' => $item->id_prodi]
-                            : ['nuptk_nidn' => $item->nuptk_nidn, 'nama' => $item->nama, 'id_prodi' => $item->id_prodi, 'email' => $item->email, 'no_whatsapp' => $item->no_whatsapp, 'status' => $item->status ?? 'aktif']);
+                        : ['nama_kelas' => $item->nama_kelas, 'id_prodi' => $item->id_prodi];
                 @endphp
                 <tr>
                     <td class="ps-4 text-muted">{{ $data->firstItem() + $loop->index }}</td>
@@ -137,7 +140,6 @@
                             <span class="fw-semibold">{{ $item->nama }}</span>
                         </td>
                         <td>{{ $item->nama_prodi ?? '—' }}</td>
-                        <td>{{ $item->email }}</td>
                         <td>{{ $item->no_whatsapp ?? '—' }}</td>
                         <td>
                             @if(($item->status ?? 'aktif') === 'nonaktif')
@@ -147,6 +149,7 @@
                             @endif
                         </td>
                     @endif
+                    @unless($isDosen)
                     <td class="text-end pe-4">
                         <div class="d-flex justify-content-end gap-2">
                             <button type="button" class="btn btn-edit d-flex align-items-center gap-1"
@@ -160,9 +163,10 @@
                             </form>
                         </div>
                     </td>
+                    @endunless
                 </tr>
             @empty
-                <tr><td colspan="{{ $tab === 'dosen' ? 7 : 6 }}" class="text-center py-5" style="color:var(--text-muted);">
+                <tr><td colspan="6" class="text-center py-5" style="color:var(--text-muted);">
                     <i class="bi bi-inbox fs-1 d-block mb-2" style="color:#c3cbdb;"></i>
                     {{ $search !== '' ? 'Tidak ada ' . strtolower($label) . ' yang cocok dengan “' . $search . '”.' : 'Belum ada data ' . strtolower($label) . '.' }}
                 </td></tr>
@@ -268,96 +272,22 @@
     </div>
 </div>
 
-{{-- Modal Dosen --}}
-<div class="modal fade" id="dosenModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <form method="POST" id="dosenForm" class="modal-content" autocomplete="off"
-              data-store="{{ route('data-akademik.store', ['tab' => 'dosen']) }}"
-              data-update="{{ route('data-akademik.update', ['tab' => 'dosen', 'id' => '__ID__']) }}"
-              data-query="{{ json_encode($listQuery) }}">
-            @csrf
-            <input type="hidden" name="_method" id="dosenMethod" value="PUT" disabled>
-            <div class="modal-header">
-                <h5 class="modal-title fw-bold" id="dosenModalTitle" style="font-size:1rem;">Tambah Dosen</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
-            </div>
-            <div class="modal-body p-4">
-                <div class="row g-3">
-                    <div class="col-12 col-sm-6">
-                        <label class="form-label" for="f_ds_nuptk_nidn">NUPTK/NIDN <span class="text-danger">*</span></label>
-                        <input type="text" id="f_ds_nuptk_nidn" name="nuptk_nidn" value="{{ old('nuptk_nidn') }}" maxlength="30"
-                               placeholder="NUPTK atau NIDN" class="form-control @error('nuptk_nidn') is-invalid @enderror">
-                        @error('nuptk_nidn')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
-                    </div>
-                    <div class="col-12 col-sm-6">
-                        <label class="form-label" for="f_ds_status">Status <span class="text-danger">*</span></label>
-                        <select id="f_ds_status" name="status" class="form-select @error('status') is-invalid @enderror">
-                            <option value="aktif" @selected(old('status') === 'aktif')>Aktif</option>
-                            <option value="nonaktif" @selected(old('status') === 'nonaktif')>Nonaktif</option>
-                        </select>
-                        @error('status')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
-                    </div>
-                    <div class="col-12">
-                        <label class="form-label" for="f_ds_nama">Nama Dosen <span class="text-danger">*</span></label>
-                        <input type="text" id="f_ds_nama" name="nama" value="{{ old('nama') }}" maxlength="100"
-                               placeholder="Nama lengkap" class="form-control @error('nama') is-invalid @enderror">
-                        @error('nama')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
-                    </div>
-                    <div class="col-12">
-                        <label class="form-label" for="f_ds_id_prodi">Prodi <span class="text-danger">*</span></label>
-                        <select id="f_ds_id_prodi" name="id_prodi" class="form-select @error('id_prodi') is-invalid @enderror">
-                            <option value="">— Pilih Prodi —</option>
-                            @foreach($prodiOptions as $id => $teks)
-                                <option value="{{ $id }}" @selected((string) old('id_prodi') === (string) $id)>{{ $teks }}</option>
-                            @endforeach
-                        </select>
-                        @error('id_prodi')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
-                    </div>
-                    <div class="col-12 col-md-6">
-                        <label class="form-label" for="f_ds_email">Email <span class="text-danger">*</span></label>
-                        <input type="email" id="f_ds_email" name="email" value="{{ old('email') }}" maxlength="50"
-                               placeholder="nama@domain.ac.id" class="form-control @error('email') is-invalid @enderror">
-                        @error('email')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
-                    </div>
-                    <div class="col-12 col-md-6">
-                        <label class="form-label" for="f_ds_wa">Nomor Telepon/WhatsApp</label>
-                        <input type="text" id="f_ds_wa" name="no_whatsapp" value="{{ old('no_whatsapp') }}" maxlength="20"
-                               placeholder="08xxxxxxxxxx" class="form-control @error('no_whatsapp') is-invalid @enderror">
-                        @error('no_whatsapp')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
-                    </div>
-                    <div class="col-12">
-                        <label class="form-label" for="f_ds_password">Password Akun Login <span class="text-danger">*</span></label>
-                        <input type="password" id="f_ds_password" name="password" maxlength="100" autocomplete="new-password"
-                               value="{{ old('password') }}" placeholder="Minimal 4 karakter"
-                               class="form-control @error('password') is-invalid @enderror">
-                        @error('password')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
-                        <div class="form-text">Password dipakai untuk akun login dosen. Saat mengubah data, kosongkan bila password tidak ingin diganti.</div>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-outline-silab" data-bs-dismiss="modal">Batal</button>
-                <button type="submit" class="btn btn-primary">Simpan</button>
-            </div>
-        </form>
-    </div>
-</div>
-
 @endif
 @endsection
 
-@unless($isSemester)
+@unless($isSemester || $isDosen)
 @push('scripts')
 <script>
     const akademikLabel = {!! json_encode($label) !!};
     const akademikTab = {!! json_encode($tab) !!};
+    // Peta konfigurasi modal per tab: id elemen form dan nama field yang diisi saat edit. Tambah field baru di sini.
     const akadConfig = {
         'mata-kuliah': { modal: 'mkModal', form: 'mkForm', method: 'mkMethod', title: 'mkModalTitle', fields: ['f_kode_mk', 'f_nama_mk', 'f_sks', 'f_semester_mk'], keys: ['kode_mk', 'nama_mk', 'sks', 'semester'] },
         'kelas': { modal: 'kelasModal', form: 'kelasForm', method: 'kelasMethod', title: 'kelasModalTitle', fields: ['f_nama_kelas', 'f_id_prodi'], keys: ['nama_kelas', 'id_prodi'] },
-        'dosen': { modal: 'dosenModal', form: 'dosenForm', method: 'dosenMethod', title: 'dosenModalTitle', fields: ['f_ds_nuptk_nidn', 'f_ds_nama', 'f_ds_id_prodi', 'f_ds_email', 'f_ds_wa', 'f_ds_status', 'f_ds_password'], keys: ['nuptk_nidn', 'nama', 'id_prodi', 'email', 'no_whatsapp', 'status', 'password'] },
     };
     const cfg = akadConfig[akademikTab];
 
+    // Buka modal tambah/edit; mode edit mengisi field dari data-item tombol dan mengubah action form ke route update.
     function openAkademikModal(mode, btn, keepOld, forcedId) {
         const form = document.getElementById(cfg.form);
         const methodEl = document.getElementById(cfg.method);
@@ -386,6 +316,7 @@
     }
 
     @if($open && $open['tab'] === $tab)
+    // Bila validasi gagal, modal dibuka lagi otomatis dengan input lama dan pesan error.
     document.addEventListener('DOMContentLoaded', function () {
         openAkademikModal('{{ $open['mode'] }}', null, true, {!! json_encode($open['id']) !!});
     });

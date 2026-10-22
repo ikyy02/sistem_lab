@@ -15,6 +15,7 @@ use Illuminate\Validation\ValidationException;
  */
 class JadwalService
 {
+    // Simpan jadwal baru atau ubah jadwal lama: validasi, cek periode arsip, cek bentrok, lalu simpan.
     public function simpan(array $data, ?Jadwal $jadwal = null): Jadwal
     {
         $v = Validator::make($data, [
@@ -31,6 +32,7 @@ class JadwalService
         ], [
             'tahun_akademik.regex' => 'Tahun akademik berformat 2025/2026.',
         ]);
+        // Validasi lanjutan: tahun akademik harus berurutan dan jam mulai < jam selesai.
         $v->after(function ($v) use ($data) {
             if ($v->errors()->isNotEmpty()) {
                 return;
@@ -48,12 +50,14 @@ class JadwalService
             throw ValidationException::withMessages(['status' => 'Jadwal arsip hanya dapat dilihat dan tidak dapat diubah.']);
         }
         // Jadwal baru masuk periode berjalan; jadwal yang diubah tetap pada periodenya.
+        // Jadwal baru masuk periode berjalan; jadwal lama tetap di periodenya.
         $valid['id_periode'] = $jadwal ? $jadwal->id_periode : PeriodeJadwal::berjalan()?->id_periode;
         $valid['jam_mulai'] = date('H:i:s', strtotime($valid['jam_mulai']));
         $valid['jam_selesai'] = date('H:i:s', strtotime($valid['jam_selesai']));
 
         return DB::transaction(function () use ($valid, $jadwal) {
             if ($valid['status'] === 'aktif') {
+                // Bentrok = ruangan, hari, tahun, semester sama dan rentang jam beririsan. lockForUpdate mencegah dua simpan bersamaan lolos.
                 $bentrok = Jadwal::where('status', 'aktif')
                     ->where('id_ruangan', $valid['id_ruangan'])->where('hari', $valid['hari'])
                     ->where('tahun_akademik', $valid['tahun_akademik'])->where('semester', $valid['semester'])

@@ -28,6 +28,7 @@
     </div>
 @endif
 
+{{-- Blok aksi muncul sesuai hak akses (flag dari PeminjamanController::show): proses (setujui/tolak). --}}
 @if($dapatMemproses)
     <div class="card-modern p-4 mb-3" style="background:var(--gold-tint);border-color:#EFE1C2;">
         <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
@@ -54,6 +55,7 @@
     </div>
 @endif
 
+{{-- Form catat pengembalian: hanya Laboran dan hanya untuk peminjaman barang yang disetujui. --}}
 @if($dapatKembalikan)
     <div class="card-modern p-4 mb-3">
         <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
@@ -65,6 +67,7 @@
     </div>
 @endif
 
+{{-- Tombol Selesai untuk peminjaman ber-ruangan; bisa tertahan bila alat belum kembali. --}}
 @if($dapatSelesai)
     <div class="card-modern p-4 mb-3">
         <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
@@ -89,6 +92,7 @@
     </div>
 @endif
 
+{{-- Tombol Batalkan: hanya peminjam, sebelum H-1 23.59, dan belum ada pengembalian. --}}
 @if($dapatBatalkan)
     <div class="card-modern p-4 mb-3">
         <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">

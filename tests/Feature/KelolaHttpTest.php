@@ -156,7 +156,7 @@ class KelolaHttpTest extends TestCase
         $k = AlatBahan::where('nama', 'Kabel UTP')->first();
         $this->assertSame(['bahan', 100, '491.80'], [$k->jenis, $k->stok, $k->harga]);
         $this->assertNotSame('', $k->gambar);
-        @unlink(public_path(AlatBahan::GAMBAR_DIR . '/' . $k->gambar));
+        \Illuminate\Support\Facades\Storage::disk('public')->delete(AlatBahan::GAMBAR_DIR . '/' . $k->gambar);
 
         $admin->post(route('kelola-katalog.store', 'alat'), $this->katalogPost(['gambar' => null]))->assertSessionHasErrors(['gambar', 'nama']); // gambar wajib; nama duplikat
         $admin->post(route('kelola-katalog.store', 'alat'), $this->katalogPost(['nama' => 'X1', 'gambar' => null]))->assertSessionHasErrors('gambar');
@@ -248,7 +248,11 @@ class KelolaHttpTest extends TestCase
         $prodi = $this->prodi();
         $admin = $this->admin();
         $admin->post(route('data-akademik.store', 'kelas'), ['nama_kelas' => '1A', 'id_prodi' => $prodi->id_prodi])->assertSessionHasNoErrors();
+<<<<<<< HEAD
         $this->assertSame(1, Kelas::where('nama_kelas', '1A')->count());
+=======
+        $this->assertSame(1, Kelas::where(['nama_kelas' => '1A', 'id_prodi' => $prodi->id_prodi])->count());
+>>>>>>> c4ec5d9 (refactor: rapikan SIARKA dan perbaiki akses serta peminjaman)
         $admin->get('/master-data')->assertNotFound();
         $admin->get('/pengaturan-operasional')->assertNotFound();
         $admin->post('/pengaturan-lab/kelas', ['nama' => '2A'])->assertNotFound();

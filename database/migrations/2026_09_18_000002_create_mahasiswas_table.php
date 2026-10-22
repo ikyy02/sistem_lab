@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    // Struktur awal mahasiswa; kemudian dibangun ulang oleh migrasi revisi final.
     public function up(): void
     {
         Schema::create('mahasiswas', function (Blueprint $table) {

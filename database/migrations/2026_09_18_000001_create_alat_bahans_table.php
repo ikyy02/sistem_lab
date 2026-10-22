@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    // Struktur awal katalog; kemudian dibangun ulang oleh migrasi revisi final (2026_11_02).
     public function up(): void
     {
         Schema::create('alat_bahans', function (Blueprint $table) {

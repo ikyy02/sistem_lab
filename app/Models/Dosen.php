@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+// Profil dosen. PK = NUPTK/NIDN; terhubung ke akun login lewat email.
 class Dosen extends Model
 {
     protected $table = 'dosens';

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+// Master satuan barang (meter, buah, dst.) untuk dropdown katalog.
 class Satuan extends Model
 {
     protected $table = 'satuans';

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+// Ruangan yang dipinjam beserta rentang waktunya (satu peminjaman bisa lebih dari satu ruangan).
 class PeminjamanRuangan extends Model
 {
     protected $table = 'peminjaman_ruangans';

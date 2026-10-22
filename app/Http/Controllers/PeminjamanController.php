@@ -31,6 +31,7 @@ class PeminjamanController extends Controller
         $me = AuthService::user();
         $roleDosen = ($me['role'] ?? null) === Role::DOSEN;
 
+        // Form pengajuan hanya menampilkan katalog yang stoknya masih ada.
         // Opsi dropdown: hanya katalog dengan stok tersedia.
         $opsiKatalog = AlatBahan::query()
             ->select('alat_bahans.id_katalog', 'alat_bahans.nama', 'alat_bahans.jenis', 'alat_bahans.stok', 'satuans.nama_satuan')
@@ -52,6 +53,7 @@ class PeminjamanController extends Controller
     }
 
     /** Simpan pengajuan peminjaman -> status "menunggu" (stok baru dipotong saat disetujui). */
+    // Alur: normalisasi input -> validasi -> cek stok awal -> cegah kirim ganda -> PeminjamanService::ajukan.
     public function store(Request $request, PeminjamanService $service)
     {
         // Dosen: jenis selalu "Pembelajaran" (ditetapkan service), tanpa dosen penanggung jawab; input jenis dari klien diabaikan.
@@ -67,6 +69,7 @@ class PeminjamanController extends Controller
             'ruangan' => $this->barisTerisi($request->input('ruangan'), 'id_ruangan'),
         ]);
 
+        // Aturan validasi form pengajuan; ubah di sini bila ada field baru.
         $data = $request->validate([
             'jenis_peminjaman' => $roleDosen ? ['nullable'] : ['required', Rule::in(Peminjaman::JENIS_MAHASISWA)],
             'email_dosen' => $roleDosen ? ['nullable'] : ['required_if:jenis_peminjaman,atas_dosen', 'nullable', 'email', 'max:50',
@@ -97,6 +100,7 @@ class PeminjamanController extends Controller
             'detail.*.jumlah' => 'Jumlah', 'ruangan.*.id_ruangan' => 'Ruangan',
         ]);
 
+        // Cek stok awal supaya pengaju langsung tahu; pengecekan resmi (dengan kunci) terjadi saat persetujuan.
         // Validasi stok saat pengajuan (stok dicek ulang & dikunci lagi saat persetujuan).
         $detail = $data['detail'] ?? [];
         $stok = AlatBahan::whereIn('id_katalog', array_column($detail, 'id_katalog'))->get()->keyBy('id_katalog');
@@ -122,6 +126,7 @@ class PeminjamanController extends Controller
         ];
 
         // Perlindungan kirim ganda: satu token form hanya boleh menghasilkan satu pengajuan (dikonsumsi setelah validasi lolos).
+        // Token form dicatat di cache 10 menit; kalau tombol Ajukan diklik dua kali, pengajuan kedua diabaikan.
         $kunci = null;
         if (is_string($request->input('token_pengajuan')) && $request->input('token_pengajuan') !== '') {
             $kunci = 'pengajuan:'.AuthService::user()['email'].':'.substr($request->input('token_pengajuan'), 0, 64);
@@ -161,6 +166,7 @@ class PeminjamanController extends Controller
     ];
 
     /** Riwayat peminjaman milik sendiri: terbaru (waktu pengajuan) di atas; ada pencarian, filter status, sorting, pagination. */
+    // Riwayat hanya milik pengguna login; mendukung filter status, pencarian, urutan, dan pagination.
     public function riwayat(Request $request)
     {
         $me = AuthService::user();
@@ -173,6 +179,7 @@ class PeminjamanController extends Controller
         $perPage = (int) $request->query('per_page');
         $perPage = in_array($perPage, self::PER_PAGE, true) ? $perPage : self::PER_PAGE[0];
 
+        // Query dasar riwayat dengan eager loading agar cepat.
         $query = Peminjaman::query()
             ->with(Peminjaman::withProfil())
             ->where('email_peminjam', $me['email'])
@@ -215,6 +222,7 @@ class PeminjamanController extends Controller
     }
 
     /** Detail satu transaksi: pemilik, pemroses, Dosen, dan Laboran/Admin. */
+    // Detail transaksi: hanya peminjam, dosen penanggung jawab, atau Laboran. Flag dapat* menentukan tombol yang tampil.
     public function show(int $id, PeminjamanService $service)
     {
         $p = Peminjaman::with(array_merge(Peminjaman::withProfil(), [
@@ -225,6 +233,7 @@ class PeminjamanController extends Controller
         abort_unless($p->bisaDilihatOleh($me['email'], $me['role']), 403);
 
         // Jumlah yang sudah dikembalikan per detail peminjaman.
+        // Total jumlah yang sudah dikembalikan per detail barang.
         $sudah = DB::table('pengembalian_details as pd')
             ->join('pengembalians as pg', 'pg.id_pengembalian', '=', 'pd.id_pengembalian')
             ->where('pg.id_peminjaman', $p->id_peminjaman)

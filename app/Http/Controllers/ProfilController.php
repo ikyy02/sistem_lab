@@ -32,6 +32,7 @@ class ProfilController extends Controller
         ]);
     }
 
+    // Ubah profil sendiri (nama, email, WhatsApp) lewat AkunService agar akun dan profil ikut berubah.
     public function update(Request $request, AkunService $akun)
     {
         $me = AuthService::user();
@@ -60,11 +61,13 @@ class ProfilController extends Controller
         }
 
         $profil = $akun->ubah($profil, $me['role'], $v->validated(), null);
+        // Perbarui identitas di sesi karena nama/email bisa berubah.
         session()->put('silab_user', ['key' => (string) $profil->getKey(), 'nama' => $profil->nama, 'email' => $profil->email] + $me);
 
         return redirect()->route('profil.index')->with('success', 'Profil berhasil diperbarui.');
     }
 
+    // Ganti password: cek password lama, password baru minimal 4 karakter dan berbeda dari yang lama.
     public function password(Request $request)
     {
         $me = AuthService::user();
@@ -86,6 +89,7 @@ class ProfilController extends Controller
         return redirect()->route('profil.index')->with('success', 'Password berhasil diubah.');
     }
 
+    // Ambil profil sesuai role pengguna login.
     private function profil(array $me)
     {
         $model = Role::MODELS[$me['role']];

@@ -19,6 +19,7 @@ class TpkService
      * @param  string  $bulan  format YYYY-MM
      * @return array<int,array{id_katalog:int,nama:string,jenis:string,stok:float,jumlah_peminjaman:int,harga:float,r:array<int,float>,nilai:float,ranking:int}>
      */
+    // Metode SAW: normalisasi tiap kriteria, kalikan bobot, jumlahkan, lalu urutkan. Tidak ada data yang disimpan.
     public function hitung(array $bobot, string $bulan): array
     {
         $bobot = array_values($bobot);
@@ -35,6 +36,7 @@ class TpkService
 
         // Jumlah peminjaman/bulan = jumlah transaksi terealisasi (disetujui/selesai) yang memuat katalog,
         // menurut tanggal_peminjaman (bukan sekadar jumlah pengajuan).
+        // Kriteria C2: jumlah transaksi disetujui/selesai per katalog pada bulan dipilih.
         $pinjam = DB::table('peminjaman_details as d')
             ->join('peminjamans as p', 'p.id_peminjaman', '=', 'd.id_peminjaman')
             ->whereIn('p.status', ['disetujui', 'selesai'])
@@ -50,9 +52,11 @@ class TpkService
             return [];
         }
 
+        // Nilai pembanding normalisasi: min untuk kriteria cost, max untuk benefit.
         $minStok = min(array_column($items, 'stok'));
         $minHarga = min(array_column($items, 'harga'));
         $maxPinjam = max(array_column($items, 'jumlah_peminjaman'));
+        // Normalisasi: cost = min/nilai, benefit = nilai/max; nilai akhir = jumlah bobot x normalisasi.
         foreach ($items as &$it) {
             // Cost: Min/Xij (Xij sama dengan minimum → 1, sehingga nilai 0 tidak membagi nol). Benefit: Xij/Max (Max = 0 → 0).
             $r1 = $it['stok'] == $minStok ? 1.0 : $minStok / $it['stok'];
@@ -62,6 +66,7 @@ class TpkService
             $it['nilai'] = $bobot[0] * $r1 + $bobot[1] * $r2 + $bobot[2] * $r3;
         }
         unset($it);
+        // Urut nilai terbesar dulu; bila sama, urut id agar hasil stabil.
         usort($items, fn ($a, $b) => $b['nilai'] <=> $a['nilai'] ?: $a['id_katalog'] <=> $b['id_katalog']);
         foreach ($items as $i => $it) {
             $items[$i]['ranking'] = $i + 1;

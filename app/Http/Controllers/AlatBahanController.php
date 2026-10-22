@@ -12,15 +12,18 @@ class AlatBahanController extends Controller
 {
     public function index(Request $request)
     {
+        // Filter jenis (alat/bahan/ruangan); null berarti semua alat+bahan.
         $jenis = in_array($request->query('jenis'), ['alat', 'bahan', 'ruangan'], true) ? $request->query('jenis') : null;
         $room = $jenis === 'ruangan';
         $search = mb_substr(trim((string) $request->query('search', '')), 0, 100);
+        // Kolom urut dibatasi whitelist agar aman dari SQL injection; nilai lain jatuh ke 'nama'.
         $sortable = $room ? ['nama'] : ['nama', 'stok', 'harga'];
         $sort = in_array($request->query('sort'), $sortable, true) ? $request->query('sort') : 'nama';
         $direction = strtolower((string) $request->query('direction')) === 'desc' ? 'desc' : 'asc';
         $perPage = (int) $request->query('per_page');
         $perPage = in_array($perPage, Kelola::PER_PAGE, true) ? $perPage : Kelola::PER_PAGE[0];
 
+        // Ruangan dan alat/bahan memakai tabel berbeda, jadi query dan kolom pencarian dibedakan di sini.
         if ($room) {
             $query = Ruangan::query();
             $columns = ['nama_ruangan', 'keterangan'];
@@ -36,6 +39,7 @@ class AlatBahanController extends Controller
             $sortColumn = 'alat_bahans.' . $sort;
             $pk = 'alat_bahans.id_katalog';
         }
+        // Pencarian: tiap kata (maks 5) harus cocok di salah satu kolom; karakter LIKE di-escape.
         foreach (array_slice(preg_split('/\s+/u', $search, -1, PREG_SPLIT_NO_EMPTY) ?: [], 0, 5) as $word) {
             $like = '%' . str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $word) . '%';
             $query->where(function ($g) use ($columns, $like) {
@@ -45,6 +49,7 @@ class AlatBahanController extends Controller
             });
         }
         $data = $query->orderBy($sortColumn, $direction)->orderBy($pk)->paginate($perPage)->withQueryString();
+        // Halaman melebihi batas (mis. setelah filter) diarahkan ke halaman terakhir.
         if ($data->currentPage() > $data->lastPage()) {
             return redirect()->route('katalog', array_merge($request->query(), ['page' => $data->lastPage()]));
         }

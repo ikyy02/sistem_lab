@@ -9,6 +9,7 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
+    // Tabel bawaan Laravel. 'users' dan 'password_reset_tokens' tidak dipakai (login memakai tabel akuns), tapi 'sessions' dipakai penyimpanan sesi.
     public function up(): void
     {
         Schema::create('users', function (Blueprint $table) {

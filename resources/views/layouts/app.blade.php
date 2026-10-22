@@ -16,6 +16,7 @@
 </head>
 <body>
 @php
+    // Data pengguna login dari sesi; dipakai untuk menu dan topbar.
     $me = \App\Services\AuthService::user();
     $role = $me['role'] ?? null;
     $roleLabel = \App\Support\Role::LABELS[$role] ?? '';
@@ -49,6 +50,10 @@
         $dataAkademik = ['route' => 'data-akademik.index', 'label' => 'Data Akademik', 'icon' => 'bi-mortarboard', 'r' => ['data-akademik.index']];
         $jadwal = ['route' => 'jadwal.index', 'label' => 'Jadwal Perkuliahan', 'icon' => 'bi-calendar-week', 'r' => ['jadwal.*']];
         // Satu daftar datar per role, urut menurut alur kerja (tanpa kelompok).
+<<<<<<< HEAD
+=======
+        // Menu sidebar per role. Tambah/hapus menu di sini (route, label, ikon, pola aktif).
+>>>>>>> c4ec5d9 (refactor: rapikan SIARKA dan perbaiki akses serta peminjaman)
         $menus = [
             $R::LABORAN => [
                 $beranda, $pengajuan, $pengembalian, $katalog, $kelolaKatalog, $dataAkademik, $jadwal,
@@ -62,6 +67,10 @@
     @endphp
     <div class="sidebar-nav">
         <ul class="nav flex-column">
+<<<<<<< HEAD
+=======
+            {{-- Menu aktif ditandai dari nama route atau pola URL. --}}
+>>>>>>> c4ec5d9 (refactor: rapikan SIARKA dan perbaiki akses serta peminjaman)
             @foreach($menus as $m)
             @php $aktif = request()->routeIs(...($m['r'] ?? [])) || request()->is(...($m['is'] ?? ['-'])); @endphp
             <li class="nav-item">
@@ -113,6 +122,10 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 @include('layouts._notifikasi')
 <script>
+<<<<<<< HEAD
+=======
+    // Buka/tutup sidebar di layar kecil (mobile).
+>>>>>>> c4ec5d9 (refactor: rapikan SIARKA dan perbaiki akses serta peminjaman)
     function setSidebar(buka) {
         document.getElementById('sidebar').classList.toggle('show', buka);
         document.getElementById('sidebar-overlay').classList.toggle('show', buka);
@@ -135,6 +148,7 @@
 
     // Satu mekanisme untuk semua form POST: cegah kirim ganda dan beri umpan balik "memproses"
     // tanpa mengubah ukuran tombol (lebar dikunci). Form dapat memilih keluar dengan atribut data-no-lock.
+    // Cegah klik ganda: form POST dikunci setelah dikirim dan tombol menampilkan 'Memproses...'. Pakai data-no-lock untuk pengecualian.
     document.addEventListener('submit', function (e) {
         const form = e.target;
         if (e.defaultPrevented || !(form instanceof HTMLFormElement) || form.hasAttribute('data-no-lock')) return;
@@ -151,6 +165,7 @@
         }, 0);
     });
     // Kembali lewat cache browser (Back): pulihkan form yang sempat terkunci.
+    // Tombol Back dari cache browser: buka kunci form agar bisa dipakai lagi.
     window.addEventListener('pageshow', function () {
         document.querySelectorAll('form[data-terkirim="1"]').forEach(function (f) {
             delete f.dataset.terkirim;

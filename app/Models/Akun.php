@@ -10,6 +10,7 @@ class Akun extends Model
     public const ROLES = ['mahasiswa', 'dosen', 'staff_prodi', 'laboran'];
 
     protected $table = 'akuns';
+    // Email dipakai sebagai primary key; tabel lain menunjuk ke email ini (foreign key).
     protected $primaryKey = 'email';
     public $incrementing = false;
     protected $keyType = 'string';

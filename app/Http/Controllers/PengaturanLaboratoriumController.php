@@ -23,6 +23,10 @@ class PengaturanLaboratoriumController extends Controller
 
     private const LABEL_HARI = ['senin' => 'Senin', 'selasa' => 'Selasa', 'rabu' => 'Rabu', 'kamis' => 'Kamis', 'jumat' => 'Jumat', 'sabtu' => 'Sabtu', 'minggu' => 'Minggu'];
 
+<<<<<<< HEAD
+=======
+    // Dua tab: Satuan (master dropdown katalog) dan Operasional (jam & hari buka).
+>>>>>>> c4ec5d9 (refactor: rapikan SIARKA dan perbaiki akses serta peminjaman)
     public function index(Request $request)
     {
         $tab = array_key_exists((string) $request->query('tab'), self::TABS) ? $request->query('tab') : 'satuan';
@@ -45,6 +49,10 @@ class PengaturanLaboratoriumController extends Controller
         if ($data->currentPage() > $data->lastPage()) {
             return redirect()->route('pengaturan-lab.index', array_merge($request->query(), ['page' => $data->lastPage()]));
         }
+<<<<<<< HEAD
+=======
+        // Hitung berapa katalog yang memakai tiap satuan (untuk info sebelum hapus).
+>>>>>>> c4ec5d9 (refactor: rapikan SIARKA dan perbaiki akses serta peminjaman)
         $data->getCollection()->each(fn ($r) => $r->used = AlatBahan::where('id_satuan', $r->id)->count());
 
         return view('pengaturan-lab.index', [
@@ -88,6 +96,10 @@ class PengaturanLaboratoriumController extends Controller
         return $this->back('Satuan berhasil dihapus.', 'success', $request);
     }
 
+<<<<<<< HEAD
+=======
+    // Jam & hari buka ini dipakai PeminjamanService untuk membatasi waktu peminjaman.
+>>>>>>> c4ec5d9 (refactor: rapikan SIARKA dan perbaiki akses serta peminjaman)
     public function updateOperasional(Request $request)
     {
         $data = $request->validate([
@@ -103,6 +115,10 @@ class PengaturanLaboratoriumController extends Controller
             'hari.min' => 'Pilih minimal satu hari operasional.',
         ], ['jam_buka' => 'Jam buka', 'jam_tutup' => 'Jam tutup']);
 
+<<<<<<< HEAD
+=======
+        // Urutkan sesuai urutan hari dan buang duplikat; disimpan sebagai teks dipisah koma.
+>>>>>>> c4ec5d9 (refactor: rapikan SIARKA dan perbaiki akses serta peminjaman)
         $hari = array_values(array_intersect(PengaturanOperasional::HARI, $data['hari'])); // urut & unik
         PengaturanOperasional::ambil()->update([
             'jam_buka' => $data['jam_buka'].':00',

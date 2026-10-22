@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+// Profil mahasiswa. PK = NIM; data diisi manual atau impor Excel.
 class Mahasiswa extends Model
 {
     protected $table = 'mahasiswas';

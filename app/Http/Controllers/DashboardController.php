@@ -18,6 +18,7 @@ class DashboardController extends Controller
     public function index(DashboardMahasiswaService $mahasiswa)
     {
         $me = AuthService::user();
+        // Isi dashboard berbeda per role; cabang di bawah memilih view yang sesuai.
         $isAdmin = $me['role'] === Role::LABORAN;
 
         if ($isAdmin) {
@@ -29,6 +30,7 @@ class DashboardController extends Controller
             ]);
         }
 
+        // Mahasiswa: semua data disusun DashboardMahasiswaService.
         if ($me['role'] === Role::MAHASISWA) {
             return view('dashboard.mahasiswa', array_merge(['me' => $me, 'isAdmin' => false], $mahasiswa->untuk($me)));
         }
@@ -38,6 +40,10 @@ class DashboardController extends Controller
             return app(DashboardControllerStaff::class)->index();
         }
 
+<<<<<<< HEAD
+=======
+        // Query dasar: semua peminjaman milik pengguna ini (dipakai berulang untuk hitungan).
+>>>>>>> c4ec5d9 (refactor: rapikan SIARKA dan perbaiki akses serta peminjaman)
         $dasar = fn () => Peminjaman::where('email_peminjam', $me['email']);
         $terbaru = $dasar()->with(Peminjaman::withProfil())
             ->orderByDesc('tanggal_pengajuan')->limit(5)->get();
@@ -53,6 +59,7 @@ class DashboardController extends Controller
             'terdekat' => $dasar()->where('status', 'disetujui')
                 ->where('tanggal_peminjaman', '>=', now())
                 ->orderBy('tanggal_peminjaman')->first(),
+            // Hanya Dosen yang punya antrean persetujuan; Staf Prodi tidak sampai ke sini.
             'menunggu' => $me['role'] === Role::DOSEN
                 ? Peminjaman::menungguTindakan($me['email'], $me['role'])->count()
                 : 0,

@@ -28,6 +28,7 @@ class UserManagementController extends Controller
      * Konfigurasi tiap kategori.
      * columns: kolom tabel [key => [label, sortable]]; search: kolom yang dicari; fields: input form.
      */
+    // Satu menu untuk 4 role. Tambah kolom/field form per kategori di sini (match menurut role).
     public static function config(string $kategori): array
     {
         $wa = ['name' => 'no_whatsapp', 'label' => 'WhatsApp', 'type' => 'text', 'placeholder' => '08xxxxxxxxxx', 'required' => false];
@@ -36,6 +37,7 @@ class UserManagementController extends Controller
         $idPegawai = ['name' => 'id_pegawai', 'label' => 'ID Pegawai/NIP', 'type' => 'text', 'placeholder' => 'ID Pegawai/NIP', 'required' => true];
         $prodi = ['name' => 'id_prodi', 'label' => 'Prodi', 'type' => 'select', 'options' => Options::prodi(), 'placeholder' => 'Pilih Prodi', 'required' => true];
 
+        // Tiap role punya kolom tabel, kolom pencarian, urutan default, dan field form sendiri.
         return match ($kategori) {
             Role::MAHASISWA => [
                 'columns' => ['nim' => ['NIM', true], 'nama' => ['Nama', true], 'nama_prodi' => ['Prodi', true], 'email' => ['Email', true], 'no_whatsapp' => ['WhatsApp', false]],
@@ -74,6 +76,7 @@ class UserManagementController extends Controller
         };
     }
 
+    // Daftar user per kategori: pencarian multi-kata, urut kolom whitelist, pagination.
     public function index(Request $request)
     {
         $kategori = $this->kategori($request->query('kategori'));
@@ -89,6 +92,7 @@ class UserManagementController extends Controller
         $perPage = in_array($perPage, self::PER_PAGE_OPTIONS, true) ? $perPage : self::PER_PAGE_OPTIONS[0];
 
         $query = $model::query()->select($table . '.*');
+        // Laboran tidak punya prodi, role lain di-join ke tabel prodis untuk nama prodi.
         if ($kategori !== Role::LABORAN) {
             $query->join('prodis', 'prodis.id_prodi', '=', $table . '.id_prodi')->addSelect('prodis.nama_prodi');
         }
@@ -121,6 +125,7 @@ class UserManagementController extends Controller
         ]);
     }
 
+    // Buat akun + profil sekaligus lewat AkunService (satu transaksi).
     public function store(Request $request, string $kategori, AkunService $akun)
     {
         $data = $this->validated($request, $kategori, null);
@@ -136,6 +141,7 @@ class UserManagementController extends Controller
             ->with('success', 'Data ' . Role::LABELS[$kategori] . ' berhasil ditambahkan.');
     }
 
+    // Ubah profil, email, dan (opsional) password. Password kosong = tidak diganti.
     public function update(Request $request, string $kategori, string $key, AkunService $akun)
     {
         $record = Role::MODELS[$kategori]::findOrFail($key);
@@ -146,6 +152,7 @@ class UserManagementController extends Controller
         $password = $data['password'] ?? null;
         unset($data['password']);
         $record = $akun->ubah($record, $kategori, $data, $password);
+        // Bila akun sendiri yang diubah, perbarui sesi karena email/nama bisa ikut berubah.
         // Jika akun yang sedang login diubah, sinkronkan identitas di sesi (PK/email bisa ikut berubah).
         $me = AuthService::user();
         if ($me && $me['role'] === $kategori && $me['key'] === $key) {
@@ -164,6 +171,7 @@ class UserManagementController extends Controller
         return response()->streamDownload(fn () => $writer->save('php://output'), $name);
     }
 
+    // Impor Excel dosen/staff/laboran; semua baris harus valid, kalau tidak laporan error ditampilkan.
     public function import(Request $request, string $kategori, UserImportService $svc)
     {
         $request->validate(['file' => ExcelFile::rules(2048)], ExcelFile::messages(2048));
@@ -180,6 +188,7 @@ class UserManagementController extends Controller
             : $back->with('import_report_' . $kategori, $result);
     }
 
+    // Akun yang sedang dipakai tidak boleh dihapus; yang masih dipakai data lain ditolak oleh AkunService.
     public function destroy(Request $request, string $kategori, string $key, AkunService $akun)
     {
         $me = AuthService::user();
@@ -197,6 +206,7 @@ class UserManagementController extends Controller
     }
 
     /** @return array<string,mixed>|\Illuminate\Contracts\Validation\Validator */
+    // Aturan validasi per kategori. Email harus unik di tabel akuns (kunci seluruh sistem).
     private function validated(Request $request, string $kategori, ?string $id)
     {
         $model = Role::MODELS[$kategori];
@@ -228,6 +238,7 @@ class UserManagementController extends Controller
             Role::STAFF => ['id_pegawai' => $pegawaiRule, 'nama' => $nama, 'id_prodi' => $prodi, 'email' => $email, 'no_whatsapp' => $wa],
             default => ['id_pegawai' => $pegawaiRule, 'nama' => $nama, 'email' => $email, 'no_whatsapp' => $wa],
         };
+        // Password wajib saat tambah, boleh kosong saat edit (hashing ditunda ke tahap lain).
         $rules['password'] = [$id ? 'nullable' : 'required', 'string', 'min:4', 'max:100'];
         $validator = Validator::make($input, $rules, MahasiswaRequest::errorMessages() + [
             'no_whatsapp.regex' => 'Nomor WhatsApp tidak valid. Gunakan format 08xxxxxxxxxx.',
@@ -253,6 +264,7 @@ class UserManagementController extends Controller
         return $data;
     }
 
+    // Rapikan input (spasi, huruf kecil email, dst.) sebelum divalidasi.
     private function normalize(Request $request, string $kategori): array
     {
         $fields = array_column(self::config($kategori)['fields'], 'name');

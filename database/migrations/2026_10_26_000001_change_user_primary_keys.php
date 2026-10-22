@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Schema;
  */
 return new class extends Migration
 {
+    // Mengganti primary key tabel user ke NIM/NUPTK/ID pegawai dengan membangun ulang tabel.
     public function up(): void
     {
         $this->rebuild('mahasiswas', function (Blueprint $t) {

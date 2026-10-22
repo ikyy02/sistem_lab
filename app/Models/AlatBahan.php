@@ -2,9 +2,11 @@
 
 namespace App\Models;
 
+use App\Support\GambarKatalog;
 use Illuminate\Database\Eloquent\Model;
 
 /** Katalog Alat/Bahan. Harga = harga untuk 1 satuan. Tanpa kategori, kondisi, unit fisik, atau snapshot. */
+// Katalog Alat/Bahan.
 class AlatBahan extends Model
 {
     public const JENIS = ['alat', 'bahan'];
@@ -19,6 +21,7 @@ class AlatBahan extends Model
     protected static function booted(): void
     {
         // Setelah pernah masuk PEMINJAMAN_DETAIL, jenis tidak boleh diubah.
+        // Aturan bisnis: jenis (alat/bahan) dikunci setelah pernah dipinjam supaya riwayat tidak kacau.
         static::updating(function (AlatBahan $m) {
             if ($m->isDirty('jenis') && $m->pernahDipinjam()) {
                 throw new \DomainException('Jenis katalog tidak dapat diubah karena sudah pernah dipakai pada peminjaman.');
@@ -36,9 +39,10 @@ class AlatBahan extends Model
         return $this->belongsTo(Ruangan::class, 'id_ruangan', 'id_ruangan');
     }
 
+    // URL gambar via GambarKatalog (mendukung lokasi lama dan storage baru).
     public function getGambarUrlAttribute(): ?string
     {
-        return $this->gambar ? asset(self::GAMBAR_DIR . '/' . $this->gambar) : null;
+        return GambarKatalog::url($this->gambar, self::GAMBAR_DIR);
     }
 
     /** True bila katalog pernah masuk detail peminjaman (jenis tidak boleh diubah). */

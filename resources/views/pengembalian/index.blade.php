@@ -39,6 +39,7 @@
     </div>
 </form>
 
+{{-- Satu kartu per peminjaman: form jumlah dikembalikan per barang (kondisi hanya untuk alat) dan riwayat pengembalian. --}}
 @forelse($data as $p)
     @php
         $aktif = $p->status === 'disetujui';

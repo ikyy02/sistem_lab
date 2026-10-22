@@ -28,6 +28,7 @@ class Options
     }
 
     /** Kelas (rombel) ditampilkan lengkap dengan prodi karena namanya unik per prodi. */
+    // Format teks pilihan di dropdown dibuat di sini; ubah di sini bila label dropdown ingin berbeda.
     public static function kelas(): array
     {
         return Kelas::with('prodi')->orderBy('nama_kelas')->orderBy('id_kelas')

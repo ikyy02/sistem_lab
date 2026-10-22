@@ -9,6 +9,7 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
+    // Tabel antrean job bawaan Laravel.
     public function up(): void
     {
         Schema::create('jobs', function (Blueprint $table) {

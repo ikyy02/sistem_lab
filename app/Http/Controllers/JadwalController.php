@@ -25,6 +25,7 @@ class JadwalController extends Controller
         $perPage = (int) $request->query('per_page');
         $perPage = in_array($perPage, self::PER_PAGE, true) ? $perPage : self::PER_PAGE[0];
 
+        // Alur filter: periode, hari, status, lalu pencarian kata kunci.
         // Periode: default periode berjalan; periode arsip dapat dipilih (hanya-baca); 'semua' menampilkan seluruhnya.
         $daftarPeriode = PeriodeJadwal::orderByDesc('tanggal_mulai')->orderByDesc('id_periode')->get();
         $berjalan = $daftarPeriode->firstWhere('status', PeriodeJadwal::BERJALAN);
@@ -32,6 +33,7 @@ class JadwalController extends Controller
         $periode = ($periodeReq === 'semua' || $daftarPeriode->contains('id_periode', (int) $periodeReq))
             ? $periodeReq : (string) ($berjalan?->id_periode ?? 'semua');
 
+        // Join ke tabel terkait supaya pencarian bisa memakai nama mata kuliah, dosen, ruangan, dan kelas.
         $query = Jadwal::query()
             ->select('jadwals.*')
             ->leftJoin('mata_kuliahs', 'mata_kuliahs.id_mata_kuliah', '=', 'jadwals.id_mata_kuliah')
@@ -48,6 +50,7 @@ class JadwalController extends Controller
         if ($status !== '') {
             $query->where('jadwals.status', $status);
         }
+        // Pencarian multi-kata (maks 5), tiap kata harus cocok di salah satu kolom.
         $words = preg_split('/\s+/u', $search, -1, PREG_SPLIT_NO_EMPTY) ?: [];
         foreach (array_slice($words, 0, 5) as $word) {
             $like = '%' . str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $word) . '%';
@@ -59,6 +62,7 @@ class JadwalController extends Controller
             });
         }
 
+        // Eager load periode agar tidak query berulang per baris.
         $query->with('periode');
         $data = $query->orderByRaw(Jadwal::HARI_SQL)->orderBy('jam_mulai')->orderBy('id_jadwal')
             ->paginate($perPage)->withQueryString();
@@ -84,6 +88,7 @@ class JadwalController extends Controller
         return view('jadwal.create', $this->form());
     }
 
+    // Simpan lewat JadwalService (di dalamnya ada cek bentrok jadwal).
     public function store(Request $request, JadwalService $service)
     {
         $this->validateJadwal($request);
@@ -132,6 +137,7 @@ class JadwalController extends Controller
     }
 
     /** @return array<string,mixed> */
+    // Data dropdown untuk form tambah/ubah/lihat.
     private function form(): array
     {
         return [
@@ -142,6 +148,7 @@ class JadwalController extends Controller
         ];
     }
 
+    // Validasi input form jadwal; validasi lanjutan dan cek bentrok ada di JadwalService.
     private function validateJadwal(Request $request): void
     {
         $request->validate([

@@ -6,7 +6,6 @@ use App\Models\Dosen;
 use App\Models\Jadwal;
 use App\Models\Kelas;
 use App\Models\MataKuliah;
-use App\Services\AkunService;
 use App\Services\AuthService;
 use App\Support\Options;
 use App\Support\Role;
@@ -17,10 +16,15 @@ use Illuminate\Validation\Rule;
 
 /**
  * Data Akademik (Staf Prodi dan Laboran/Admin): Mata Kuliah, Kelas, Semester, dan Dosen.
+<<<<<<< HEAD
  * Tab Dosen hanya untuk Staf Prodi; Laboran/Admin mengelola dosen lewat Kelola Data User (lihat tabs()).
  * Mata Kuliah, Kelas, dan Dosen dikelola penuh; Semester bernilai tetap sistem (ganjil/genap)
+=======
+ * Tab Dosen hanya-baca untuk Staf Prodi (daftar dan pencarian); tambah/ubah/hapus dosen ditolak 403 di backend.
+ * Laboran/Admin mengelola dosen dan akunnya lewat Kelola Data User (lihat tabs()).
+ * Mata Kuliah dan Kelas dikelola penuh; Semester bernilai tetap sistem (ganjil/genap)
+>>>>>>> c4ec5d9 (refactor: rapikan SIARKA dan perbaiki akses serta peminjaman)
  * sehingga ditampilkan sebagai ringkasan, bukan data yang dapat diubah.
- * Dosen dibuat/diubah/dihapus bersama akun login-nya lewat AkunService (relasi 1:1 dengan akuns).
  * Master yang sudah dipakai jadwal tidak dapat dihapus (FK ON DELETE RESTRICT).
  */
 class DataAkademikController extends Controller
@@ -28,7 +32,11 @@ class DataAkademikController extends Controller
     public const TABS = ['mata-kuliah' => 'Mata Kuliah', 'kelas' => 'Kelas', 'semester' => 'Semester', 'dosen' => 'Dosen'];
     public const PER_PAGE = [10, 25, 50, 100];
 
-    public const STATUS_DOSEN = ['aktif', 'nonaktif'];
+    /** Tab yang boleh dipakai role saat ini. Satu sumber untuk tampilan dan akses langsung lewat URL. */
+    private function tabs(): array
+    {
+        return (AuthService::user()['role'] ?? null) === Role::LABORAN ? array_diff_key(self::TABS, ['dosen' => 1]) : self::TABS;
+    }
 
     /** Tab yang boleh dipakai role saat ini. Satu sumber untuk tampilan dan akses langsung lewat URL. */
     private function tabs(): array
@@ -56,10 +64,11 @@ class DataAkademikController extends Controller
             $this->cari($query, $search, ['kelas.nama_kelas', 'prodis.nama_prodi']);
             $data = $query->orderBy('kelas.nama_kelas')->orderBy('kelas.id_kelas')->paginate($perPage)->withQueryString();
         } elseif ($tab === 'dosen') {
-            $query = Dosen::query()->select('dosens.*')
+            // Email tidak diambil: tidak boleh terlihat oleh Staff Prodi.
+            $query = Dosen::query()->select('dosens.nuptk_nidn', 'dosens.nama', 'dosens.id_prodi', 'dosens.no_whatsapp', 'dosens.status')
                 ->leftJoin('prodis', 'prodis.id_prodi', '=', 'dosens.id_prodi')
                 ->addSelect('prodis.nama_prodi');
-            $this->cari($query, $search, ['dosens.nuptk_nidn', 'dosens.nama', 'dosens.email', 'dosens.no_whatsapp', 'prodis.nama_prodi']);
+            $this->cari($query, $search, ['dosens.nuptk_nidn', 'dosens.nama', 'dosens.no_whatsapp', 'prodis.nama_prodi']);
             $data = $query->orderBy('dosens.nama')->orderBy('dosens.nuptk_nidn')->paginate($perPage)->withQueryString();
         }
 
@@ -74,8 +83,7 @@ class DataAkademikController extends Controller
             'search' => $search,
             'perPage' => $perPage,
             'perPageOptions' => self::PER_PAGE,
-            'prodiOptions' => in_array($tab, ['kelas', 'dosen'], true) ? Options::prodi() : [],
-            'statusDosen' => self::STATUS_DOSEN,
+            'prodiOptions' => $tab === 'kelas' ? Options::prodi() : [],
             'semesterInfo' => $tab === 'semester' ? $this->semesterInfo() : null,
             'openModal' => session('open_modal'),
             'me' => AuthService::user(),
@@ -84,11 +92,15 @@ class DataAkademikController extends Controller
 
     public function store(Request $request, string $tab)
     {
+<<<<<<< HEAD
         abort_unless(isset($this->tabs()[$tab]), 403);
 
         if ($tab === 'dosen') {
             return $this->storeDosen($request);
         }
+=======
+        abort_unless(isset($this->tabs()[$tab]) && $tab !== 'dosen', 403); // dosen hanya-baca
+>>>>>>> c4ec5d9 (refactor: rapikan SIARKA dan perbaiki akses serta peminjaman)
 
         $data = $this->divalidasi($request, $tab, null);
         if ($data instanceof \Illuminate\Http\RedirectResponse) {
@@ -102,11 +114,15 @@ class DataAkademikController extends Controller
 
     public function update(Request $request, string $tab, string $id)
     {
+<<<<<<< HEAD
         abort_unless(isset($this->tabs()[$tab]), 403);
 
         if ($tab === 'dosen') {
             return $this->updateDosen($request, $id);
         }
+=======
+        abort_unless(isset($this->tabs()[$tab]) && $tab !== 'dosen', 403); // dosen hanya-baca
+>>>>>>> c4ec5d9 (refactor: rapikan SIARKA dan perbaiki akses serta peminjaman)
 
         $model = $tab === 'kelas' ? Kelas::class : MataKuliah::class;
         $record = $model::findOrFail($id);
@@ -121,11 +137,15 @@ class DataAkademikController extends Controller
 
     public function destroy(Request $request, string $tab, string $id)
     {
+<<<<<<< HEAD
         abort_unless(isset($this->tabs()[$tab]), 403);
 
         if ($tab === 'dosen') {
             return $this->destroyDosen($request, $id);
         }
+=======
+        abort_unless(isset($this->tabs()[$tab]) && $tab !== 'dosen', 403); // dosen hanya-baca
+>>>>>>> c4ec5d9 (refactor: rapikan SIARKA dan perbaiki akses serta peminjaman)
 
         $model = $tab === 'kelas' ? Kelas::class : MataKuliah::class;
         $record = $model::findOrFail($id);
@@ -137,61 +157,6 @@ class DataAkademikController extends Controller
         }
 
         return $this->kembali($tab, self::TABS[$tab] . ' berhasil dihapus.', 'success', $request);
-    }
-
-    /** Simpan dosen + akun login secara atomik (email wajib ada di tabel akuns / FK). */
-    private function storeDosen(Request $request)
-    {
-        $data = $this->divalidasi($request, 'dosen', null);
-        if ($data instanceof \Illuminate\Http\RedirectResponse) {
-            return $data;
-        }
-        $password = (string) ($data['password'] ?? '');
-        $profil = array_diff_key($data, array_flip(['email', 'password']));
-
-        try {
-            app(AkunService::class)->buat(Role::DOSEN, $data['email'], $password, $profil);
-        } catch (\Throwable $e) {
-            return $this->kembali('dosen', 'Gagal menyimpan data dosen. Silakan coba lagi.', 'error', $request);
-        }
-
-        return $this->kembali('dosen', self::TABS['dosen'] . ' berhasil ditambahkan.');
-    }
-
-    /** Perbarui dosen beserta akunnya; password kosong berarti tidak diganti. */
-    private function updateDosen(Request $request, string $id)
-    {
-        $dosen = Dosen::findOrFail($id);
-        $data = $this->divalidasi($request, 'dosen', $dosen);
-        if ($data instanceof \Illuminate\Http\RedirectResponse) {
-            return $data;
-        }
-        $password = ($data['password'] ?? null) ?: null;
-        $profil = array_diff_key($data, array_flip(['password']));
-
-        try {
-            app(AkunService::class)->ubah($dosen, Role::DOSEN, $profil, $password);
-        } catch (\Throwable $e) {
-            return $this->kembali('dosen', 'Gagal memperbarui data dosen. Silakan coba lagi.', 'error', $request);
-        }
-
-        return $this->kembali('dosen', self::TABS['dosen'] . ' berhasil diperbarui.', 'success', $request);
-    }
-
-    private function destroyDosen(Request $request, string $id)
-    {
-        $dosen = Dosen::findOrFail($id);
-        if (Jadwal::where('nuptk_nidn', $dosen->getKey())->exists()) {
-            return $this->kembali('dosen', 'Dosen "' . $dosen->nama . '" masih dipakai jadwal dan tidak dapat dihapus.', 'error', $request);
-        }
-
-        try {
-            app(AkunService::class)->hapus($dosen);
-        } catch (\Throwable $e) {
-            return $this->kembali('dosen', 'Dosen "' . $dosen->nama . '" masih dipakai data lain dan tidak dapat dihapus.', 'error', $request);
-        }
-
-        return $this->kembali('dosen', self::TABS['dosen'] . ' berhasil dihapus.', 'success', $request);
     }
 
     private function cari($query, string $search, array $kolom): void
@@ -210,10 +175,6 @@ class DataAkademikController extends Controller
     /** @return array<string,mixed>|\Illuminate\Http\RedirectResponse */
     private function divalidasi(Request $request, string $tab, $record)
     {
-        if ($tab === 'dosen') {
-            return $this->divalidasiDosen($request, $record);
-        }
-
         if ($tab === 'kelas') {
             $rules = [
                 'nama_kelas' => ['required', 'string', 'max:100', Rule::unique('kelas', 'nama_kelas')
@@ -262,62 +223,6 @@ class DataAkademikController extends Controller
             'sks' => (int) $request->input('sks'),
             'semester' => $request->input('semester'),
         ];
-    }
-
-    /** @return array<string,mixed>|\Illuminate\Http\RedirectResponse */
-    private function divalidasiDosen(Request $request, $record)
-    {
-        $emailLama = $record?->email;
-
-        $rules = [
-            'nuptk_nidn' => ['bail', 'required', 'string', 'max:30', 'regex:/^[A-Za-z0-9]+$/', Rule::unique('dosens', 'nuptk_nidn')->ignore($record?->getKey(), 'nuptk_nidn')],
-            'nama' => ['bail', 'required', 'string', 'min:2', 'max:100'],
-            'id_prodi' => ['bail', 'required', 'integer', Rule::exists('prodis', 'id_prodi')],
-            'email' => ['bail', 'required', 'email', 'max:50', Rule::unique('akuns', 'email')->ignore($emailLama, 'email')],
-            'no_whatsapp' => ['bail', 'nullable', 'string', 'max:20', 'regex:/^(?:\+62|62|0)8[1-9][0-9]{7,11}$/'],
-            'status' => ['bail', 'required', Rule::in(self::STATUS_DOSEN)],
-            'password' => [$record ? 'nullable' : 'required', 'string', 'min:4', 'max:100'],
-        ];
-
-        $pesan = [
-            'nuptk_nidn.required' => 'NUPTK/NIDN wajib diisi.',
-            'nuptk_nidn.unique' => 'NUPTK/NIDN sudah terdaftar.',
-            'nuptk_nidn.regex' => 'NUPTK/NIDN hanya boleh berisi huruf dan angka.',
-            'nama.required' => 'Nama dosen wajib diisi.',
-            'nama.min' => 'Nama dosen minimal :min karakter.',
-            'id_prodi.required' => 'Prodi wajib dipilih.',
-            'id_prodi.integer' => 'Pilih Prodi dari daftar.',
-            'id_prodi.exists' => 'Pilih Prodi dari daftar.',
-            'email.required' => 'Email wajib diisi.',
-            'email.unique' => 'Email sudah terdaftar di sistem.',
-            'no_whatsapp.regex' => 'Nomor WhatsApp tidak valid. Gunakan format 08xxxxxxxxxx (atau diawali +62 / 62).',
-            'status.in' => 'Status hanya Aktif atau Nonaktif.',
-            'password.required' => 'Password akun login wajib diisi.',
-            'password.min' => 'Password minimal :min karakter.',
-        ];
-
-        $v = Validator::make($request->all(), $rules, $pesan, ['nuptk_nidn' => 'NUPTK/NIDN', 'nama' => 'Nama dosen', 'id_prodi' => 'Prodi', 'email' => 'Email', 'no_whatsapp' => 'Nomor WhatsApp', 'status' => 'Status', 'password' => 'Password']);
-        if ($v->fails()) {
-            return redirect()->route('data-akademik.index', $request->only(['tab', 'search', 'per_page', 'page']))
-                ->withErrors($v)->withInput()
-                ->with('open_modal', ['mode' => $record ? 'edit' : 'create', 'tab' => 'dosen', 'id' => $record?->getKey()]);
-        }
-
-        $data = $v->validated();
-        $wa = $data['no_whatsapp'] ?? null;
-        $out = [
-            'nuptk_nidn' => trim((string) $data['nuptk_nidn']),
-            'nama' => trim(preg_replace('/\s+/u', ' ', (string) $data['nama'])),
-            'id_prodi' => (int) $data['id_prodi'],
-            'email' => mb_strtolower(trim((string) $data['email'])),
-            'no_whatsapp' => $wa !== null && $wa !== '' ? preg_replace('/[\s\-\.\(\)]/', '', $wa) : null,
-            'status' => $data['status'],
-        ];
-        if (! empty($data['password'])) {
-            $out['password'] = $data['password'];
-        }
-
-        return $out;
     }
 
     private function kembali(string $tab, string $pesan, string $tipe = 'success', ?Request $request = null)

@@ -5,6 +5,7 @@
 @section('page-subtitle', 'Ringkasan laboratorium Jurusan Komputer dan Bisnis.')
 
 @section('content')
+{{-- Seluruh data berasal dari DashboardMahasiswaService (ringkasan, harus dikembalikan, pembaruan, status lab). --}}
 @php
     $jam = (int) date('H');
     $sapaan = $jam < 11 ? 'Selamat pagi' : ($jam < 15 ? 'Selamat siang' : ($jam < 18 ? 'Selamat sore' : 'Selamat malam'));

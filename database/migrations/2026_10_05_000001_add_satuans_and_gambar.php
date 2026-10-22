@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Schema;
  */
 return new class extends Migration
 {
+    // Membuat tabel satuan dan kolom gambar katalog.
     public function up(): void
     {
         Schema::create('satuans', function (Blueprint $table) {

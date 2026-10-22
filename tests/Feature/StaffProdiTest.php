@@ -200,50 +200,52 @@ class StaffProdiTest extends TestCase
 
     // ------------------------------------------------------------------ data akademik: dosen
 
-    public function test_tab_dosen_tampil_dan_crud_dari_halaman_data_akademik(): void
+    public function test_tab_dosen_staff_hanya_baca_dan_tanpa_email(): void
     {
-        $prodi = $this->prodi();
+        $dosen = $this->dosen(['nama' => 'Dosen Cari Uji']);
 
         $this->sebagaiStaff()->get(route('data-akademik.index', ['tab' => 'dosen']))->assertOk()
-            ->assertSee('Dosen')
-            ->assertSee('Belum ada data dosen.');
+            ->assertSee('Dosen Cari Uji')
+            ->assertDontSee($dosen->email)
+            ->assertDontSee('Tambah Dosen')
+            ->assertDontSee('dosenModal')
+            ->assertDontSee('pe-4">Aksi', false)
+            ->assertDontSee('data-akademik/dosen/', false);
 
-        $this->sebagaiStaff()->post(route('data-akademik.store', ['tab' => 'dosen']), [
-            'nuptk_nidn' => 'D00000123', 'nama' => ' Dosen Baru ', 'id_prodi' => $prodi->id_prodi,
-            'email' => 'DosenBaru@Uji.Test', 'no_whatsapp' => '081234567890', 'status' => 'aktif', 'password' => 'abcd',
-        ])->assertRedirect()->assertSessionHas('success');
-
-        $dosen = \App\Models\Dosen::where('nuptk_nidn', 'D00000123')->firstOrFail();
-        $this->assertSame('Dosen Baru', $dosen->nama);
-        $this->assertSame('dosenbaru@uji.test', $dosen->email);
-        $this->assertSame('dosen', Akun::find($dosen->email)->role);
-
-        // NUPTK/NIDN ganda ditolak
-        $this->sebagaiStaff()->post(route('data-akademik.store', ['tab' => 'dosen']), [
-            'nuptk_nidn' => 'D00000123', 'nama' => 'Dosen Lain', 'id_prodi' => $prodi->id_prodi,
-            'email' => 'lain@uji.test', 'no_whatsapp' => null, 'status' => 'nonaktif', 'password' => 'abcd',
-        ])->assertSessionHasErrors('nuptk_nidn');
-
-        $this->sebagaiStaff()->put(route('data-akademik.update', ['tab' => 'dosen', 'id' => $dosen->getKey()]), [
-            'nuptk_nidn' => 'D00000123', 'nama' => 'Dosen Baru Lagi', 'id_prodi' => $prodi->id_prodi,
-            'email' => 'dosenbaru@uji.test', 'no_whatsapp' => '081234567891', 'status' => 'nonaktif',
-        ])->assertSessionHas('success');
-        $this->assertSame('Dosen Baru Lagi', $dosen->fresh()->nama);
-        $this->assertSame('nonaktif', $dosen->fresh()->status);
-
-        $this->sebagaiStaff()->delete(route('data-akademik.destroy', ['tab' => 'dosen', 'id' => $dosen->getKey()]))
-            ->assertSessionHas('success');
-        $this->assertNull(\App\Models\Dosen::find('D00000123'));
-        $this->assertNull(Akun::find('dosenbaru@uji.test'));
+        $this->sebagaiStaff()->get(route('data-akademik.index', ['tab' => 'dosen', 'search' => 'Cari Uji']))->assertOk()
+            ->assertSee('Dosen Cari Uji');
+        // email tidak ikut dicari
+        $this->sebagaiStaff()->get(route('data-akademik.index', ['tab' => 'dosen', 'search' => $dosen->email]))->assertOk()
+            ->assertDontSee('Dosen Cari Uji');
     }
 
-    public function test_dosen_masih_dipakai_jadwal_tidak_bisa_dihapus(): void
+    public function test_staff_tidak_bisa_tambah_ubah_hapus_dosen(): void
+    {
+        $prodi = $this->prodi();
+        $dosen = $this->dosen(['nuptk_nidn' => 'D00000123']);
+        $namaAsli = $dosen->nama;
+        $payload = ['nuptk_nidn' => 'D00000999', 'nama' => 'Dosen Baru', 'id_prodi' => $prodi->id_prodi,
+            'email' => 'dosenbaru@uji.test', 'no_whatsapp' => '081234567890', 'status' => 'aktif', 'password' => 'abcd'];
+
+        $this->sebagaiStaff()->post(route('data-akademik.store', ['tab' => 'dosen']), $payload)->assertForbidden();
+        $this->sebagaiStaff()->put(route('data-akademik.update', ['tab' => 'dosen', 'id' => $dosen->getKey()]), $payload)->assertForbidden();
+        $this->sebagaiStaff()->delete(route('data-akademik.destroy', ['tab' => 'dosen', 'id' => $dosen->getKey()]))->assertForbidden();
+
+        $this->assertNull(\App\Models\Dosen::find('D00000999'));
+        $this->assertNull(Akun::find('dosenbaru@uji.test'));
+        $this->assertSame($namaAsli, $dosen->fresh()->nama);
+        $this->assertNotNull(Akun::find($dosen->email));
+    }
+
+    public function test_relasi_dosen_pada_jadwal_tetap_berfungsi(): void
     {
         $dosen = $this->dosen();
-        $this->sebagaiStaff()->post(route('jadwal.store'), $this->payloadJadwal(['nuptk_nidn' => $dosen->nuptk_nidn]));
+        $this->sebagaiStaff()->post(route('jadwal.store'), $this->payloadJadwal(['nuptk_nidn' => $dosen->nuptk_nidn]))
+            ->assertSessionHas('success');
 
-        $this->sebagaiStaff()->delete(route('data-akademik.destroy', ['tab' => 'dosen', 'id' => $dosen->getKey()]))
-            ->assertSessionHas('error');
+        $this->assertSame($dosen->nuptk_nidn, Jadwal::first()->nuptk_nidn);
+        $this->sebagaiStaff()->get(route('jadwal.index'))->assertOk();
+        $this->sebagaiStaff()->delete(route('data-akademik.destroy', ['tab' => 'dosen', 'id' => $dosen->getKey()]))->assertForbidden();
         $this->assertNotNull(\App\Models\Dosen::find($dosen->getKey()));
     }
 

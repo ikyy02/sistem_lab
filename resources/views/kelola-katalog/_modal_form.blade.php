@@ -38,6 +38,7 @@
 
             <div class="modal-body p-4">
                 <div class="row g-3">
+                    {{-- Field form dibuat dinamis dari KelolaKatalogController::config(). --}}
                     @foreach($fields as $f)
                         <div class="col-12 {{ in_array($f['name'], ['stok', 'id_satuan', 'harga', 'id_ruangan']) ? 'col-md-6' : '' }}">
                             <label

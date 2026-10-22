@@ -38,6 +38,7 @@ class MahasiswaController extends Controller
      * Import data mahasiswa dari file Excel.
      * Semua-atau-tidak-sama-sekali: bila ada satu baris bermasalah, tidak ada yang disimpan.
      */
+    // Impor semua-atau-tidak-sama-sekali: satu baris salah, tidak ada yang tersimpan.
     public function import(Request $request, MahasiswaImportService $importer)
     {
         $request->validate(['file' => ExcelFile::rules(2048)], ExcelFile::messages(2048));
@@ -69,6 +70,7 @@ class MahasiswaController extends Controller
      * Pastikan library PhpSpreadsheet sudah dipasang (composer require phpoffice/phpspreadsheet).
      * Bila belum, tampilkan pesan yang jelas alih-alih error 500.
      */
+    // Jika PhpSpreadsheet belum terpasang, tampilkan pesan jelas, bukan error 500.
     private function spreadsheetLibraryMissing()
     {
         if (class_exists(IOFactory::class)) {

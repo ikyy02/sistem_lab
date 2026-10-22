@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    // Struktur awal dosen; kemudian dibangun ulang oleh migrasi revisi final.
     public function up(): void
     {
         Schema::create('dosens', function (Blueprint $table) {

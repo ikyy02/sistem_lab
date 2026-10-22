@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+// Header pengembalian: satu peminjaman boleh punya beberapa pengembalian (sebagian-sebagian).
 class Pengembalian extends Model
 {
     protected $table = 'pengembalians';

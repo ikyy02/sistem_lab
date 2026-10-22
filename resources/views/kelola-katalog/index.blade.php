@@ -479,6 +479,7 @@
     const itemFields = {!! json_encode($fieldNames) !!};
     const itemLabel = {!! json_encode($label) !!};
 
+    // Buka modal tambah/edit katalog; edit mengisi field dan menampilkan gambar yang sudah ada.
     function openItemModal(mode, btn, keepOld) {
         const form = document.getElementById('itemForm');
         const edit = mode === 'edit';
@@ -537,6 +538,7 @@
             .show();
     }
 
+    // Pratinjau gambar yang baru dipilih sebelum disimpan.
     document.getElementById('f_gambar').addEventListener('change', function () {
         const prev = document.getElementById('gambarPreview');
 
@@ -573,6 +575,7 @@
         importSpinner.setAttribute('aria-hidden', 'true');
 
         if (importFile) {
+            // Menampilkan nama file Excel yang dipilih.
             importFile.addEventListener('change', function () {
                 importFile.classList.remove('is-invalid');
                 var feedback = importFile.parentElement.querySelector('.invalid-feedback');
@@ -582,6 +585,7 @@
         }
 
         if (importForm) {
+            // Kunci tombol impor saat proses berjalan supaya tidak terkirim dua kali.
             importForm.addEventListener('submit', function (e) {
                 if (! importFile || ! importFile.files.length) {
                     e.preventDefault();

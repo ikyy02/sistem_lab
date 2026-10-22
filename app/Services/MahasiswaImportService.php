@@ -39,6 +39,7 @@ class MahasiswaImportService
     public const MAX_DISPLAYED_ERRORS = 200;
 
     /** Judul kolom pada template => nama kolom database. Urutan = urutan kolom template. */
+    // Judul kolom template. Ubah di sini bila kolom impor bertambah; template Excel ikut berubah.
     public const COLUMNS = [
         'NIM' => 'nim',
         'Nama' => 'nama',
@@ -77,6 +78,7 @@ class MahasiswaImportService
      */
     public function import(UploadedFile $file): array
     {
+        // Tiga langkah: baca file, validasi semua baris, simpan semua dalam satu transaksi.
         $rows = $this->readRows($file);
 
         $errors = $this->validateRows($rows);
@@ -236,6 +238,7 @@ class MahasiswaImportService
         $existingNim = $this->existingValues('nim', array_column($rows, 'nim'));
         $existingEmail = $this->existingValues('email', array_column($rows, 'email'), Akun::class);
 
+        // Nama prodi di Excel dicocokkan (tanpa peduli huruf besar/kecil) ke id_prodi.
         $prodiMap = Prodi::pluck('id_prodi', 'nama_prodi')->mapWithKeys(fn ($id, $n) => [mb_strtolower($n) => $id])->all();
 
         $seenNim = [];
@@ -334,6 +337,7 @@ class MahasiswaImportService
             DB::transaction(function () use ($rows, $prodiMap) {
                 foreach ($rows as $data) {
                     // Password awal = NIM (disimpan apa adanya). Akun dan profil dibuat bersamaan.
+                    // Password awal mahasiswa = NIM (disimpan apa adanya; hashing ditunda).
                     Akun::create(['email' => $data['email'], 'password' => $data['nim'], 'role' => 'mahasiswa']);
                     Mahasiswa::create([
                         'nim' => $data['nim'],

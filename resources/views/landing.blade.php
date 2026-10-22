@@ -328,6 +328,7 @@
         const links = [...document.querySelectorAll('.lp-link[data-spy]')];
         const peta = { 'tentang': 'tentang', 'fasilitas': 'fasilitas', 'semua-fasilitas': 'fasilitas', 'layanan': 'layanan', 'alur': 'layanan', 'operasional': 'operasional', 'informasi': 'informasi' };
 
+        // Menandai menu navigasi sesuai bagian halaman yang sedang terlihat saat di-scroll.
         function perbarui() {
             nav.classList.toggle('is-scrolled', window.scrollY > 8);
             const batas = nav.offsetHeight + 40;

@@ -64,6 +64,7 @@ return [
     'providers' => [
         'users' => [
             'driver' => 'eloquent',
+            // Model login utama = Akun (tabel akuns). Login sebenarnya ditangani AuthService + sesi 'silab_user'.
             'model' => env('AUTH_MODEL', Akun::class),
         ],
 

@@ -17,6 +17,7 @@ class PengajuanController extends Controller
 
     public const FILTER = ['menunggu', 'disetujui', 'ditolak', 'selesai', 'dibatalkan', 'semua'];
 
+    // Antrean pengajuan sesuai kewenangan role (lihat Peminjaman::scopeDapatDiprosesOleh). Default tab 'menunggu'.
     public function index(Request $request)
     {
         $status = $request->query('status', 'menunggu');
@@ -58,6 +59,7 @@ class PengajuanController extends Controller
         ]);
     }
 
+    // Setujui: otorisasi dulu, lalu service. Dosen = teruskan ke Laboran; Laboran = final dan stok berkurang.
     public function setujui(int $id, PeminjamanService $service)
     {
         $this->otorisasi($id);
@@ -68,6 +70,7 @@ class PengajuanController extends Controller
             : 'Pengajuan peminjaman disetujui dan stok barang telah diperbarui.');
     }
 
+    // Tolak wajib menyertakan alasan.
     public function tolak(Request $request, int $id, PeminjamanService $service)
     {
         $this->otorisasi($id);
@@ -84,6 +87,7 @@ class PengajuanController extends Controller
     }
 
     /** Pengajuan di luar kewenangan role ditolak 403 sebelum diproses (bukan hanya disembunyikan dari daftar). */
+    // Cek hak akses di backend sebelum memproses, bukan hanya menyembunyikan tombol.
     private function otorisasi(int $id): void
     {
         $me = AuthService::user();

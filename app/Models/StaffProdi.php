@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+// Profil Staf Prodi. PK = id_pegawai; mengelola data akademik dan jadwal.
 class StaffProdi extends Model
 {
     protected $table = 'staff_prodis';

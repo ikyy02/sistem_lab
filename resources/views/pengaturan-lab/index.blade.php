@@ -157,6 +157,10 @@
 @push('scripts')
 @if($satuan)
 <script>
+<<<<<<< HEAD
+=======
+    // Buka modal tambah/edit satuan.
+>>>>>>> c4ec5d9 (refactor: rapikan SIARKA dan perbaiki akses serta peminjaman)
     function openMasterModal(mode, btn, keepOld) {
         const form = document.getElementById('masterForm');
         const edit = mode === 'edit';

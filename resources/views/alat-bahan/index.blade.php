@@ -54,6 +54,7 @@
     </div>
 @else
     <div class="row g-3">
+        {{-- Kartu katalog hanya-baca; gambar memakai gambar_url (lihat GambarKatalog). --}}
         @foreach($data as $item)
             @php $room = $jenis === 'ruangan'; $nama = $room ? $item->nama_ruangan : $item->nama; @endphp
             <div class="col-12 col-sm-6 col-lg-4 col-xl-3">

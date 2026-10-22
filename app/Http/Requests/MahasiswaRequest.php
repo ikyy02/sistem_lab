@@ -53,6 +53,7 @@ class MahasiswaRequest extends FormRequest
      *
      * 'bail' membuat hanya satu pesan error (yang pertama) yang muncul per kolom.
      */
+    // Aturan format yang dipakai bersama oleh form tambah/edit, Kelola User, dan impor Excel.
     public static function baseRules(): array
     {
         return [
@@ -68,6 +69,7 @@ class MahasiswaRequest extends FormRequest
      * Rapikan input sebelum divalidasi & disimpan, agar data di database konsisten:
      * spasi berlebih dibuang, email jadi huruf kecil, nomor WhatsApp tanpa spasi/tanda hubung.
      */
+    // Rapikan input: spasi berlebih dibuang, email huruf kecil, nomor WA tanpa tanda baca.
     public static function normalize(array $input): array
     {
         $squish = static function (mixed $value): mixed {

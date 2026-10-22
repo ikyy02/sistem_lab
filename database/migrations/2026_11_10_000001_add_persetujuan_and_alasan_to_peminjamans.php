@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Schema;
  */
 return new class extends Migration
 {
+    // Menambah waktu persetujuan dan alasan penolakan.
     public function up(): void
     {
         if (! Schema::hasTable('peminjamans')) {

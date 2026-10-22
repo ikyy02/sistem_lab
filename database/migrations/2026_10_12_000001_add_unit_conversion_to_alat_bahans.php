@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Schema;
  */
 return new class extends Migration
 {
+    // Kolom konversi satuan lama untuk TPK (struktur final menggantinya).
     public function up(): void
     {
         Schema::table('alat_bahans', function (Blueprint $table) {

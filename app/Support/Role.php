@@ -19,6 +19,7 @@ class Role
 
     public const ALL = [self::MAHASISWA, self::DOSEN, self::STAFF, self::LABORAN];
 
+    // Peta role -> model profil; dipakai AkunService dan AuthService.
     public const MODELS = [
         self::MAHASISWA => Mahasiswa::class,
         self::DOSEN => Dosen::class,
@@ -26,6 +27,7 @@ class Role
         self::LABORAN => Laboran::class,
     ];
 
+    // Label tampilan role di antarmuka.
     public const LABELS = [
         self::MAHASISWA => 'Mahasiswa',
         self::DOSEN => 'Dosen',

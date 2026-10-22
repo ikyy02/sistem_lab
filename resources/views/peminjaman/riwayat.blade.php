@@ -80,6 +80,7 @@
                 </tr>
             </thead>
             <tbody>
+            {{-- Satu baris per peminjaman; status memakai partial _status. --}}
             @forelse($data as $p)
                 <tr>
                     <td class="ps-4 text-muted">{{ $data->firstItem() + $loop->index }}</td>

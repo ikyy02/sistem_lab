@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Schema;
  */
 return new class extends Migration
 {
+    // Dibuat lalu dilepas lagi di 2026_12_03; tidak dipakai kode aplikasi.
     public function up(): void
     {
         if (Schema::hasTable('kelas_mahasiswas')) {

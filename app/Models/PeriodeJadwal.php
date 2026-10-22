@@ -21,6 +21,7 @@ class PeriodeJadwal extends Model
         return $this->hasMany(Jadwal::class, 'id_periode', 'id_periode');
     }
 
+    // Periode yang sedang berjalan (paling akhir berakhirnya bila ada lebih dari satu).
     public static function berjalan(): ?self
     {
         return self::where('status', self::BERJALAN)->orderByDesc('tanggal_berakhir')->first();

@@ -4,6 +4,7 @@
 @section('page-title', 'Profil Saya')
 @section('page-subtitle', 'Lihat dan ubah data profil serta password Anda.')
 
+{{-- Catatan: route profil saat ini dinonaktifkan di routes/web.php, halaman ini belum bisa dibuka. --}}
 @section('content')
 <div class="row g-3">
     <div class="col-12 col-lg-7">

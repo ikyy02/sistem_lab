@@ -93,6 +93,7 @@
 
 @push('scripts')
 <script>
+    // Data dari controller (dropdown katalog/ruangan, jam kerja) dikirim ke JavaScript dalam format JSON.
     const OPSI_KATALOG = @json($jsKatalog);
     const OPSI_RUANGAN = @json($jsRuangan);
     const LAMA_BARANG = @json(collect(old('detail', []))->values());
@@ -128,6 +129,7 @@
         return td;
     }
 
+    // Dropdown dosen penanggung jawab hanya aktif bila jenis peminjaman = atas_dosen.
     function toggleDosen(jenis) {
         const box = el('boxDosen');
         const sel = el('email_dosen');
@@ -135,6 +137,7 @@
         if (sel) sel.disabled = jenis !== 'atas_dosen';
     }
 
+    // Baris dianggap valid bila sudah memilih item (dan jumlahnya bulat 1..stok untuk alat/bahan).
     function barisValid(tr) {
         const pilih = tr.querySelector('select');
         if (!pilih || pilih.value === '') return false;
@@ -166,6 +169,7 @@
         el('btnAjukan').title = ada ? '' : PESAN_ITEM;
     }
 
+    // Tambah satu baris alat/bahan ke tabel; jumlah dibatasi stok yang tersedia.
     function tambahBarang(kategori, data = {}) {
         const i = idxBarang++;
         const tr = document.createElement('tr');
@@ -215,6 +219,7 @@
         sinkron();
     }
 
+    // Tambah satu baris ruangan (tanpa jumlah).
     function tambahRuangan(data = {}) {
         const i = idxRuangan++;
         const tr = document.createElement('tr');
@@ -240,6 +245,7 @@
     }
 
     // akhir=true: jam tutup masih boleh sebagai waktu selesai; waktu mulai harus sebelum jam tutup.
+    // Cek apakah waktu berada di hari dan jam operasional (aturan sama dengan PeminjamanService di server).
     function waktuKerja(nilai, akhir) {
         const d = new Date(nilai);
         if (isNaN(d.getTime())) return false;
@@ -268,6 +274,7 @@
     ['tanggal_peminjaman', 'tanggal_rencana_kembali'].forEach(id => el(id).addEventListener('input', aturBatasWaktu));
 
     // Mengembalikan daftar pesan kesalahan sisi klien (backend tetap memvalidasi ulang).
+    // Validasi sisi browser agar pengguna cepat tahu; server tetap memvalidasi ulang semuanya.
     function validasiForm() {
         const form = el('formPinjam');
         const galat = [];
@@ -314,6 +321,7 @@
         perbarui();
     }
 
+    // Saat submit: validasi dulu; kalau lolos, tombol dikunci untuk mencegah kirim ganda.
     el('formPinjam').addEventListener('submit', function (e) {
         if (sedangKirim) { e.preventDefault(); return; }       // cegah klik/enter berulang
         const galat = validasiForm();

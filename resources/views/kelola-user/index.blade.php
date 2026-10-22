@@ -70,6 +70,7 @@
             <thead>
                 <tr>
                     <th class="ps-4" style="width:56px;">No</th>
+                    {{-- Header tabel dinamis dari konfigurasi kategori; kolom sortable memakai link urut. --}}
                     @foreach($config['columns'] as $col => [$text, $sortable])
                         <th>
                             @if($sortable)
@@ -157,6 +158,7 @@
             </div>
             <div class="modal-body p-4">
                 <div class="row g-3">
+                    {{-- Field form modal dibuat dinamis dari UserManagementController::config(). --}}
                     @foreach($fields as $f)
                         <div class="col-12 {{ in_array($f['name'], ['nama', 'email', 'id_prodi']) ? '' : 'col-md-6' }}">
                             <label class="form-label" for="f_{{ $f['name'] }}">{{ $f['label'] }} @if($f['required'])<span class="text-danger">*</span>@endif</label>
@@ -198,6 +200,7 @@
     const userFields = {!! json_encode($fieldNames) !!};
     const userLabel = {!! json_encode($label) !!};
 
+    // Buka modal tambah/edit user; field form dibuat dari konfigurasi kategori (UserManagementController::config).
     function openUserModal(mode, btn, keepOld) {
         const form = document.getElementById('userForm');
         const edit = mode === 'edit';

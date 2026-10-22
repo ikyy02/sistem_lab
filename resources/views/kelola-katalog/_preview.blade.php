@@ -12,6 +12,7 @@
     </div>
 </div>
 <script>
+    // Tampilkan gambar dalam modal pratinjau (dipakai tabel dan form).
     function previewImage(src, title) {
         document.getElementById('previewImg').src = src;
         document.getElementById('previewTitle').textContent = title || 'Preview Gambar';

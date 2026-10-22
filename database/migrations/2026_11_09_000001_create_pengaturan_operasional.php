@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Schema;
 /** Pengaturan operasional laboratorium: satu baris pengaturan (jam + hari). */
 return new class extends Migration
 {
+    // Membuat tabel satu baris untuk jam dan hari operasional.
     public function up(): void
     {
         Schema::create('pengaturan_operasional', function (Blueprint $t) {

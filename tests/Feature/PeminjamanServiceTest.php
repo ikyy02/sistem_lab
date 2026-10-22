@@ -413,6 +413,26 @@ class PeminjamanServiceTest extends TestCase
         $this->assertSame('dibatalkan', $this->svc->batalkan($q->id_peminjaman, $m->email, Carbon::parse('2030-01-09 23:59'))->status);
     }
 
+    public function test_pembatalan_ditolak_bila_sudah_ada_pengembalian_dan_stok_tidak_berubah(): void
+    {
+        $alat = $this->katalog('alat', 10);
+        $r = $this->ruangan();
+        $lab = $this->laboran();
+        $m = $this->mahasiswa();
+        $p = $this->svc->ajukan($m->email, $this->data([
+            'detail' => [['id_katalog' => $alat->id_katalog, 'jumlah' => 2]],
+            'tanggal_peminjaman' => '2030-01-10 08:00', 'tanggal_rencana_kembali' => '2030-01-10 10:00',
+            'ruangan' => [['id_ruangan' => $r->id_ruangan]],
+        ]));
+        $this->svc->setujui($p->id_peminjaman, $lab->email);
+        $this->svc->kembalikan($p->id_peminjaman, $lab->email, [['id_detail_peminjaman' => $this->detailId($p, $alat), 'jumlah_dikembalikan' => 1, 'kondisi' => 'baik']]);
+        $stok = $alat->fresh()->stok;
+
+        $this->gagal(fn () => $this->svc->batalkan($p->id_peminjaman, $m->email, Carbon::parse('2030-01-09 12:00')), 'status');
+        $this->assertSame('disetujui', $p->fresh()->status);
+        $this->assertSame($stok, $alat->fresh()->stok);
+    }
+
     // ---------------------------------------------------------------- konflik ruangan & jadwal
 
     private function ajukanRuangan(string $email, $r, string $mulai, string $selesai): Peminjaman

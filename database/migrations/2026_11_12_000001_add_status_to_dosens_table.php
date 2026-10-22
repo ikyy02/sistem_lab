@@ -11,6 +11,7 @@ return new class extends Migration
      * Struktur tabel dosens yang sudah ada tidak diubah, hanya ditambah kolom default
      * sehingga data yang sudah tersimpan dan relasi jadwals tetap aman.
      */
+    // Menambah status aktif/nonaktif dosen (nonaktif tidak bisa jadi penanggung jawab).
     public function up(): void
     {
         Schema::table('dosens', function (Blueprint $table) {

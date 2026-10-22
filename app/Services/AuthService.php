@@ -15,9 +15,11 @@ class AuthService
     public function attempt(string $email, string $password): ?array
     {
         $akun = Akun::query()->whereRaw('LOWER(email) = ?', [mb_strtolower(trim($email))])->first();
+        // Bandingkan password apa adanya (hashing belum diterapkan, ditunda); hash_equals menghindari timing attack.
         if (! $akun || ! hash_equals((string) $akun->password, $password)) {
             return null;
         }
+        // Cari profil sesuai role (Mahasiswa/Dosen/Staff/Laboran) lewat email.
         $model = Role::MODELS[$akun->role] ?? null;
         $profil = $model ? $model::query()->where('email', $akun->email)->first() : null;
         if (! $profil) {
@@ -29,7 +31,9 @@ class AuthService
 
     public function login(Request $request, array $identity): void
     {
+        // Ganti ID sesi saat login untuk mencegah session fixation.
         $request->session()->regenerate();
+        // Identitas login disimpan di sesi, bukan memakai Auth bawaan Laravel.
         $request->session()->put('silab_user', $identity);
     }
 
@@ -40,6 +44,7 @@ class AuthService
         $request->session()->regenerateToken();
     }
 
+    // Helper dipakai di mana-mana untuk membaca pengguna yang sedang login.
     public static function user(): ?array
     {
         return session('silab_user');

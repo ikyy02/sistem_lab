@@ -70,6 +70,7 @@
                 </tr>
             </thead>
             <tbody>
+            {{-- Tombol setujui/tolak ditampilkan sesuai kewenangan role dan tahap persetujuan. --}}
             @forelse($data as $i => $p)
                 <tr>
                     <td class="ps-4 text-muted">{{ $data->firstItem() + $i }}</td>
@@ -178,6 +179,7 @@
     (function () {
         var modal = document.getElementById('tolakModal');
         if (!modal) return;
+        // Isi form tolak (action dan nama peminjam) dari tombol yang diklik sebelum modal tampil.
         modal.addEventListener('show.bs.modal', function (event) {
             var btn = event.relatedTarget;
             if (!btn) return;

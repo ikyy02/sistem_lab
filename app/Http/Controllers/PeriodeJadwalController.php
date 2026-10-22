@@ -37,6 +37,7 @@ class PeriodeJadwalController extends Controller
             'tanggal_berakhir' => ['required', 'date_format:Y-m-d', 'after_or_equal:tanggal_mulai'],
         ], self::PESAN, self::ATRIBUT);
 
+        // Transaksi: periode lama diarsipkan lalu periode baru dibuat sebagai 'berjalan'; tanggal tidak boleh tumpang tindih.
         DB::transaction(function () use ($data) {
             $terakhir = PeriodeJadwal::lockForUpdate()->max('tanggal_berakhir');
             if ($terakhir && $data['tanggal_mulai'] <= substr((string) $terakhir, 0, 10)) {
@@ -62,6 +63,7 @@ class PeriodeJadwalController extends Controller
             'tanggal_berakhir' => ['required', 'date_format:Y-m-d', 'after_or_equal:tanggal_mulai'],
         ], self::PESAN, self::ATRIBUT);
 
+        // Tanggal mulai periode yang diubah tidak boleh menyentuh periode arsip sebelumnya.
         $akhirArsip = PeriodeJadwal::where('id_periode', '!=', $periode->id_periode)->max('tanggal_berakhir');
         if ($akhirArsip && $data['tanggal_mulai'] <= substr((string) $akhirArsip, 0, 10)) {
             throw ValidationException::withMessages(['tanggal_mulai' => 'Tanggal mulai harus setelah tanggal berakhir periode arsip terakhir (' . substr((string) $akhirArsip, 0, 10) . ').']);

@@ -25,11 +25,14 @@ use Illuminate\Support\Facades\Route;
 */
 
 // Landing Page + Login / logout (tanpa registrasi: akun dikelola Laboran/Admin)
+// Halaman publik: landing, login, logout. Tidak ada registrasi.
 Route::get('/', [AuthController::class, 'landing'])->name('landing');
 Route::get('login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('login', [AuthController::class, 'login'])->name('login.attempt');
 Route::post('logout', [AuthController::class, 'logout'])->name('logout');
 
+// Semua route di dalam grup ini wajib login (middleware silab.auth = SilabAuth).
+// Middleware 'silab.role:...' membatasi route per role; tambah role baru di sini.
 Route::middleware('silab.auth')->group(function () {
 
     // Beranda: dashboard ringkas sesuai role
@@ -79,6 +82,7 @@ Route::middleware('silab.auth')->group(function () {
     Route::get('peminjaman/{id}', [PeminjamanController::class, 'show'])->whereNumber('id')->name('peminjaman.show');
 
     // Batalkan (peminjam) dan Selesai (pihak berwenang): hak akses dicek ulang di PeminjamanService
+    // Hak akses batal/selesai dicek lagi di PeminjamanService, bukan hanya di route.
     Route::post('peminjaman/{id}/batal', [PeminjamanController::class, 'batalkan'])->whereNumber('id')->name('peminjaman.batal');
     Route::post('peminjaman/{id}/selesai', [PeminjamanController::class, 'selesai'])->whereNumber('id')->name('peminjaman.selesai');
 
@@ -90,6 +94,7 @@ Route::middleware('silab.auth')->group(function () {
     });
 
     // Khusus Laboran/Admin
+    // Semua route di bawah ini hanya untuk Laboran/Admin.
     Route::middleware('silab.role:' . Role::LABORAN)->group(function () {
 
         // Pengembalian hanya dicatat Laboran/Admin (Dosen ditolak di tingkat route)
@@ -97,6 +102,7 @@ Route::middleware('silab.auth')->group(function () {
         Route::post('pengembalian/{id}', [PengembalianController::class, 'store'])->whereNumber('id')->name('pengembalian.store');
 
         // Kelola Katalog (Alat, Bahan, Ruangan — satu menu, 3 tab terpisah)
+        // Daftar kategori katalog yang valid (alat, bahan, ruangan) dipakai sebagai batasan parameter route.
         $kat = ['kategori' => array_keys(KelolaKatalogController::KATEGORI)];
         Route::get('kelola-katalog', [KelolaKatalogController::class, 'index'])->name('kelola-katalog.index');
         Route::post('kelola-katalog/{kategori}', [KelolaKatalogController::class, 'store'])->whereIn('kategori', $kat['kategori'])->name('kelola-katalog.store');
@@ -127,6 +133,7 @@ Route::middleware('silab.auth')->group(function () {
             ->whereIn('kategori', Role::ALL)->where('key', '[A-Za-z0-9._\-]+')->name('kelola-user.destroy');
 
         // Import & template Excel mahasiswa (dipakai di kategori Mahasiswa)
+        // Import Excel mahasiswa memakai MahasiswaController + MahasiswaImportService.
         Route::get('mahasiswa/template', [MahasiswaController::class, 'template'])->name('mahasiswa.template');
         Route::post('mahasiswa/import', [MahasiswaController::class, 'import'])->name('mahasiswa.import');
     });

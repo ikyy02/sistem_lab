@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Schema;
  */
 return new class extends Migration
 {
+    // Membuat tabel periode dan mengelompokkan jadwal lama ke periode otomatis.
     public function up(): void
     {
         Schema::create('periode_jadwals', function (Blueprint $t) {

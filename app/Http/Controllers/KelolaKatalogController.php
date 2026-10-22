@@ -6,11 +6,11 @@ use App\Models\AlatBahan;
 use App\Models\Ruangan;
 use App\Services\KatalogImportService;
 use App\Support\ExcelFile;
+use App\Support\GambarKatalog;
 use App\Support\Options;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -24,6 +24,7 @@ class KelolaKatalogController extends Controller
     public const KATEGORI = ['alat' => 'Alat', 'bahan' => 'Bahan', 'ruangan' => 'Ruangan'];
     public const PER_PAGE = [10, 25, 50, 100];
 
+    // Konfigurasi kolom tabel, kolom pencarian, dan field form per kategori. Tambah/ubah kolom form di sini.
     public static function config(string $kategori): array
     {
         $ket = ['name' => 'keterangan', 'label' => 'Keterangan', 'type' => 'textarea', 'placeholder' => 'Keterangan tambahan', 'required' => false];
@@ -61,6 +62,7 @@ class KelolaKatalogController extends Controller
         $config = self::config($kategori);
         $room = $kategori === 'ruangan';
         $search = mb_substr(trim((string) $request->query('search', '')), 0, 100);
+        // Hanya kolom bertanda true yang boleh dipakai mengurutkan (whitelist).
         $sortable = array_keys(array_filter($config['columns'], fn ($c) => $c[1]));
         $default = $room ? 'nama_ruangan' : 'nama';
         $sort = in_array($request->query('sort'), $sortable, true) ? $request->query('sort') : $default;
@@ -78,6 +80,7 @@ class KelolaKatalogController extends Controller
                 ->join('satuans', 'satuans.id_satuan', '=', 'alat_bahans.id_satuan')
                 ->join('ruangans', 'ruangans.id_ruangan', '=', 'alat_bahans.id_ruangan')
                 ->where('alat_bahans.jenis', $kategori);
+            // Nama kolom urut dipetakan ke kolom tabel asli (join) agar aman dan tidak ambigu.
             $sortColumn = match ($sort) {
                 'nama_satuan' => 'satuans.nama_satuan',
                 'nama_ruangan' => 'ruangans.nama_ruangan',
@@ -105,6 +108,7 @@ class KelolaKatalogController extends Controller
         ]);
     }
 
+    // Tambah data: validasi, simpan gambar ke storage, lalu buat record sesuai kategori.
     public function store(Request $request, string $kategori)
     {
         $v = $this->validator($request, $kategori, null);
@@ -114,6 +118,10 @@ class KelolaKatalogController extends Controller
         $data = $v->validated();
         $room = $kategori === 'ruangan';
         $dir = $room ? Ruangan::GAMBAR_DIR : AlatBahan::GAMBAR_DIR;
+<<<<<<< HEAD
+=======
+        // Nama file gambar yang disimpan ke database hanya nama acak (uuid), bukan path penuh.
+>>>>>>> c4ec5d9 (refactor: rapikan SIARKA dan perbaiki akses serta peminjaman)
         $data['gambar'] = $request->hasFile('gambar') ? $this->saveImage($request->file('gambar'), $dir) : null; // alat/bahan: gambar wajib (validator)
         if ($room) {
             Ruangan::create($data);
@@ -125,6 +133,7 @@ class KelolaKatalogController extends Controller
             ->with('success', self::KATEGORI[$kategori] . ' berhasil ditambahkan.');
     }
 
+    // Edit data. Gambar lama dihapus hanya bila gambar baru diunggah.
     public function update(Request $request, string $kategori, int $id)
     {
         $item = $this->find($kategori, $id);
@@ -135,6 +144,10 @@ class KelolaKatalogController extends Controller
         $data = $v->validated();
         $dir = $kategori === 'ruangan' ? Ruangan::GAMBAR_DIR : AlatBahan::GAMBAR_DIR;
         unset($data['gambar']);
+<<<<<<< HEAD
+=======
+        // Urutan: hapus gambar lama, simpan gambar baru, simpan namanya ke database.
+>>>>>>> c4ec5d9 (refactor: rapikan SIARKA dan perbaiki akses serta peminjaman)
         if ($request->hasFile('gambar')) {
             $this->deleteImage($item->gambar, $dir);
             $data['gambar'] = $this->saveImage($request->file('gambar'), $dir);
@@ -146,6 +159,7 @@ class KelolaKatalogController extends Controller
     }
 
     /** Stok manual: tambah/kurangi stok Alat/Bahan. Jumlah harus bilangan bulat > 0 dan stok tidak boleh negatif. */
+    // Stok manual tambah/kurangi. Baris dikunci agar dua perubahan bersamaan tidak saling menimpa.
     public function stok(Request $request, string $kategori, int $id)
     {
         $back = redirect()->route('kelola-katalog.index', $request->only(['search', 'sort', 'direction', 'per_page', 'page']) + ['kategori' => $kategori]);
@@ -164,6 +178,7 @@ class KelolaKatalogController extends Controller
         $tambah = $v->validated()['aksi'] === 'tambah';
 
         $hasil = DB::transaction(function () use ($kategori, $id, $jumlah, $tambah) {
+            // lockForUpdate mengunci baris sampai transaksi selesai.
             $item = AlatBahan::where('jenis', $kategori)->lockForUpdate()->findOrFail($id);
             $baru = $tambah ? $item->stok + $jumlah : $item->stok - $jumlah;
             if ($baru < 0) {
@@ -182,6 +197,7 @@ class KelolaKatalogController extends Controller
             : $back->with('success', 'Stok berhasil ' . ($tambah ? 'ditambah' : 'dikurangi') . '.');
     }
 
+    // Hapus data. Bila sudah dipakai data lain (foreign key RESTRICT) ditolak; gambar baru dihapus setelah berhasil.
     public function destroy(Request $request, string $kategori, int $id)
     {
         $item = $this->find($kategori, $id);
@@ -203,6 +219,7 @@ class KelolaKatalogController extends Controller
         return response()->streamDownload(fn () => $writer->save('php://output'), $name);
     }
 
+    // Import Excel katalog; hasil gagal ditampilkan sebagai laporan per baris.
     public function import(Request $request, string $kategori, KatalogImportService $svc)
     {
         $request->validate(['file' => ExcelFile::rules(5120)], ExcelFile::messages(5120));
@@ -225,6 +242,7 @@ class KelolaKatalogController extends Controller
             : AlatBahan::where('jenis', $kategori)->findOrFail($id);
     }
 
+    // Aturan validasi dibedakan per kategori; pesan error dalam bahasa Indonesia.
     private function validator(Request $request, string $kategori, $item)
     {
         $squish = fn ($v) => trim(preg_replace('/\s+/u', ' ', (string) $v));
@@ -233,6 +251,7 @@ class KelolaKatalogController extends Controller
             $rules = [
                 'nama_ruangan' => ['bail', 'required', 'string', 'max:50', Rule::unique('ruangans', 'nama_ruangan')->ignore($item?->getKey(), 'id_ruangan')],
                 'keterangan' => ['nullable', 'string', 'max:2000'],
+                // Validasi upload: harus gambar jpg/png/webp, maksimal 2 MB.
                 'gambar' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
             ];
 
@@ -277,21 +296,26 @@ class KelolaKatalogController extends Controller
         ]);
     }
 
+    // Simpan gambar ke disk 'public' (storage/app/public) dengan nama acak; butuh `php artisan storage:link` agar bisa diakses.
     private function saveImage($file, string $dir = AlatBahan::GAMBAR_DIR): string
     {
         $name = Str::uuid() . '.' . ($file->guessExtension() ?: 'jpg');
+<<<<<<< HEAD
         $file->move(public_path($dir), $name);
+=======
+        $file->storeAs($dir, $name, 'public'); // storage/app/public/{dir}; tampil lewat public/storage (storage:link)
+>>>>>>> c4ec5d9 (refactor: rapikan SIARKA dan perbaiki akses serta peminjaman)
 
         return $name;
     }
 
+    // Hapus file gambar (lokasi baru dan lokasi lama) lewat GambarKatalog.
     private function deleteImage(?string $name, string $dir = AlatBahan::GAMBAR_DIR): void
     {
-        if ($name) {
-            File::delete(public_path($dir . '/' . basename($name)));
-        }
+        GambarKatalog::hapus($name, $dir);
     }
 
+    // Validasi gagal: kembali ke daftar dan buka lagi modal form dengan error.
     private function fail($validator, string $kategori, string $mode, ?int $id)
     {
         return redirect()->route('kelola-katalog.index', ['kategori' => $kategori])

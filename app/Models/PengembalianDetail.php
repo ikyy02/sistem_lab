@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+// Rincian pengembalian per detail peminjaman; kondisi hanya diisi untuk alat (baik/rusak).
 class PengembalianDetail extends Model
 {
     public const KONDISI = ['baik', 'rusak'];

@@ -13,6 +13,7 @@ class SilabRole
     {
         $user = AuthService::user();
 
+        // Role tidak diizinkan => 403.
         if (! $user || ! in_array($user['role'], $roles, true)) {
             abort(403, 'Anda tidak memiliki hak akses ke halaman ini.');
         }

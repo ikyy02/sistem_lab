@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Schema;
  */
 return new class extends Migration
 {
+    // Membuat master prodi dan kelas beserta data awal.
     public function up(): void
     {
         Schema::create('prodis', function (Blueprint $table) {

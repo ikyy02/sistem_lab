@@ -9,6 +9,7 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
+    // Tabel cache (dipakai driver cache database, mis. token anti kirim ganda dan rate limit login).
     public function up(): void
     {
         Schema::create('cache', function (Blueprint $table) {

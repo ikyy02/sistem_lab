@@ -137,6 +137,7 @@
         var importSubmit = document.getElementById('importSubmit');
         var importLabel = importSubmit.innerHTML;
 
+        // Kunci tombol impor saat proses berjalan.
         importForm.addEventListener('submit', function () {
             importSubmit.disabled = true;
 

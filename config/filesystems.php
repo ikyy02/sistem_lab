@@ -38,6 +38,7 @@ return [
             'report' => false,
         ],
 
+        // Disk 'public' = storage/app/public. Gambar katalog disimpan di sini dan diakses lewat symlink public/storage (php artisan storage:link).
         'public' => [
             'driver' => 'local',
             'root' => storage_path('app/public'),

@@ -40,6 +40,7 @@ class ExcelFile
      *
      * @return array<int, array<int, mixed>>
      */
+    // Semua impor Excel lewat sini: validasi isi file asli, batasi jumlah baris, lalu baca sheet pertama.
     public static function rows(UploadedFile $file, int $limit): array
     {
         $ext = strtolower($file->getClientOriginalExtension());

@@ -71,6 +71,7 @@
         <table class="table table-silab mb-0">
             <thead><tr><th class="ps-4" style="width:56px;">No</th><th>Periode</th><th>Berlaku</th><th>Jumlah Jadwal</th><th class="pe-4">Status</th></tr></thead>
             <tbody>
+            {{-- Hanya periode berjalan yang bisa diubah; periode lain berstatus arsip (hanya baca). --}}
             @forelse($periode as $p)
                 <tr>
                     <td class="ps-4 text-muted">{{ $loop->iteration }}</td>

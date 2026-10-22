@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+// Jadwal kuliah mingguan (kelas, mata kuliah, dosen, ruangan, hari, jam). Dipakai untuk mengecek bentrok ruangan.
 class Jadwal extends Model
 {
     public const HARI = ['senin', 'selasa', 'rabu', 'kamis', 'jumat', 'sabtu'];
@@ -11,6 +12,7 @@ class Jadwal extends Model
     public const SEMESTER = ['ganjil', 'genap'];
 
     /** Urutan hari untuk pengurutan (MySQL maupun SQLite). */
+    // Ekspresi SQL untuk mengurutkan hari senin..sabtu (bukan urutan abjad).
     public const HARI_SQL = "CASE hari WHEN 'senin' THEN 1 WHEN 'selasa' THEN 2 WHEN 'rabu' THEN 3 WHEN 'kamis' THEN 4 WHEN 'jumat' THEN 5 WHEN 'sabtu' THEN 6 ELSE 7 END";
 
     protected $table = 'jadwals';
@@ -35,6 +37,7 @@ class Jadwal extends Model
     }
 
     /** Jadwal yang sedang berlaku: periode berjalan (atau belum terhubung ke periode mana pun). */
+    // Scope: hanya jadwal di periode berjalan (atau yang belum terhubung ke periode).
     public function scopeBerlaku($query)
     {
         return $query->where(function ($q) {

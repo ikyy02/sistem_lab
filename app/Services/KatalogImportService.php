@@ -25,6 +25,7 @@ class KatalogImportService
     public const MAX_ERRORS = 100;
 
     /** Judul kolom template => kolom database. Gambar tidak dapat diimpor (diunggah lewat Edit). */
+    // Kolom template: Ruangan hanya Nama+Keterangan; Alat/Bahan juga Satuan, Stok, Harga, Ruangan.
     public static function columns(string $kategori): array
     {
         return $kategori === 'ruangan'
@@ -71,6 +72,7 @@ class KatalogImportService
      *
      * @return array{success: bool, total: int, inserted?: int, error_count?: int, errors?: array}
      */
+    // Alur impor: validasi semua baris dulu, baru simpan dalam satu transaksi.
     public function import(UploadedFile $file, string $kategori): array
     {
         $rows = ExcelFile::rows($file, self::MAX_ROWS + 50);
@@ -94,8 +96,10 @@ class KatalogImportService
         }
         
         $room = $kategori === 'ruangan';
+        // Peta nama (huruf kecil) => id untuk mengubah teks Excel menjadi id_satuan/id_ruangan.
         $satuan = Satuan::pluck('id_satuan', 'nama_satuan')->mapWithKeys(fn ($id, $n) => [mb_strtolower($n) => $id])->all();
         $ruangan = Ruangan::pluck('id_ruangan', 'nama_ruangan')->mapWithKeys(fn ($id, $n) => [mb_strtolower($n) => $id])->all();
+        // Nama yang sudah ada ditolak (data lama tidak ditimpa).
         $existing = array_flip(array_map(fn ($n) => mb_strtolower(trim($n)), $room ? Ruangan::pluck('nama_ruangan')->all() : AlatBahan::pluck('nama')->all()));
         
         $valid = [];
@@ -149,6 +153,7 @@ class KatalogImportService
                     $msg[] = 'Ruangan "' . $get('ruangan') . '" tidak ada.';
                 }
                 
+                // Gambar dikosongkan; diunggah lewat tombol Edit setelah impor.
                 $record += ['id_satuan' => $idSatuan, 'stok' => (int) $stok, 'harga' => $harga, 'id_ruangan' => $idRuangan, 'gambar' => ''];
             }
             
@@ -172,6 +177,7 @@ class KatalogImportService
         }
         
         DB::transaction(function () use ($valid, $room) {
+            // Insert per 100 baris agar query tidak terlalu besar.
             foreach (array_chunk($valid, 100) as $chunk) {
                 $room ? Ruangan::insert($chunk) : AlatBahan::insert($chunk);
             }

@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Schema;
  */
 return new class extends Migration
 {
+    // Membuat master mata kuliah dan kolom id_mata_kuliah di jadwal (nullable agar jadwal lama aman).
     public function up(): void
     {
         Schema::create('mata_kuliahs', function (Blueprint $t) {

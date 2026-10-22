@@ -22,6 +22,7 @@ return new class extends Migration
         $this->ubah(self::LAMA);
     }
 
+    // MySQL memakai ALTER ... MODIFY ENUM; database lain memakai ->change().
     private function ubah(array $nilai): void
     {
         if (! Schema::hasTable('peminjamans')) {

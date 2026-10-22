@@ -86,6 +86,7 @@
 </div>
 
 <script>
+    // Tombol tampil/sembunyikan password.
     document.getElementById('togglePassword').addEventListener('click', function () {
         const i = document.getElementById('password');
         const tampil = i.type === 'password';
@@ -94,6 +95,7 @@
         this.firstElementChild.className = tampil ? 'bi bi-eye-slash' : 'bi bi-eye';
     });
     // Kunci tombol Masuk saat dikirim (cegah kirim ganda) tanpa mengubah ukuran tombol.
+    // Kunci tombol login saat dikirim agar tidak diklik dua kali.
     document.getElementById('formLogin').addEventListener('submit', function (e) {
         if (this.dataset.terkirim === '1') { e.preventDefault(); return; }
         this.dataset.terkirim = '1';

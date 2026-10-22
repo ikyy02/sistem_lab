@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Schema;
 /** Foto ruangan/laboratorium untuk landing page; bersumber dari database, bukan dari situs luar. */
 return new class extends Migration
 {
+    // Kolom gambar ruangan (nama file saja; lokasi file lihat GambarKatalog).
     public function up(): void
     {
         if (! Schema::hasColumn('ruangans', 'gambar')) {

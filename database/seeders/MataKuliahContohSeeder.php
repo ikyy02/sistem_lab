@@ -20,6 +20,7 @@ class MataKuliahContohSeeder extends Seeder
 
     public function run(): void
     {
+        // firstOrCreate: aman dijalankan berulang karena kode_mk unik.
         foreach (self::DATA as $baris) {
             MataKuliah::firstOrCreate(['kode_mk' => $baris['kode_mk']], $baris + ['semester' => 'ganjil']);
         }

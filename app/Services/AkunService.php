@@ -17,6 +17,7 @@ class AkunService
     {
         $model = Role::MODELS[$role] ?? throw new \InvalidArgumentException('Role tidak valid.');
 
+        // Akun dan profil dibuat dalam satu transaksi: gagal salah satu, keduanya dibatalkan.
         return DB::transaction(function () use ($model, $role, $email, $password, $profil) {
             Akun::create(['email' => $email, 'password' => $password, 'role' => $role]);
 
@@ -28,8 +29,10 @@ class AkunService
     public function ubah(object $profil, string $role, array $data, ?string $password): object
     {
         return DB::transaction(function () use ($profil, $role, $data, $password) {
+            // lockForUpdate mengunci baris akun supaya tidak ada perubahan bersamaan.
             $akun = Akun::where('email', $profil->email)->where('role', $role)->lockForUpdate()->firstOrFail();
             $email = $data['email'] ?? $profil->email;
+            // Email adalah kunci akun; mengubahnya otomatis ikut ke tabel lain lewat ON UPDATE CASCADE.
             if ($email !== $akun->email) {
                 Akun::where('email', $akun->email)->update(['email' => $email]); // FK profil/peminjaman ikut ter-update (CASCADE)
                 $akun = Akun::findOrFail($email);
@@ -54,6 +57,7 @@ class AkunService
                 $profil->delete();
                 Akun::where('email', $email)->delete();
             });
+        // Foreign key RESTRICT menolak hapus bila masih dipakai peminjaman/jadwal.
         } catch (QueryException $e) {
             throw new \RuntimeException('Data tidak dapat dihapus karena sudah dipakai pada data lain (histori transaksi atau jadwal).');
         }

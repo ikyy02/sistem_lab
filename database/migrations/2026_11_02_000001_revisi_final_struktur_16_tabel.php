@@ -22,6 +22,7 @@ return new class extends Migration
 
     public function up(): void
     {
+        // Langkah: ganti nama tabel lama, buat tabel baru, salin data, buang tabel lama (tidak bisa di-rollback).
         foreach (self::LAMA as $t) {
             Schema::rename($t, $t . '_lama');
         }
@@ -37,6 +38,7 @@ return new class extends Migration
 
         $this->pasangCheck();
 
+        // Folder gambar lama (inventaris) dipindah ke katalog di public/uploads. Gambar baru memakai storage/app/public (lihat GambarKatalog); file di lokasi lama tetap dipakai.
         $lama = public_path('uploads/inventaris');
         $baru = public_path('uploads/katalog');
         if (File::isDirectory($lama) && ! File::exists($baru)) {
@@ -49,6 +51,7 @@ return new class extends Migration
         throw new \RuntimeException('Migration revisi final tidak dapat di-rollback. Pulihkan dari backup database.');
     }
 
+    // Skema final: kunci utama, foreign key (RESTRICT/CASCADE), dan unique constraint dibuat di sini.
     private function buatTabel(): void
     {
         Schema::create('akuns', function (Blueprint $t) {
@@ -198,6 +201,7 @@ return new class extends Migration
         });
     }
 
+    // Menyalin data tabel lama ke struktur baru (email+password ke akuns, nama prodi ke id_prodi).
     private function salinData(): void
     {
         // PRODI (id dipertahankan); prodi yang hanya muncul di data profil ditambahkan otomatis.
@@ -308,6 +312,7 @@ return new class extends Migration
     }
 
     /** CHECK constraint hanya untuk database yang mendukung; validasi aplikasi tetap berlaku di semua driver. */
+    // CHECK constraint (mis. stok >= 0, jam mulai < jam selesai) hanya dipasang di database yang mendukung.
     private function pasangCheck(): void
     {
         if (! in_array(DB::getDriverName(), ['mysql', 'mariadb', 'pgsql'], true)) {

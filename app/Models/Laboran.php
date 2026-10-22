@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+// Profil Laboran/Admin. PK = id_pegawai; login lewat akun (email).
 class Laboran extends Model
 {
     protected $table = 'laborans';

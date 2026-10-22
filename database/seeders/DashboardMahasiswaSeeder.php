@@ -47,10 +47,12 @@ class DashboardMahasiswaSeeder extends Seeder
 
     public function run(): void
     {
+        // Pengaman: seeder data contoh tidak jalan di production.
         if (! app()->environment('local', 'testing')) {
             return;
         }
 
+        // Semua data contoh dibuat dalam satu transaksi.
         DB::transaction(function () {
             [$tahun, $semester] = PeminjamanService::periodeAkademik(now());
 
@@ -75,6 +77,7 @@ class DashboardMahasiswaSeeder extends Seeder
     }
 
     /** @return array<string,AlatBahan> */
+    // Katalog contoh (alat + bahan) beserta stok awal.
     private function katalog(Ruangan $labJaringan, Ruangan $labBasis, Satuan $unit, Satuan $meter, Satuan $botol): array
     {
         $baris = [
@@ -117,6 +120,7 @@ class DashboardMahasiswaSeeder extends Seeder
     }
 
     /** 5 jadwal aktif (satu pada hari ini) + 1 dibatalkan, tersebar pada beberapa hari. */
+    // Jadwal contoh: satu untuk hari ini supaya dashboard punya data, sisanya tersebar di hari lain.
     private function jadwal(Dosen $dosen, Kelas $kelasA, Kelas $kelasB, Ruangan $labJaringan, Ruangan $labBasis, string $tahun, string $semester): void
     {
         $hariIni = self::HARI_URUT[(int) now()->format('w')];
@@ -148,6 +152,7 @@ class DashboardMahasiswaSeeder extends Seeder
     }
 
     /** Semua kasus status peminjaman untuk mahasiswa 1 (stok konsisten dengan aturan bisnis). */
+    // Satu peminjaman untuk tiap kasus status; stok disesuaikan seperti aturan bisnis.
     private function peminjamanMhs1(Mahasiswa $mhs, Dosen $dosen, array $k, Ruangan $ruangan): void
     {
         $kini = now();

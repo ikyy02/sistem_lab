@@ -35,7 +35,7 @@ class ExampleTest extends TestCase
 
         $this->get('/')->assertOk()
             ->assertSee('Lab Uji 1')->assertSee('Lab Uji 4')->assertSee('Lab Uji 5')
-            ->assertSee(asset(Ruangan::GAMBAR_DIR.'/uji.jpg'), false)
+            ->assertSee(asset('storage/'.Ruangan::GAMBAR_DIR.'/uji.jpg'), false)
             ->assertSee('Lihat Semua')
             ->assertSee('id="semua-fasilitas"', false);
     }

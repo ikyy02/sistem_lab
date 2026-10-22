@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+// Master program studi.
 class Prodi extends Model
 {
     protected $table = 'prodis';

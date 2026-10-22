@@ -76,8 +76,8 @@ class ImportTest extends TestCase
     public function test_import_dosen_membuat_akun_dan_profil(): void
     {
         $this->prodi('D3 Uji');
-        $file = $this->excel(['NUPTK/NIDN', 'Nama', 'Prodi', 'Email', 'WhatsApp', 'Password'], [
-            ['0011', 'Dosen Satu', 'D3 Uji', 'd1@politala.ac.id', '', 'abcd'],
+        $file = $this->excel(['NUPTK/NIDN', 'Nama', 'Prodi', 'Email', 'WhatsApp', 'Status', 'Password'], [
+            ['0011', 'Dosen Satu', 'D3 Uji', 'd1@politala.ac.id', '', 'Aktif', 'abcd'],
         ]);
         $this->admin()->post(route('kelola-user.import', 'dosen'), ['file' => $file])->assertSessionHas('success');
         $this->assertSame('dosen', Akun::find('d1@politala.ac.id')->role);

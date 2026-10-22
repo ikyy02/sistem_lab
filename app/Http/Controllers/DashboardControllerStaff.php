@@ -15,6 +15,7 @@ class DashboardControllerStaff extends Controller
 {
     public function index()
     {
+        // Nama hari Inggris huruf kecil, dipakai untuk mengurutkan jadwal hari ini paling atas.
         $hariIni = strtolower(date('l'));
 
         return view('dashboard.staff_prodi', [
@@ -23,6 +24,7 @@ class DashboardControllerStaff extends Controller
             'totalMataKuliah' => MataKuliah::count(),
             'totalJadwal' => Jadwal::berlaku()->count(),
             'hariIni' => $hariIni,
+            // 5 jadwal terdekat: hari ini dulu, lalu urut hari dan jam mulai. berlaku() = jadwal pada periode aktif.
             'jadwal' => Jadwal::berlaku()->with(['mataKuliah', 'dosen', 'kelas', 'ruangan'])
                 ->orderByRaw('CASE WHEN hari = ? THEN 0 ELSE 1 END', [$hariIni])
                 ->orderByRaw(Jadwal::HARI_SQL)

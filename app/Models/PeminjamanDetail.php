@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+// Satu baris barang (alat/bahan) beserta jumlah dalam satu peminjaman.
 class PeminjamanDetail extends Model
 {
     protected $table = 'peminjaman_details';

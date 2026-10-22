@@ -6,11 +6,13 @@ use Illuminate\Database\Eloquent\Model;
 
 class Peminjaman extends Model
 {
+    // Alur status: menunggu -> disetujui -> selesai; atau ditolak / dibatalkan.
     public const STATUS = ['menunggu', 'disetujui', 'ditolak', 'selesai', 'dibatalkan'];
 
     public const JENIS = ['pribadi', 'atas_dosen', 'pembelajaran'];
 
     /** Jenis yang boleh dipilih Mahasiswa (Dosen selalu memakai "Pembelajaran"). */
+    // Dosen tidak memilih jenis; sistem otomatis memakai 'pembelajaran'.
     public const JENIS_MAHASISWA = ['pribadi', 'atas_dosen'];
 
     public const JENIS_PEMBELAJARAN = 'pembelajaran';
@@ -88,6 +90,7 @@ class Peminjaman extends Model
     }
 
     /** Relasi yang perlu di-eager-load pada daftar agar tidak N+1. */
+    // Daftar relasi untuk eager loading supaya halaman daftar tidak melakukan query berulang (N+1).
     public static function withProfil(): array
     {
         return ['mahasiswaPeminjam', 'dosenPeminjam', 'dosenPenanggung', 'details.katalog.satuan', 'ruangans.ruangan'];
@@ -121,6 +124,7 @@ class Peminjaman extends Model
      * - Dosen: hanya jenis "atas_dosen" (Kuliah/Praktikum) yang menunjuk dirinya, bukan miliknya sendiri;
      * - role lain: tidak ada. Peminjaman Mandiri dan Pembelajaran Dosen hanya ditangani Laboran.
      */
+    // Scope: siapa boleh MELIHAT pengajuan di antreannya. Ubah di sini bila aturan kewenangan berubah.
     public function scopeDapatDiprosesOleh($q, string $email, string $role)
     {
         return match ($role) {
@@ -131,6 +135,10 @@ class Peminjaman extends Model
     }
 
     /** Yang menunggu TINDAKAN role itu sekarang: Dosen = tahap 1; Laboran = semua yang menunggu. */
+<<<<<<< HEAD
+=======
+    // Scope: pengajuan yang menunggu tindakan role tersebut sekarang.
+>>>>>>> c4ec5d9 (refactor: rapikan SIARKA dan perbaiki akses serta peminjaman)
     public function scopeMenungguTindakan($q, string $email, string $role)
     {
         $q = $q->dapatDiprosesOleh($email, $role)->where('status', 'menunggu');
@@ -172,6 +180,7 @@ class Peminjaman extends Model
     }
 
     /** Dapat dibatalkan peminjam: melibatkan ruangan, belum diproses akhir, dan sebelum tanggal pelaksanaan (sampai 23.59 H-1). */
+    // Syarat batal: milik sendiri, status menunggu/disetujui, ada ruangan, dan masih sebelum tanggal pelaksanaan.
     public function bisaDibatalkanOleh(string $email, ?\Carbon\CarbonInterface $sekarang = null): bool
     {
         $pelaksanaan = $this->tanggalPelaksanaan();
@@ -189,6 +198,7 @@ class Peminjaman extends Model
      * - ruangan saja dengan Penanggung Jawab Dosen -> Dosen terkait;
      * - ruangan saja lainnya (mandiri/pembelajaran) -> peminjam sendiri.
      */
+    // Menentukan siapa yang memegang tombol Selesai tergantung isi transaksi (ruangan/barang/dosen).
     public function bisaDiselesaikanOleh(string $email, string $role): bool
     {
         if ($this->status !== 'disetujui' || ! $this->melibatkanRuangan()) {
@@ -227,6 +237,7 @@ class Peminjaman extends Model
     }
 
     /** Peminjaman aktif yang sudah melewati batas pengembalian. */
+    // Terlambat = masih disetujui tetapi rencana kembali sudah lewat.
     public function getTerlambatAttribute(): bool
     {
         return $this->status === 'disetujui' && $this->tanggal_rencana_kembali !== null

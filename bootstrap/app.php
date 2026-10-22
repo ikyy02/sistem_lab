@@ -11,6 +11,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Alias middleware: 'silab.auth' (wajib login) dan 'silab.role' (batasi role) dipakai di routes/web.php.
         $middleware->alias([
             'silab.auth' => \App\Http\Middleware\SilabAuth::class,
             'silab.role' => \App\Http\Middleware\SilabRole::class,

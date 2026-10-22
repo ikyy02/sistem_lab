@@ -94,6 +94,7 @@
                 </tr>
             </thead>
             <tbody>
+            {{-- Jadwal arsip hanya bisa dilihat; tombol ubah/hapus hanya untuk periode berjalan. --}}
             @forelse($data as $j)
                 <tr>
                     <td class="ps-4 text-muted">{{ $data->firstItem() + $loop->index }}</td>

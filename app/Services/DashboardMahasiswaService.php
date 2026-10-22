@@ -26,6 +26,7 @@ class DashboardMahasiswaService
         $email = $me['email'];
 
         // a) ringkasan: satu query groupBy
+        // Hitung jumlah peminjaman per status dalam satu query.
         $hitung = Peminjaman::query()->selectRaw('status, COUNT(*) as jml')
             ->where('email_peminjam', $email)->groupBy('status')->pluck('jml', 'status');
 
@@ -33,6 +34,7 @@ class DashboardMahasiswaService
         $aktif = Peminjaman::query()->with(Peminjaman::withProfil())
             ->where('email_peminjam', $email)->where('status', 'disetujui')
             ->orderBy('tanggal_rencana_kembali')->get();
+        // Terlambat dan 'dekat' (jatuh tempo <= 24 jam) dihitung dari daftar peminjaman aktif.
         $terlambat = $aktif->filter(fn ($p) => $p->terlambat)->count();
         $dekat = $aktif->filter(fn ($p) => ! $p->terlambat
             && $p->tanggal_rencana_kembali !== null
@@ -80,6 +82,7 @@ class DashboardMahasiswaService
     }
 
     /** @return array{status:string,label:string,keterangan:string,jam:string} */
+    // Buka/tutup ditentukan dari hari aktif dan jam buka-tutup di pengaturan operasional.
     private function statusLaboratorium(PengaturanOperasional $setting): array
     {
         $jam = now()->format('H:i:s');

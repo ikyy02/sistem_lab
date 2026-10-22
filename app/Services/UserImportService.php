@@ -24,6 +24,7 @@ class UserImportService
     public const MAX_ERRORS = 100;
 
     /** Judul kolom template => nama kolom database, untuk kategori selain mahasiswa. */
+    // Judul kolom Excel dibuat dari field form kategori + kolom Password; ubah field di UserManagementController::config otomatis ikut.
     public static function columns(string $kategori): array
     {
         $map = ['Password' => 'password'];
@@ -34,6 +35,7 @@ class UserImportService
         return $map;
     }
 
+    // Buat file template: sheet Data (judul kolom) dan sheet Petunjuk.
     public function template(string $kategori): array
     {
         $columns = self::columns($kategori);
@@ -59,6 +61,7 @@ class UserImportService
     }
 
     /** @return array{success: bool, total: int, inserted?: int, error_count?: int, errors?: array} */
+    // Alur impor: baca Excel -> cocokkan judul kolom -> validasi tiap baris -> kalau semua valid simpan dalam satu transaksi.
     public function import(UploadedFile $file, string $kategori): array
     {
         $model = Role::MODELS[$kategori];
@@ -66,6 +69,7 @@ class UserImportService
         $rows = ExcelFile::rows($file, self::MAX_ROWS + 50);
 
         $header = array_shift($rows) ?? [];
+        // $index = peta nama kolom database => nomor kolom di Excel (judul dicocokkan tanpa peduli huruf besar/spasi).
         $index = [];
         foreach ($header as $i => $h) {
             $key = preg_replace('/[^a-z]/', '', mb_strtolower(trim((string) $h)));
@@ -81,6 +85,7 @@ class UserImportService
             throw new \RuntimeException('Judul kolom tidak sesuai template. Kolom tidak ditemukan: ' . implode(', ', array_map(fn ($c) => $labels[$c], $missing)) . '.');
         }
 
+        // Muat email/ID yang sudah ada sekali saja agar pengecekan duplikat cepat (tanpa query per baris).
         $existingEmail = [];
         foreach (Akun::pluck('email') as $e) {
             $existingEmail[mb_strtolower($e)] = true;
@@ -100,6 +105,7 @@ class UserImportService
         $seenEmail = [];
         $seenUnique = [];
 
+        // Validasi per baris; error dikumpulkan (maks 100) dengan nomor baris Excel.
         foreach ($rows as $n => $row) {
             $line = $n + 2;
             $get = fn ($col) => trim((string) ($row[$index[$col]] ?? ''));
@@ -136,6 +142,7 @@ class UserImportService
                 $record[$f['name']] = $val !== '' ? $val : null;
             }
 
+            // Password dibaca apa adanya dari Excel (hashing ditunda).
             $password = $get('password');
             if (mb_strlen($password) < 4) {
                 $msg[] = 'Password minimal 4 karakter.';
@@ -176,11 +183,13 @@ class UserImportService
         if ($total === 0) {
             throw new \RuntimeException('File tidak berisi data. Isi data mulai baris ke-2.');
         }
+        // Ada satu saja error => tidak ada data yang disimpan, laporan dikembalikan.
         if ($errors) {
             return ['success' => false, 'total' => $total, 'error_count' => count($errors), 'errors' => array_slice($errors, 0, self::MAX_ERRORS)];
         }
 
         $akun = app(AkunService::class);
+        // Simpan semua akun + profil dalam satu transaksi.
         DB::transaction(function () use ($akun, $kategori, $valid) {
             foreach ($valid as $row) {
                 $password = $row['password'];

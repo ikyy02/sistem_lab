@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Schema;
  */
 return new class extends Migration
 {
+    // Menambah password, tabel staff_prodis dan laborans, serta akun awal admin.
     public function up(): void
     {
         Schema::table('mahasiswas', function (Blueprint $table) {

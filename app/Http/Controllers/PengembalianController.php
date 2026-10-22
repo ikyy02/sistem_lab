@@ -31,6 +31,7 @@ class PengembalianController extends Controller
 
         $data = Peminjaman::query()
             ->with(array_merge(Peminjaman::withProfil(), ['details.katalog', 'ruangans.ruangan']))
+            // Hanya peminjaman yang punya barang; peminjaman ruangan saja tidak punya yang dikembalikan.
             ->whereHas('details') // peminjaman ruangan saja tidak punya barang untuk dikembalikan
             ->when($status !== 'semua', fn ($q) => $q->where('status', $status))
             ->orderBy('tanggal_rencana_kembali')
@@ -49,6 +50,7 @@ class PengembalianController extends Controller
             ->selectRaw('pd.id_detail_peminjaman as id_detail, SUM(pd.jumlah_dikembalikan) as total')
             ->pluck('total', 'id_detail');
         // Riwayat pengembalian (tanggal aktual & penerima) per transaksi.
+        // Riwayat pengembalian per transaksi (tanggal dan rincian).
         $riwayat = Pengembalian::with('details.detailPeminjaman.katalog')
             ->whereIn('id_peminjaman', $ids)
             ->orderByDesc('tanggal_pengembalian')
@@ -65,6 +67,7 @@ class PengembalianController extends Controller
         ]);
     }
 
+    // Ubah input form (jumlah[id_detail], kondisi[id_detail]) menjadi baris untuk PeminjamanService::kembalikan.
     public function store(Request $request, int $id, PeminjamanService $service)
     {
         $data = $request->validate([
@@ -86,6 +89,7 @@ class PengembalianController extends Controller
         ]);
 
         $rows = [];
+        // Kunci array = id detail peminjaman, nilainya jumlah yang dikembalikan.
         foreach ((array) $data['jumlah'] as $idDetail => $jumlah) {
             $rows[] = [
                 'id_detail_peminjaman' => (int) $idDetail,

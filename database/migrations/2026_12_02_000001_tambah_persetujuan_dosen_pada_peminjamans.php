@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Schema;
  */
 return new class extends Migration
 {
+    // Kolom waktu persetujuan dosen untuk alur dua tahap.
     public function up(): void
     {
         if (! Schema::hasTable('peminjamans') || Schema::hasColumn('peminjamans', 'tanggal_persetujuan_dosen')) {
