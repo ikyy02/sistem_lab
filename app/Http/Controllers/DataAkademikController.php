@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\Cari;
 use App\Models\Dosen;
 use App\Models\Jadwal;
 use App\Models\Kelas;
@@ -18,7 +19,7 @@ use Illuminate\Validation\Rule;
 
 /**
  * Data Akademik (Staf Prodi dan Laboran/Admin): Mata Kuliah, Kelas, Semester, dan Dosen.
- * Tab Dosen hanya-baca untuk Staf Prodi (daftar dan pencarian); tambah/ubah/hapus dosen ditolak 403 di backend.
+ * Tab Dosen hanya-baca untuk Staf Prodi (daftar dan pencarian, dibatasi ke dosen prodinya); tambah/ubah/hapus dosen ditolak 403 di backend.
  * Laboran/Admin mengelola dosen dan akunnya lewat Kelola Data User (lihat tabs()).
  * Mata Kuliah dan Kelas dikelola penuh; Semester bernilai tetap sistem (ganjil/genap)
  * sehingga ditampilkan sebagai ringkasan, bukan data yang dapat diubah.
@@ -45,21 +46,24 @@ class DataAkademikController extends Controller
 
         $data = null;
         if ($tab === 'mata-kuliah') {
-            $query = MataKuliah::query();
-            $this->cari($query, $search, ['mata_kuliahs.kode_mk', 'mata_kuliahs.nama_mk']);
-            $data = $query->orderBy('kode_mk')->paginate($perPage)->withQueryString();
+            // Staf Prodi hanya melihat mata kuliah prodinya (juga pada pencarian); Laboran semua prodi.
+            $query = $this->dasar('mata-kuliah')->select('mata_kuliahs.*')
+                ->leftJoin('prodis', 'prodis.id_prodi', '=', 'mata_kuliahs.id_prodi')
+                ->addSelect('prodis.nama_prodi');
+            Cari::kolom($query, $search, ['mata_kuliahs.kode_mk', 'mata_kuliahs.nama_mk', 'prodis.nama_prodi']);
+            $data = $query->orderBy('mata_kuliahs.kode_mk')->orderBy('mata_kuliahs.id_mata_kuliah')->paginate($perPage)->withQueryString();
         } elseif ($tab === 'kelas') {
-            $query = Kelas::query()->select('kelas.*')
+            $query = $this->dasar('kelas')->select('kelas.*')
                 ->leftJoin('prodis', 'prodis.id_prodi', '=', 'kelas.id_prodi')
                 ->addSelect('prodis.nama_prodi');
-            $this->cari($query, $search, ['kelas.nama_kelas', 'prodis.nama_prodi']);
+            Cari::kolom($query, $search, ['kelas.nama_kelas', 'prodis.nama_prodi']);
             $data = $query->orderBy('kelas.nama_kelas')->orderBy('kelas.id_kelas')->paginate($perPage)->withQueryString();
         } elseif ($tab === 'dosen') {
-            // Email tidak diambil: tidak boleh terlihat oleh Staff Prodi.
-            $query = Dosen::query()->select('dosens.nuptk_nidn', 'dosens.nama', 'dosens.id_prodi', 'dosens.no_whatsapp', 'dosens.status')
+            // Email tidak diambil: tidak boleh terlihat oleh Staff Prodi. Staf Prodi hanya melihat dosen prodinya (juga pada pencarian).
+            $query = Dosen::query()->batasProdi(AuthService::batasProdi())->select('dosens.nuptk_nidn', 'dosens.nama', 'dosens.id_prodi', 'dosens.no_whatsapp', 'dosens.status')
                 ->leftJoin('prodis', 'prodis.id_prodi', '=', 'dosens.id_prodi')
                 ->addSelect('prodis.nama_prodi');
-            $this->cari($query, $search, ['dosens.nuptk_nidn', 'dosens.nama', 'dosens.no_whatsapp', 'prodis.nama_prodi']);
+            Cari::kolom($query, $search, ['dosens.nuptk_nidn', 'dosens.nama', 'dosens.no_whatsapp', 'prodis.nama_prodi']);
             $data = $query->orderBy('dosens.nama')->orderBy('dosens.nuptk_nidn')->paginate($perPage)->withQueryString();
         }
 
@@ -74,7 +78,8 @@ class DataAkademikController extends Controller
             'search' => $search,
             'perPage' => $perPage,
             'perPageOptions' => self::PER_PAGE,
-            'prodiOptions' => $tab === 'kelas' ? Options::prodi() : [],
+            'prodiOptions' => in_array($tab, ['kelas', 'mata-kuliah'], true) ? Options::prodi(AuthService::batasProdi()) : [],
+            'pilihProdiMk' => AuthService::batasProdi() === null, // hanya Laboran memilih prodi mata kuliah
             'semesterInfo' => $tab === 'semester' ? $this->semesterInfo() : null,
             'openModal' => session('open_modal'),
             'me' => AuthService::user(),
@@ -99,8 +104,7 @@ class DataAkademikController extends Controller
     {
         abort_unless(isset($this->tabs()[$tab]) && $tab !== 'dosen', 403); // dosen hanya-baca
 
-        $model = $tab === 'kelas' ? Kelas::class : MataKuliah::class;
-        $record = $model::findOrFail($id);
+        $record = $this->dasar($tab)->findOrFail($id);
         $data = $this->divalidasi($request, $tab, $record);
         if ($data instanceof \Illuminate\Http\RedirectResponse) {
             return $data;
@@ -114,12 +118,14 @@ class DataAkademikController extends Controller
     {
         abort_unless(isset($this->tabs()[$tab]) && $tab !== 'dosen', 403); // dosen hanya-baca
 
-        $model = $tab === 'kelas' ? Kelas::class : MataKuliah::class;
-        $record = $model::findOrFail($id);
+        $record = $this->dasar($tab)->findOrFail($id);
         $nama = $tab === 'kelas' ? $record->nama_kelas : $record->nama_mk;
         try {
             $record->delete(); // ON DELETE RESTRICT bila sudah dipakai jadwal
-        } catch (QueryException) {
+        } catch (QueryException $e) {
+            if ($e->getCode() !== '23000') {
+                throw $e;
+            }
             return $this->kembali($tab, self::TABS[$tab] . ' "' . $nama . '" masih dipakai jadwal dan tidak dapat dihapus.', 'error', $request);
         }
 
@@ -129,7 +135,7 @@ class DataAkademikController extends Controller
     public function template(string $tab, AkademikImportService $svc)
     {
         abort_if($tab === 'dosen', 404);
-        [$writer, $name] = $svc->template($tab);
+        [$writer, $name] = $svc->template($tab, AuthService::batasProdi());
 
         return response()->streamDownload(fn () => $writer->save('php://output'), $name);
     }
@@ -142,7 +148,7 @@ class DataAkademikController extends Controller
         $back = redirect()->route('data-akademik.index', ['tab' => $tab]);
 
         try {
-            $result = $svc->import($request->file('file'), $tab);
+            $result = $svc->import($request->file('file'), $tab, AuthService::batasProdi());
         } catch (\RuntimeException $e) {
             return $back->with('error', $e->getMessage());
         }
@@ -152,23 +158,23 @@ class DataAkademikController extends Controller
             : $back->with('import_report', $result);
     }
 
-    private function cari($query, string $search, array $kolom): void
+    /** Query dasar per tab: Kelas dan Mata Kuliah dibatasi ke prodi Staf Prodi (404 untuk prodi lain); Laboran tanpa batas. */
+    private function dasar(string $tab)
     {
-        $words = preg_split('/\s+/u', $search, -1, PREG_SPLIT_NO_EMPTY) ?: [];
-        foreach (array_slice($words, 0, 5) as $word) {
-            $like = '%' . str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $word) . '%';
-            $query->where(function ($group) use ($kolom, $like) {
-                foreach ($kolom as $col) {
-                    $group->orWhereRaw("{$col} LIKE ? ESCAPE '!'", [$like]);
-                }
-            });
-        }
+        return $tab === 'kelas'
+            ? Kelas::query()->when(AuthService::batasProdi(), fn ($q, $prodi) => $q->where('kelas.id_prodi', $prodi))
+            : MataKuliah::query()->batasProdi(AuthService::batasProdi());
     }
 
     /** @return array<string,mixed>|\Illuminate\Http\RedirectResponse */
     private function divalidasi(Request $request, string $tab, $record)
     {
+        $input = $request->all();
+        $idProdi = null;
         if ($tab === 'kelas') {
+            // Staf Prodi hanya boleh membuat/memindahkan kelas ke prodinya sendiri.
+            $prodi = AuthService::batasProdi();
+            abort_if($prodi !== null && (int) $request->input('id_prodi') !== $prodi, 403);
             $rules = [
                 'nama_kelas' => ['required', 'string', 'max:100', Rule::unique('kelas', 'nama_kelas')
                     ->ignore($record?->getKey(), 'id_kelas')->where('id_prodi', (int) $request->input('id_prodi'))],
@@ -181,24 +187,42 @@ class DataAkademikController extends Controller
                 'id_prodi.exists' => 'Pilih Prodi dari daftar.',
             ];
         } else {
+            // Mata kuliah milik satu prodi: Staf Prodi hanya prodinya sendiri (prodi lain 403, kosong = prodinya); Laboran wajib memilih.
+            $batas = AuthService::batasProdi();
+            abort_if($batas !== null && $request->filled('id_prodi') && (int) $request->input('id_prodi') !== $batas, 403);
+            $idProdi = $batas ?? $request->input('id_prodi');
+            $input['id_prodi'] = $idProdi;
+            // Kode dan nama unik per prodi (prodi berbeda boleh memakai kode yang sama).
+            $unik = fn (string $kolom) => Rule::unique('mata_kuliahs', $kolom)->ignore($record?->getKey(), 'id_mata_kuliah')->where('id_prodi', $idProdi);
             $rules = [
-                'kode_mk' => ['required', 'string', 'max:15', Rule::unique('mata_kuliahs', 'kode_mk')->ignore($record?->getKey(), 'id_mata_kuliah')],
-                'nama_mk' => ['required', 'string', 'max:100', Rule::unique('mata_kuliahs', 'nama_mk')->ignore($record?->getKey(), 'id_mata_kuliah')],
+                'id_prodi' => ['required', Rule::exists('prodis', 'id_prodi')],
+                'kode_mk' => ['required', 'string', 'max:15', $unik('kode_mk')],
+                'nama_mk' => ['required', 'string', 'max:100', $unik('nama_mk')],
                 'sks' => ['required', 'integer', 'min:1', 'max:10'],
                 'semester' => ['required', Rule::in(Jadwal::SEMESTER)],
             ];
             $pesan = [
+                'id_prodi.required' => 'Prodi wajib dipilih.',
+                'id_prodi.exists' => 'Pilih Prodi dari daftar.',
                 'kode_mk.required' => 'Kode mata kuliah wajib diisi.',
-                'kode_mk.unique' => 'Kode mata kuliah sudah dipakai.',
+                'kode_mk.unique' => 'Kode mata kuliah sudah dipakai pada prodi ini.',
                 'nama_mk.required' => 'Nama mata kuliah wajib diisi.',
-                'nama_mk.unique' => 'Nama mata kuliah sudah dipakai.',
+                'nama_mk.unique' => 'Nama mata kuliah sudah dipakai pada prodi ini.',
                 'sks.min' => 'SKS minimal 1.',
                 'sks.max' => 'SKS maksimal 10.',
                 'semester.in' => 'Semester hanya Ganjil atau Genap.',
             ];
         }
 
-        $v = Validator::make($request->all(), $rules, $pesan);
+        $v = Validator::make($input, $rules, $pesan);
+        // Memindah mata kuliah ke prodi lain akan memutus keterhubungan jadwal prodi sebelumnya.
+        if ($tab !== 'kelas' && $record) {
+            $v->after(function ($v) use ($record, $idProdi) {
+                if ($v->errors()->isEmpty() && (int) $record->id_prodi !== (int) $idProdi && $record->jadwals()->exists()) {
+                    $v->errors()->add('id_prodi', 'Prodi tidak dapat diubah karena mata kuliah sudah dipakai jadwal.');
+                }
+            });
+        }
         if ($v->fails()) {
             return redirect()->route('data-akademik.index', $request->only(['tab', 'search', 'per_page', 'page']))
                 ->withErrors($v)->withInput()
@@ -215,6 +239,7 @@ class DataAkademikController extends Controller
             'nama_mk' => trim(preg_replace('/\s+/u', ' ', (string) $request->input('nama_mk'))),
             'sks' => (int) $request->input('sks'),
             'semester' => $request->input('semester'),
+            'id_prodi' => (int) $idProdi,
         ];
     }
 
@@ -231,8 +256,9 @@ class DataAkademikController extends Controller
         return collect(Jadwal::SEMESTER)->map(fn ($s) => [
             'nilai' => $s,
             'label' => ucfirst($s),
-            'jadwal' => Jadwal::where('semester', $s)->count(),
-            'mata_kuliah' => MataKuliah::where('semester', $s)->count(),
+            'jadwal' => Jadwal::where('semester', $s)
+                ->when(AuthService::batasProdi(), fn ($q, $prodi) => $q->whereIn('id_kelas', Kelas::where('id_prodi', $prodi)->select('id_kelas')))->count(),
+            'mata_kuliah' => MataKuliah::where('semester', $s)->batasProdi(AuthService::batasProdi())->count(),
         ])->all();
     }
 }

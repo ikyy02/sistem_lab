@@ -13,8 +13,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use App\Support\ExcelFile;
-use PhpOffice\PhpSpreadsheet\IOFactory;
-use Throwable;
+use RuntimeException;
 
 /**
  * Import data mahasiswa dari file Excel (.xlsx / .xls).
@@ -65,9 +64,6 @@ class MahasiswaImportService
         'email' => 'email',
     ];
 
-    /** Batas sheet mentah (sebelum baris kosong dibuang) agar file aneh tidak menghabiskan memori. */
-    private const MAX_SHEET_ROWS = 20000;
-
     /** Jumlah baris per INSERT (100 baris x 7 kolom = 700 parameter, aman untuk semua driver). */
     private const INSERT_CHUNK = 100;
 
@@ -108,47 +104,11 @@ class MahasiswaImportService
      */
     private function readRows(UploadedFile $file): array
     {
-        $path = $file->getRealPath();
-        $ext = strtolower($file->getClientOriginalExtension());
-
         try {
-            if (! in_array($ext, ExcelFile::EXTENSIONS, true)) {
-                throw new MahasiswaImportException(ExcelFile::NOT_EXCEL);
-            }
-            $reader = IOFactory::createReader(ucfirst($ext));
-
-            // Isi file harus benar-benar sesuai ekstensinya (bukan sekadar file yang di-rename).
-            if (! $reader->canRead($path)) {
-                throw new MahasiswaImportException(ExcelFile::NOT_EXCEL);
-            }
-
-            $reader->setReadDataOnly(true);   // abaikan style/gambar -> lebih hemat memori
-            $reader->setReadEmptyCells(false); // sel kosong (mis. hanya berformat) tidak dibaca
-
-            $spreadsheet = $reader->load($path);
-            $sheet = $spreadsheet->getSheetByName(self::SHEET_NAME) ?? $spreadsheet->getSheet(0);
-
-            if ($sheet->getHighestRow() > self::MAX_SHEET_ROWS) {
-                throw new MahasiswaImportException(
-                    'File terlalu besar. Maksimal ' . self::MAX_ROWS . ' baris data per file; pecah menjadi beberapa file.'
-                );
-            }
-
-            // Nilai mentah (tanpa format tampilan). Indeks 0 = baris 1 Excel.
-            $matrix = $sheet->toArray(null, true, false, false);
-
-            $spreadsheet->disconnectWorksheets();
-            unset($spreadsheet);
-        } catch (MahasiswaImportException $e) {
-            throw $e;
-        } catch (Throwable $e) {
-            Log::warning('Import mahasiswa: file Excel tidak dapat dibaca.', ['exception' => $e->getMessage()]);
-
-            throw new MahasiswaImportException(
-                'File Excel tidak dapat dibaca. Pastikan file tidak rusak dan tidak diproteksi password.',
-                0,
-                $e
-            );
+            // Baca file lewat pintu bersama (cek isi file, batas baris, sheet pertama = Data Mahasiswa di template).
+            $matrix = ExcelFile::rows($file, self::MAX_ROWS + 50);
+        } catch (RuntimeException $e) {
+            throw new MahasiswaImportException($e->getMessage(), 0, $e);
         }
 
         $columnMap = $this->mapHeaders(array_shift($matrix) ?? []);
@@ -338,7 +298,7 @@ class MahasiswaImportService
                 foreach ($rows as $data) {
                     // Password awal = NIM (disimpan apa adanya). Akun dan profil dibuat bersamaan.
                     // Password awal mahasiswa = NIM (disimpan apa adanya; hashing ditunda).
-                    Akun::create(['email' => $data['email'], 'password' => $data['nim'], 'role' => 'mahasiswa']);
+                    Akun::create(['email' => $data['email'], 'password' => $data['nim'], 'role' => 'mahasiswa', 'wajib_ganti_password' => true]);
                     Mahasiswa::create([
                         'nim' => $data['nim'],
                         'nama' => $data['nama'],

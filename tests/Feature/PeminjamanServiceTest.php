@@ -84,7 +84,7 @@ class PeminjamanServiceTest extends TestCase
         $this->assertNull($pribadi->email_dosen);
         $this->gagal(fn () => $this->svc->ajukan($m->email, $this->data($d + ['email_dosen' => $dosen->email])), 'email_dosen');
 
-        $atas = $this->svc->ajukan($m->email, $this->data($d + ['jenis_peminjaman' => 'atas_dosen', 'email_dosen' => $dosen->email]));
+        $atas = $this->svc->ajukan($this->mahasiswa()->email, $this->data($d + ['jenis_peminjaman' => 'atas_dosen', 'email_dosen' => $dosen->email]));
         $this->assertSame($dosen->email, $atas->email_dosen);
         $this->gagal(fn () => $this->svc->ajukan($m->email, $this->data($d + ['jenis_peminjaman' => 'atas_dosen'])), 'email_dosen');
         // email_dosen harus akun ber-role dosen
@@ -167,7 +167,7 @@ class PeminjamanServiceTest extends TestCase
         $k = $this->katalog('alat', 5);
         $m = $this->mahasiswa()->email;
         $a = $this->ajukanBarang($m, [$k->id_katalog => 3]);
-        $b = $this->ajukanBarang($m, [$k->id_katalog => 3]); // total 6 > stok 5 (boleh diajukan, stok tidak dipesan)
+        $b = $this->ajukanBarang($this->mahasiswa()->email, [$k->id_katalog => 3]); // total 6 > stok 5 (boleh diajukan, stok tidak dipesan)
 
         $this->svc->setujui($a->id_peminjaman, $lab->email);
         $this->assertSame(2, $k->fresh()->stok);
@@ -195,7 +195,7 @@ class PeminjamanServiceTest extends TestCase
         $k = $this->katalog('alat', 1);
         $m = $this->mahasiswa()->email;
         $a = $this->ajukanBarang($m, [$k->id_katalog => 1]);
-        $b = $this->ajukanBarang($m, [$k->id_katalog => 1]);
+        $b = $this->ajukanBarang($this->mahasiswa()->email, [$k->id_katalog => 1]);
 
         // Simulasi pembacaan basi: kedua proses sudah "melihat" stok 1 sebelum salah satu commit.
         $stale = AlatBahan::find($k->id_katalog);
@@ -408,9 +408,16 @@ class PeminjamanServiceTest extends TestCase
         $this->assertSame(0, $this->svc->sinkronSelesai(Carbon::parse('2030-01-08 10:00')));
         $this->assertSame('selesai', $this->svc->selesaikan($p->id_peminjaman, $m->email)->status);
 
+        // Disetujui: ruangan hanya dapat dibatalkan sampai 23.59 H-1.
         $q = $this->ajukanRuangan($m->email, $r, '2030-01-10 08:00', '2030-01-10 10:00');
+        $this->svc->setujui($q->id_peminjaman, $lab->email);
         $this->gagal(fn () => $this->svc->batalkan($q->id_peminjaman, $m->email, Carbon::parse('2030-01-10 00:00')), 'status');
         $this->assertSame('dibatalkan', $this->svc->batalkan($q->id_peminjaman, $m->email, Carbon::parse('2030-01-09 23:59'))->status);
+
+        // Menunggu: boleh dibatalkan kapan saja (stok belum dipotong), termasuk setelah H-1.
+        // Tanggal harus hari operasional (11 Jan 2030 = Jumat; 12 Jan = Sabtu ditolak aturan hari operasional).
+        $w = $this->ajukanRuangan($m->email, $r, '2030-01-11 08:00', '2030-01-11 10:00');
+        $this->assertSame('dibatalkan', $this->svc->batalkan($w->id_peminjaman, $m->email, Carbon::parse('2030-01-11 00:00'))->status);
     }
 
     public function test_pembatalan_ditolak_bila_sudah_ada_pengembalian_dan_stok_tidak_berubah(): void
@@ -446,8 +453,8 @@ class PeminjamanServiceTest extends TestCase
         $lab = $this->laboran();
         $m = $this->mahasiswa()->email;
         $a = $this->ajukanRuangan($m, $r, '2030-01-08 08:00', '2030-01-08 10:00');
-        $b = $this->ajukanRuangan($m, $r, '2030-01-08 09:00', '2030-01-08 11:00'); // beririsan
-        $c = $this->ajukanRuangan($m, $r, '2030-01-08 10:00', '2030-01-08 12:00'); // bersambung -> boleh
+        $b = $this->ajukanRuangan($this->mahasiswa()->email, $r, '2030-01-08 09:00', '2030-01-08 11:00'); // beririsan
+        $c = $this->ajukanRuangan($this->mahasiswa()->email, $r, '2030-01-08 10:00', '2030-01-08 12:00'); // bersambung -> boleh
         $this->assertSame('menunggu', $b->status); // pengajuan boleh berstatus menunggu
 
         $this->svc->setujui($a->id_peminjaman, $lab->email);
@@ -464,7 +471,7 @@ class PeminjamanServiceTest extends TestCase
         $m = $this->mahasiswa()->email;
         $a = $this->ajukanRuangan($m, $r, '2030-01-08 08:00', '2030-01-08 10:00');
         $this->svc->setujui($a->id_peminjaman, $lab->email);
-        $b = $this->svc->ajukan($m, $this->data([
+        $b = $this->svc->ajukan($this->mahasiswa()->email, $this->data([
             'detail' => [['id_katalog' => $k->id_katalog, 'jumlah' => 3]],
             'tanggal_peminjaman' => '2030-01-08 09:00', 'tanggal_rencana_kembali' => '2030-01-08 09:30', 'ruangan' => [['id_ruangan' => $r->id_ruangan]],
         ]));
@@ -480,7 +487,7 @@ class PeminjamanServiceTest extends TestCase
         $a = $this->ajukanRuangan($m, $r, '2030-01-08 08:00', '2030-01-08 10:00');
         $this->svc->tolak($a->id_peminjaman, $lab->email);
         $b = $this->ajukanRuangan($m, $r, '2030-01-08 08:00', '2030-01-08 10:00');
-        $this->ajukanRuangan($m, $r, '2030-01-08 08:30', '2030-01-08 09:30'); // menunggu
+        $this->ajukanRuangan($this->mahasiswa()->email, $r, '2030-01-08 08:30', '2030-01-08 09:30'); // menunggu
         $this->assertSame('disetujui', $this->svc->setujui($b->id_peminjaman, $lab->email)->status);
     }
 
@@ -498,10 +505,10 @@ class PeminjamanServiceTest extends TestCase
         $bentrok = $this->ajukanRuangan($m, $r, '2030-01-08 09:00', '2030-01-08 11:00');
         $this->gagal(fn () => $this->svc->setujui($bentrok->id_peminjaman, $lab->email), 'ruangan');
 
-        $sambung = $this->ajukanRuangan($m, $r, '2030-01-08 10:00', '2030-01-08 12:00'); // bersambung dengan jadwal
+        $sambung = $this->ajukanRuangan($this->mahasiswa()->email, $r, '2030-01-08 10:00', '2030-01-08 12:00'); // bersambung dengan jadwal
         $this->assertSame('disetujui', $this->svc->setujui($sambung->id_peminjaman, $lab->email)->status);
 
-        $batal = $this->ajukanRuangan($m, $r, '2030-01-08 13:30', '2030-01-08 14:30'); // jadwal dibatalkan
+        $batal = $this->ajukanRuangan($this->mahasiswa()->email, $r, '2030-01-08 13:30', '2030-01-08 14:30'); // jadwal dibatalkan
         $this->assertSame('disetujui', $this->svc->setujui($batal->id_peminjaman, $lab->email)->status);
     }
 

@@ -58,7 +58,7 @@ class PeriodeJadwalTest extends TestCase
 
         $this->expectException(ValidationException::class);
         app(JadwalService::class)->simpan([
-            'id_kelas' => $j->id_kelas, 'nuptk_nidn' => $j->nuptk_nidn, 'id_ruangan' => $j->id_ruangan, 'hari' => 'rabu',
+            'id_mata_kuliah' => $this->mataKuliah()->id_mata_kuliah, 'id_kelas' => $j->id_kelas, 'nuptk_nidn' => $j->nuptk_nidn, 'id_ruangan' => $j->id_ruangan, 'hari' => 'rabu',
             'jam_mulai' => '08:00', 'jam_selesai' => '10:00', 'status' => 'aktif', 'tahun_akademik' => '2026/2027', 'semester' => 'ganjil',
         ], $j);
     }
@@ -72,7 +72,7 @@ class PeriodeJadwalTest extends TestCase
 
         // jam yang sama pada ruangan yang sama di periode berjalan tidak dianggap bentrok dengan arsip
         $j = app(JadwalService::class)->simpan([
-            'id_kelas' => $this->kelas()->id_kelas, 'nuptk_nidn' => $this->dosen()->nuptk_nidn, 'id_ruangan' => $r->id_ruangan, 'hari' => 'senin',
+            'id_mata_kuliah' => $this->mataKuliah()->id_mata_kuliah, 'id_kelas' => $this->kelas()->id_kelas, 'nuptk_nidn' => $this->dosen()->nuptk_nidn, 'id_ruangan' => $r->id_ruangan, 'hari' => 'senin',
             'jam_mulai' => '08:00', 'jam_selesai' => '10:00', 'status' => 'aktif', 'tahun_akademik' => '2026/2027', 'semester' => 'ganjil',
         ]);
         $this->assertSame($baru->id_periode, $j->id_periode);

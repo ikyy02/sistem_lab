@@ -68,4 +68,33 @@ class ExcelFile
 
         return array_slice($data, 0, $limit);
     }
+
+    /**
+     * Cocokkan judul kolom di baris pertama ke daftar kolom impor (judul => kolom db), tanpa peduli
+     * huruf besar/kecil, spasi, atau tanda baca. Hasil: kolom db => nomor kolom di Excel.
+     * Lempar RuntimeException bila ada kolom wajib yang tidak ditemukan.
+     *
+     * @param  array<int, mixed>  $header
+     * @param  array<string, string>  $columns
+     * @return array<string, int>
+     */
+    public static function matchHeaders(array $header, array $columns): array
+    {
+        $norm = fn ($v) => preg_replace('/[^a-z]/', '', mb_strtolower(trim((string) $v)));
+        $index = [];
+        foreach ($header as $i => $h) {
+            foreach ($columns as $label => $col) {
+                if ($norm($h) === $norm($label)) {
+                    $index[$col] = $i;
+                }
+            }
+        }
+        $missing = array_diff(array_values($columns), array_keys($index));
+        if ($missing) {
+            $labels = array_flip($columns);
+            throw new RuntimeException('Judul kolom tidak sesuai template. Kolom tidak ditemukan: ' . implode(', ', array_map(fn ($c) => $labels[$c], $missing)) . '.');
+        }
+
+        return $index;
+    }
 }

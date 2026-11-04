@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\Cari;
 use App\Http\Controllers\KelolaKatalogController as Kelola;
 use App\Models\AlatBahan;
 use App\Models\Ruangan;
@@ -40,14 +41,7 @@ class AlatBahanController extends Controller
             $pk = 'alat_bahans.id_katalog';
         }
         // Pencarian: tiap kata (maks 5) harus cocok di salah satu kolom; karakter LIKE di-escape.
-        foreach (array_slice(preg_split('/\s+/u', $search, -1, PREG_SPLIT_NO_EMPTY) ?: [], 0, 5) as $word) {
-            $like = '%' . str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $word) . '%';
-            $query->where(function ($g) use ($columns, $like) {
-                foreach ($columns as $col) {
-                    $g->orWhereRaw("{$col} LIKE ? ESCAPE '!'", [$like]);
-                }
-            });
-        }
+        Cari::kolom($query, $search, $columns);
         $data = $query->orderBy($sortColumn, $direction)->orderBy($pk)->paginate($perPage)->withQueryString();
         // Halaman melebihi batas (mis. setelah filter) diarahkan ke halaman terakhir.
         if ($data->currentPage() > $data->lastPage()) {

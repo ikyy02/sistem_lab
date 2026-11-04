@@ -6,9 +6,7 @@
     <title>@yield('title', 'Beranda') — SIARKA</title>
     <meta name="application-name" content="SIARKA">
     <meta name="description" content="SIARKA — Sistem Informasi Administrasi, Reservasi, Katalog, dan Aktivitas Laboratorium">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+    @include('layouts._fonts')
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
     @include('layouts._theme')
@@ -33,7 +31,7 @@
     <a href="{{ url('/') }}" class="sidebar-brand">
         <div class="sidebar-brand-text">
             <div class="brand-name">SIARKA</div>
-            <div class="brand-sub" style="font-size:.75rem;line-height:1.25;">Sistem Informasi Administrasi, Reservasi, Katalog, dan Aktivitas Laboratorium</div>
+            <div class="brand-sub" style="font-size:.8rem;line-height:1.25;">Sistem Informasi Administrasi, Reservasi, Katalog, dan Aktivitas Laboratorium</div>
         </div>
     </a>
 
@@ -48,6 +46,7 @@
         $pengembalian = ['route' => 'pengembalian.index', 'label' => 'Pengembalian', 'icon' => 'bi-arrow-down-left-square', 'r' => ['pengembalian.*']];
         $kelolaKatalog = ['route' => 'kelola-katalog.index', 'label' => 'Kelola Katalog', 'icon' => 'bi-boxes', 'is' => ['kelola-katalog*']];
         $dataAkademik = ['route' => 'data-akademik.index', 'label' => 'Data Akademik', 'icon' => 'bi-mortarboard', 'r' => ['data-akademik.index']];
+        $menuProfil = ['route' => 'profil.index', 'label' => 'Profil', 'icon' => 'bi-person-circle', 'r' => ['profil.*']];
         $jadwal = ['route' => 'jadwal.index', 'label' => 'Jadwal Perkuliahan', 'icon' => 'bi-calendar-week', 'r' => ['jadwal.*']];
         // Satu daftar datar per role, urut menurut alur kerja (tanpa kelompok).
         // Menu sidebar per role. Tambah/hapus menu di sini (route, label, ikon, pola aktif).
@@ -56,10 +55,11 @@
                 $beranda, $pengajuan, $pengembalian, $katalog, $kelolaKatalog, $dataAkademik, $jadwal,
                 ['route' => 'kelola-user.index', 'label' => 'Kelola Data User', 'icon' => 'bi-people', 'is' => ['kelola-user*']],
                 ['route' => 'pengaturan-lab.index', 'label' => 'Pengaturan Laboratorium', 'icon' => 'bi-sliders', 'is' => ['pengaturan-lab*']],
+                $menuProfil,
             ],
-            $R::DOSEN => [$beranda, $katalog, $ajukan, $riwayat, $pengajuan],
-            $R::MAHASISWA => [$beranda, $katalog, $ajukan, $riwayat],
-            $R::STAFF => [$beranda, $katalog, $dataAkademik, $jadwal],
+            $R::DOSEN => [$beranda, $katalog, $ajukan, $riwayat, $pengajuan, $menuProfil],
+            $R::MAHASISWA => [$beranda, $katalog, $ajukan, $riwayat, $menuProfil],
+            $R::STAFF => [$beranda, $katalog, $dataAkademik, $jadwal, $menuProfil],
         ][$role] ?? [$beranda];
     @endphp
     <div class="sidebar-nav">
@@ -92,11 +92,11 @@
                 <span class="topbar-avatar">{{ $initial }}</span>
                 <span class="d-none d-sm-block text-start lh-sm">
                     <span class="d-block fw-semibold" style="font-size:.82rem">{{ $me['nama'] ?? '' }}</span>
-                    <span class="d-block" style="font-size:.75rem;color:var(--text-muted)">{{ $roleLabel }}</span>
+                    <span class="d-block" style="font-size:.8rem;color:var(--text-muted)">{{ $roleLabel }}</span>
                 </span>
             </button>
             <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
-                <li class="px-3 py-2"><div style="font-size:.75rem;color:var(--text-muted)">{{ $me['email'] ?? '' }}</div></li>
+                <li class="px-3 py-2"><div style="font-size:.8rem;color:var(--text-muted)">{{ $me['email'] ?? '' }}</div></li>
                 <li><hr class="dropdown-divider"></li>
                 <li>
                     <form action="{{ route('logout') }}" method="POST">

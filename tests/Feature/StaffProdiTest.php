@@ -40,7 +40,7 @@ class StaffProdiTest extends TestCase
     private function payloadJadwal(array $o = []): array
     {
         return $o + [
-            'id_mata_kuliah' => MataKuliah::create(['kode_mk' => 'IF-101', 'nama_mk' => 'Basis Data', 'sks' => 3, 'semester' => 'ganjil'])->id_mata_kuliah,
+            'id_mata_kuliah' => MataKuliah::create(['kode_mk' => 'IF-101', 'nama_mk' => 'Basis Data', 'sks' => 3, 'semester' => 'ganjil', 'id_prodi' => $this->prodi()->id_prodi])->id_mata_kuliah,
             'id_kelas' => $this->kelas()->id_kelas,
             'nuptk_nidn' => $this->dosen()->nuptk_nidn,
             'id_ruangan' => $this->ruangan()->id_ruangan,
@@ -74,6 +74,17 @@ class StaffProdiTest extends TestCase
             ->assertDontSee('Kelola Data User')
             ->assertDontSee('Pengaturan Laboratorium')
             ->assertDontSee('Peminjaman');
+    }
+
+    public function test_dashboard_staf_menandai_jadwal_hari_ini(): void
+    {
+        \Carbon\Carbon::setTestNow('2030-01-07 09:00:00'); // Senin
+        try {
+            $this->jadwal($this->ruangan(), 'senin', '08:00', '10:00');
+            $this->sebagaiStaff()->get(route('dashboard'))->assertOk()->assertSee('(hari ini)');
+        } finally {
+            \Carbon\Carbon::setTestNow();
+        }
     }
 
     // ------------------------------------------------------------------ hak akses
@@ -229,7 +240,7 @@ class StaffProdiTest extends TestCase
         $dosen = $this->dosen(['nuptk_nidn' => 'D00000123']);
         $namaAsli = $dosen->nama;
         $payload = ['nuptk_nidn' => 'D00000999', 'nama' => 'Dosen Baru', 'id_prodi' => $prodi->id_prodi,
-            'email' => 'dosenbaru@uji.test', 'no_whatsapp' => '081234567890', 'status' => 'aktif', 'password' => 'abcd'];
+            'email' => 'dosenbaru@uji.test', 'no_whatsapp' => '081234567890', 'status' => 'aktif', 'password' => 'abcd1234'];
 
         $this->sebagaiStaff()->post(route('data-akademik.store', ['tab' => 'dosen']), $payload)->assertForbidden();
         $this->sebagaiStaff()->put(route('data-akademik.update', ['tab' => 'dosen', 'id' => $dosen->getKey()]), $payload)->assertForbidden();
@@ -274,7 +285,7 @@ class StaffProdiTest extends TestCase
 
     public function test_import_mata_kuliah_dan_kelas_dari_data_akademik(): void
     {
-        $prodi = $this->prodi('D3 Uji');
+        $prodi = $this->prodi(); // Staf Prodi hanya boleh mengimpor kelas prodinya sendiri
 
         $this->sebagaiStaff()->get(route('data-akademik.index'))->assertOk()->assertSee('importModal');
         $this->sebagaiStaff()->get(route('data-akademik.template', ['tab' => 'kelas']))->assertOk();
@@ -295,7 +306,7 @@ class StaffProdiTest extends TestCase
 
         $this->sebagaiStaff()->post(route('data-akademik.import', ['tab' => 'kelas']), ['file' => $this->excel(
             ['Nama Kelas', 'Prodi'],
-            [['1A', 'D3 Uji'], ['1B', 'D3 Uji']],
+            [['1A', 'Prodi Uji'], ['1B', 'Prodi Uji']],
         )])->assertSessionHas('success');
         $this->assertSame(2, \App\Models\Kelas::where('id_prodi', $prodi->id_prodi)->whereIn('nama_kelas', ['1A', '1B'])->count());
 

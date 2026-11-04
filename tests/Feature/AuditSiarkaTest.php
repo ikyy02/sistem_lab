@@ -91,7 +91,7 @@ class AuditSiarkaTest extends TestCase
         $gabung = $r + [];
         $gabung['detail'] = [['id_katalog' => $this->katalog('bahan', 5)->id_katalog, 'jumlah' => 1]];
         $this->harusGagal(fn () => $this->ajukan($m, '2030-01-08 09:00', '2030-01-09 09:00', $gabung), 'tanggal_rencana_kembali'); // gabungan
-        $this->assertSame('menunggu', $this->ajukan($m, '2030-01-08 09:00', '2030-01-08 11:00', $gabung)->status);
+        $this->assertSame('menunggu', $this->ajukan($this->mahasiswa()->email, '2030-01-08 09:00', '2030-01-08 11:00', $gabung)->status);
     }
 
     // ---------------------------------------------------------------- tombol Selesai (tanpa syarat waktu)

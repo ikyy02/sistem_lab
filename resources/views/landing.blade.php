@@ -6,7 +6,7 @@
     <title>SIARKA — Laboratorium Komputer Politeknik Negeri Tanah Laut</title>
     <meta name="application-name" content="SIARKA">
     <meta name="description" content="SIARKA — Sistem Informasi Administrasi, Reservasi, Katalog, dan Aktivitas Laboratorium Komputer Politeknik Negeri Tanah Laut.">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+    @include('layouts._fonts')
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
     @include('layouts._theme')
@@ -20,8 +20,8 @@
         html { scroll-padding-top: calc(var(--lp-nav-h) + 12px); }
         .lp-nav { position: fixed; top: 0; left: 0; right: 0; z-index: 1030; background: transparent; border-bottom: 1px solid transparent; transition: background-color .2s ease, border-color .2s ease; }
         .lp-nav .navbar { height: var(--lp-nav-h); padding: 0; }
-        .lp-brand { font-family: 'Fraunces', serif; font-weight: 600; font-size: 1.5rem; letter-spacing: .04em; color: #fff; text-decoration: none; transition: color .2s ease; }
-        .lp-link { position: relative; color: rgba(255,255,255,.82); text-decoration: none; font-size: .9rem; font-weight: 500; padding: 8px 4px !important; margin-inline: 14px; transition: color .2s ease; }
+        .lp-brand { font-family: var(--font-accent); font-weight: 600; font-size: 1.25rem; letter-spacing: .03em; color: #fff; text-decoration: none; transition: color .2s ease; }
+        .lp-link { position: relative; color: rgba(255,255,255,.82); text-decoration: none; font-size: .96rem; font-weight: 450; padding: 8px 4px !important; margin-inline: 14px; transition: color .2s ease; }
         .lp-link::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 2px; background: var(--gold-bright); transform: scaleX(0); transition: transform .2s ease; }
         .lp-link:hover, .lp-link:focus-visible, .lp-link.active { color: #fff; }
         .lp-link.active::after { transform: scaleX(1); }
@@ -40,12 +40,12 @@
         /* Hero */
         .lp-hero { background: var(--ink); color: #fff; position: relative; overflow: hidden; }
         .lp-hero .container { padding-top: calc(var(--lp-nav-h) + 56px); padding-bottom: 84px; }
-        .lp-eyebrow { display: inline-flex; align-items: center; gap: 10px; font-size: .75rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--gold-bright); }
+        .lp-eyebrow { display: inline-flex; align-items: center; gap: 12px; font-family: var(--font-accent); font-size: .68rem; font-weight: 500; letter-spacing: .1em; text-transform: uppercase; color: var(--gold-bright); }
         .lp-eyebrow::before { content: ''; width: 30px; height: 2px; background: var(--gold-bright); }
-        .lp-title { font-family: 'Fraunces', serif; font-weight: 600; font-size: clamp(2.1rem, 4.6vw, 3.4rem); line-height: 1.12; margin: 16px 0 18px; }
-        .lp-title em { font-style: normal; color: var(--gold-bright); }
-        .lp-lead { color: #D6D3CB; font-size: 1rem; line-height: 1.75; max-width: 540px; }
-        .btn-lp { padding: 12px 24px; font-size: .92rem; border-radius: 10px; }
+        .lp-title { font-family: var(--font-serif); font-weight: 500; font-size: clamp(2.5rem, 5.4vw, 4.1rem); line-height: 1.04; letter-spacing: -.03em; margin: 22px 0 24px; text-wrap: balance; }
+        .lp-title em { font-style: italic; font-weight: 400; color: var(--gold-bright); }
+        .lp-lead { color: #D6D3CB; font-size: 1.1rem; line-height: 1.7; max-width: 46ch; }
+        .btn-lp { padding: 13px 26px; font-size: 1rem; border-radius: 10px; }
         .btn-lp-gold { background: var(--gold-bright); border-color: var(--gold-bright); color: #1B1A18; }
         .btn-lp-gold:hover { background: #D8AA50; border-color: #D8AA50; color: #1B1A18; }
         .btn-lp-ghost { background: transparent; border: 1px solid rgba(255,255,255,.38); color: #fff; }
@@ -56,47 +56,50 @@
         .lp-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
         .lp-photo .lp-fallback { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: rgba(255,255,255,.35); font-size: 2.6rem; z-index: 0; }
         .lp-photo img { position: relative; z-index: 1; }
-        .lp-photo-cap { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; padding: 22px 14px 12px; font-size:.75rem; color: #fff; background: linear-gradient(transparent, rgba(0,0,0,.65)); }
+        .lp-photo-cap { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; padding: 22px 14px 12px; font-size:.84rem; color: #fff; background: linear-gradient(transparent, rgba(0,0,0,.65)); }
 
 
         /* Section */
         .lp-section { padding: 84px 0; }
         .lp-band { background: #FAF7F0; border-top: 1px solid #EFE1C2; border-bottom: 1px solid #EFE1C2; }
-        .lp-kicker { font-size:.75rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--gold-text); margin-bottom: 8px; }
-        .lp-h2 { font-family: 'Fraunces', serif; font-weight: 600; font-size: clamp(1.6rem, 3vw, 2.2rem); color: var(--ink); margin-bottom: 12px; }
-        .lp-sub { color: var(--text-muted); max-width: 640px; line-height: 1.7; }
+        .lp-kicker { font-family: var(--font-accent); font-size: .68rem; font-weight: 500; letter-spacing: .1em; text-transform: uppercase; color: var(--gold-text); margin-bottom: 14px; }
+        .lp-h2 { font-family: var(--font-serif); font-weight: 500; font-size: clamp(1.9rem, 3.6vw, 2.8rem); line-height: 1.1; letter-spacing: -.025em; color: var(--ink); margin-bottom: 16px; max-width: 20ch; text-wrap: balance; }
+        .lp-sub { color: var(--text-muted); font-size: 1.05rem; max-width: 56ch; line-height: 1.7; }
+        .lp-intro { font-family: var(--font-serif); font-weight: 400; font-size: clamp(1.25rem, 2vw, 1.6rem); line-height: 1.5; letter-spacing: -.01em; color: var(--ink); margin: 0; text-wrap: pretty; }
+        .lp-intro strong { font-weight: 600; }
         .lp-card { height: 100%; background: #fff; border: 1px solid var(--border-color); border-radius: 14px; padding: 26px; }
         .lp-card:hover { border-color: var(--gold); }
         .lp-icon { width: 48px; height: 48px; border-radius: 12px; background: var(--gold-tint); border: 1px solid #EFE1C2; color: var(--gold-text); display: flex; align-items: center; justify-content: center; font-size: 1.3rem; margin-bottom: 16px; }
-        .lp-card h3 { font-size: 1.02rem; font-weight: 700; margin-bottom: 8px; }
-        .lp-card p { font-size: .88rem; color: var(--text-muted); margin: 0; line-height: 1.65; }
+        .lp-card h3 { font-size: 1.12rem; font-weight: 600; margin-bottom: 8px; }
+        .lp-card p { font-size: .95rem; color: var(--text-muted); margin: 0; line-height: 1.65; }
         .lp-lab { display: block; background: #fff; border: 1px solid var(--border-color); border-radius: 12px; overflow: hidden; height: 100%; }
         .lp-lab .foto { aspect-ratio: 16 / 10; background: var(--gold-tint); display: flex; align-items: center; justify-content: center; color: var(--gold-text); font-size: 2.2rem; overflow: hidden; }
         .lp-lab .foto img { width: 100%; height: 100%; object-fit: cover; display: block; }
-        .lp-lab .nama { padding: 14px 18px; font-weight: 600; font-size: .98rem; color: var(--ink); }
-        .lp-all { display: inline-flex; align-items: center; gap: 8px; margin-top: 32px; padding: 11px 22px; border: 1px solid var(--ink); border-radius: 8px; color: var(--ink); text-decoration: none; font-weight: 600; font-size: .88rem; }
+        .lp-lab .nama { padding: 14px 18px; font-weight: 500; font-size: 1.05rem; color: var(--ink); }
+        .lp-all { display: inline-flex; align-items: center; gap: 8px; margin-top: 32px; padding: 11px 22px; border: 1px solid var(--ink); border-radius: 8px; color: var(--ink); text-decoration: none; font-weight: 500; font-size: .96rem; }
         .lp-all:hover { background: var(--ink); color: #fff; }
         .lp-index { list-style: none; margin: 0; padding: 0; columns: 3; column-gap: 32px; }
         .lp-index li { break-inside: avoid; padding: 12px 0; border-top: 1px solid var(--border-color); font-weight: 500; }
-        .lp-index li span { color: var(--gold-text); font-weight: 600; font-size: .8rem; margin-right: 12px; }
+        .lp-index li span { font-family: var(--font-accent); color: var(--gold-text); font-weight: 500; font-size: .72rem; letter-spacing: .02em; margin-right: 14px; }
         @media (max-width: 991.98px) { .lp-index { columns: 2; } }
         @media (max-width: 575.98px) { .lp-index { columns: 1; } }
         .lp-step { position: relative; padding-top: 4px; }
-        .lp-step-no { width: 42px; height: 42px; border-radius: 50%; background: var(--ink); color: #fff; font-weight: 700; display: flex; align-items: center; justify-content: center; margin-bottom: 14px; }
-        .lp-step h3 { font-size: 1rem; font-weight: 700; }
-        .lp-step p { font-size: .87rem; color: var(--text-muted); line-height: 1.65; margin: 0; }
+        .lp-step-no { width: 42px; height: 42px; border-radius: 50%; background: var(--ink); color: #fff; font-family: var(--font-accent); font-weight: 600; font-size: .95rem; display: flex; align-items: center; justify-content: center; margin-bottom: 16px; }
+        .lp-step h3 { font-size: 1.12rem; font-weight: 600; }
+        .lp-step p { font-size: .95rem; color: var(--text-muted); line-height: 1.65; margin: 0; }
         .lp-jam { background: #fff; border: 1px solid var(--border-color); border-radius: 14px; padding: 26px; }
-        .lp-jam .k { font-size:.75rem; text-transform: uppercase; letter-spacing: .08em; color: var(--text-muted); }
+        .lp-jam .k { font-size:.78rem; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 6px; color: var(--text-muted); }
         .lp-cta { background: var(--ink); color: #fff; border-radius: 18px; padding: 44px; }
-        .lp-cta h2 { font-family: 'Fraunces', serif; font-weight: 600; font-size: clamp(1.4rem, 2.6vw, 1.9rem); }
+        .lp-cta h2 { font-family: var(--font-serif); font-weight: 500; font-size: clamp(1.7rem, 3vw, 2.3rem); letter-spacing: -.025em; line-height: 1.1; }
+        .lp-jam-waktu { font-family: var(--font-accent); font-weight: 600; font-size: 1.35rem; letter-spacing: -.02em; line-height: 1.2; }
 
         /* Footer */
-        .lp-footer { background: #1B1A18; color: #BDB9AE; padding: 56px 0 28px; font-size: .86rem; }
-        .lp-footer h4 { color: #fff; font-size: .82rem; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 14px; }
+        .lp-footer { background: #1B1A18; color: #BDB9AE; padding: 56px 0 28px; font-size: .92rem; }
+        .lp-footer h4 { color: #fff; font-family: var(--font-accent); font-weight: 500; font-size: .68rem; text-transform: uppercase; letter-spacing: .1em; margin-bottom: 14px; }
         .lp-footer a { color: #E7E4DB; text-decoration: none; }
         .lp-footer a:hover { color: var(--gold-bright); }
         .lp-footer li { margin-bottom: 8px; }
-        .lp-copy { border-top: 1px solid rgba(255,255,255,.12); margin-top: 36px; padding-top: 20px; font-size:.8rem; }
+        .lp-copy { border-top: 1px solid rgba(255,255,255,.12); margin-top: 36px; padding-top: 20px; font-size:.86rem; }
 
         @media (max-width: 991.98px) {
             .lp-hero .container { padding-top: calc(var(--lp-nav-h) + 32px); padding-bottom: 56px; }
@@ -180,10 +183,12 @@
     <section class="lp-section" id="tentang">
         <div class="container">
             <div class="row g-5 align-items-start">
-                <div class="col-12 col-lg-8">
+                <div class="col-12 col-lg-5">
                     <div class="lp-kicker">Tentang SIARKA</div>
-                    <h2 class="lp-h2">Satu sistem untuk laboratorium.</h2>
-                    <p class="lp-sub mb-0">SIARKA — <strong>Sistem Informasi Administrasi, Reservasi, Katalog, dan Aktivitas Laboratorium</strong> — adalah sistem untuk mengelola alat, bahan, ruangan, dan peminjaman laboratorium Jurusan Komputer dan Bisnis.</p>
+                    <h2 class="lp-h2">Mengelola laboratorium dengan lebih tertib.</h2>
+                </div>
+                <div class="col-12 col-lg-7">
+                    <p class="lp-intro">SIARKA — <strong>Sistem Informasi Administrasi, Reservasi, Katalog, dan Aktivitas Laboratorium</strong> — adalah sistem untuk mengelola alat, bahan, ruangan, dan peminjaman laboratorium Jurusan Komputer dan Bisnis.</p>
                 </div>
             </div>
         </div>
@@ -276,7 +281,7 @@
                 </div>
                 <div class="col-12 col-lg-6">
                     <div class="lp-jam d-flex flex-wrap gap-4">
-                        <div><div class="k">Jam</div><div class="fw-bold" style="font-size:1.4rem;">{{ $jam($setting->jam_buka) }} – {{ $jam($setting->jam_tutup) }}</div></div>
+                        <div><div class="k">Jam</div><div class="lp-jam-waktu">{{ $jam($setting->jam_buka) }} – {{ $jam($setting->jam_tutup) }}</div></div>
                         <div><div class="k">Hari</div><div class="fw-semibold">{{ $hariAktif ? implode(', ', $hariAktif) : '—' }}</div></div>
                     </div>
                 </div>
@@ -291,7 +296,7 @@
             <div class="lp-cta d-flex flex-wrap align-items-center justify-content-between gap-3">
                 <div>
                     <h2 class="mb-1">Siap menggunakan laboratorium?</h2>
-                    <p class="mb-0" style="color:#D6D3CB;">Masuk ke SIARKA untuk melihat katalog dan mengajukan peminjaman.</p>
+                    <p class="mb-0" style="color:#D6D3CB;font-size:1.05rem;">Masuk ke SIARKA untuk melihat katalog dan mengajukan peminjaman.</p>
                 </div>
                 <a href="{{ route('login') }}" class="btn btn-lp btn-lp-gold d-inline-flex align-items-center gap-2"><i class="bi bi-box-arrow-in-right"></i> Masuk SIARKA</a>
             </div>
@@ -303,7 +308,7 @@
     <div class="container">
         <div class="row g-4">
             <div class="col-12 col-lg-5">
-                <div class="lp-brand-name mb-2" style="color:#fff;">SIARKA</div>
+                <div class="lp-brand d-inline-block mb-3">SIARKA</div>
                 <p class="mb-0" style="max-width:420px;line-height:1.7;">Sistem Informasi Administrasi, Reservasi, Katalog, dan Aktivitas Laboratorium — Jurusan Komputer dan Bisnis, Politeknik Negeri Tanah Laut.</p>
             </div>
             <div class="col-12 col-lg-7">

@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\Cari;
 use App\Models\AlatBahan;
 use App\Models\Ruangan;
+use App\Services\AuthService;
 use App\Services\KatalogImportService;
 use App\Support\ExcelFile;
 use App\Support\GambarKatalog;
@@ -11,6 +13,7 @@ use App\Support\Options;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -42,7 +45,7 @@ class KelolaKatalogController extends Controller
         return [
             'columns' => [
                 'nama' => ['Nama', true], 'nama_satuan' => ['Satuan', true], 'stok' => ['Stok', true],
-                'harga' => ['Harga / Satuan', true], 'keterangan' => ['Keterangan', false],
+                'harga' => ['Harga / Satuan', true], 'keterangan' => ['Keterangan', false], 'satuans.id_satuan' => ['ID Satuan', false], 'ruangans.id_ruangan' => ['ID Ruangan', false], 'ruangans.nama_ruangan' => ['Ruangan', true],
             ],
             'search' => ['alat_bahans.nama', 'satuans.nama_satuan', 'ruangans.nama_ruangan', 'alat_bahans.keterangan'],
             'fields' => [
@@ -83,19 +86,12 @@ class KelolaKatalogController extends Controller
             // Nama kolom urut dipetakan ke kolom tabel asli (join) agar aman dan tidak ambigu.
             $sortColumn = match ($sort) {
                 'nama_satuan' => 'satuans.nama_satuan',
-                'nama_ruangan' => 'ruangans.nama_ruangan',
+                'ruangans.nama_ruangan' => 'ruangans.nama_ruangan',
                 default => 'alat_bahans.' . $sort,
             };
             $pk = 'alat_bahans.id_katalog';
         }
-        foreach (array_slice(preg_split('/\s+/u', $search, -1, PREG_SPLIT_NO_EMPTY) ?: [], 0, 5) as $word) {
-            $like = '%' . str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $word) . '%';
-            $query->where(function ($g) use ($config, $like) {
-                foreach ($config['search'] as $col) {
-                    $g->orWhereRaw("{$col} LIKE ? ESCAPE '!'", [$like]);
-                }
-            });
-        }
+        Cari::kolom($query, $search, $config['search']);
         $data = $query->orderBy($sortColumn, $direction)->orderBy($pk)->paginate($perPage)->withQueryString();
         if ($data->currentPage() > $data->lastPage()) {
             return redirect()->route('kelola-katalog.index', array_merge($request->query(), ['page' => $data->lastPage()]));
@@ -139,14 +135,18 @@ class KelolaKatalogController extends Controller
             return $this->fail($v, $kategori, 'edit', $id);
         }
         $data = $v->validated();
+        unset($data['stok']); // stok hanya berubah lewat stok(); form edit bisa memuat stok lama
         $dir = $kategori === 'ruangan' ? Ruangan::GAMBAR_DIR : AlatBahan::GAMBAR_DIR;
         unset($data['gambar']);
-        // Urutan: hapus gambar lama, simpan gambar baru, simpan namanya ke database.
+        // Urutan: simpan gambar baru, simpan namanya ke database, baru hapus gambar lama.
+        $gambarLama = $item->gambar;
         if ($request->hasFile('gambar')) {
-            $this->deleteImage($item->gambar, $dir);
             $data['gambar'] = $this->saveImage($request->file('gambar'), $dir);
         }
         $item->update($data);
+        if ($request->hasFile('gambar')) {
+            $this->deleteImage($gambarLama, $dir);
+        }
 
         return redirect()->route('kelola-katalog.index', $request->only(['search', 'sort', 'direction', 'per_page', 'page']) + ['kategori' => $kategori])
             ->with('success', self::KATEGORI[$kategori] . ' berhasil diperbarui.');
@@ -171,7 +171,8 @@ class KelolaKatalogController extends Controller
         $jumlah = (int) $v->validated()['jumlah'];
         $tambah = $v->validated()['aksi'] === 'tambah';
 
-        $hasil = DB::transaction(function () use ($kategori, $id, $jumlah, $tambah) {
+        $jejak = null;
+        $hasil = DB::transaction(function () use ($kategori, $id, $jumlah, $tambah, &$jejak) {
             // lockForUpdate mengunci baris sampai transaksi selesai.
             $item = AlatBahan::where('jenis', $kategori)->lockForUpdate()->findOrFail($id);
             $baru = $tambah ? $item->stok + $jumlah : $item->stok - $jumlah;
@@ -181,10 +182,16 @@ class KelolaKatalogController extends Controller
             if ($baru > 4294967295) {
                 return 'Stok melebihi batas maksimum.';
             }
+            $lama = $item->stok;
             $item->update(['stok' => $baru]);
+            $jejak = ['id_katalog' => $item->id_katalog, 'nama' => $item->nama, 'stok_lama' => $lama, 'stok_baru' => $baru];
 
             return null;
         });
+        // Jejak perubahan stok manual (tanpa tabel baru), dicatat setelah transaksi berhasil.
+        if ($jejak) {
+            Log::info('Stok katalog diubah manual.', ['pelaku' => AuthService::user()['email'] ?? null, 'aksi' => $tambah ? 'tambah' : 'kurangi', 'jumlah' => $jumlah] + $jejak);
+        }
 
         return $hasil
             ? $back->with('error', $hasil)
@@ -199,6 +206,9 @@ class KelolaKatalogController extends Controller
         try {
             $item->delete(); // FK RESTRICT: ditolak bila sudah dipakai peminjaman/jadwal/katalog
         } catch (QueryException $e) {
+            if ($e->getCode() !== '23000') {
+                throw $e;
+            }
             return $back->with('error', self::KATEGORI[$kategori] . ' "' . ($item->nama ?? $item->nama_ruangan) . '" sudah dipakai data lain dan tidak dapat dihapus.');
         }
         $this->deleteImage($item->gambar, $kategori === 'ruangan' ? Ruangan::GAMBAR_DIR : AlatBahan::GAMBAR_DIR);

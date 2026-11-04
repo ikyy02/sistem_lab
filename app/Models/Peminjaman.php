@@ -9,6 +9,9 @@ class Peminjaman extends Model
     // Alur status: menunggu -> disetujui -> selesai; atau ditolak / dibatalkan.
     public const STATUS = ['menunggu', 'disetujui', 'ditolak', 'selesai', 'dibatalkan'];
 
+    /** Status "aktif": pengguna dengan peminjaman berstatus ini belum boleh mengajukan lagi. */
+    public const STATUS_AKTIF = ['menunggu', 'disetujui'];
+
     public const JENIS = ['pribadi', 'atas_dosen', 'pembelajaran'];
 
     /** Jenis yang boleh dipilih Mahasiswa (Dosen selalu memakai "Pembelajaran"). */
@@ -87,6 +90,12 @@ class Peminjaman extends Model
     public function pemroses()
     {
         return $this->belongsTo(Akun::class, 'email_pemroses', 'email');
+    }
+
+    /** Peminjaman aktif (menunggu/disetujui) milik satu pengguna. */
+    public function scopeAktifMilik($q, string $email)
+    {
+        return $q->where('email_peminjam', $email)->whereIn('status', self::STATUS_AKTIF);
     }
 
     /** Relasi yang perlu di-eager-load pada daftar agar tidak N+1. */
@@ -176,17 +185,24 @@ class Peminjaman extends Model
         return $awal?->copy()->startOfDay();
     }
 
-    /** Dapat dibatalkan peminjam: melibatkan ruangan, belum diproses akhir, dan sebelum tanggal pelaksanaan (sampai 23.59 H-1). */
-    // Syarat batal: milik sendiri, status menunggu/disetujui, ada ruangan, dan masih sebelum tanggal pelaksanaan.
+    /**
+     * Dapat dibatalkan peminjam sendiri:
+     * - menunggu: semua jenis, selama belum diproses (stok belum dipotong);
+     * - disetujui: hanya yang melibatkan ruangan, sampai 23.59 H-1 tanggal pelaksanaan.
+     */
+    // Syarat batal: milik sendiri; menunggu = bebas; disetujui = ada ruangan dan masih sebelum tanggal pelaksanaan.
     public function bisaDibatalkanOleh(string $email, ?\Carbon\CarbonInterface $sekarang = null): bool
     {
+        if ($this->email_peminjam !== $email) {
+            return false;
+        }
+        if ($this->status === 'menunggu') {
+            return true;
+        }
         $pelaksanaan = $this->tanggalPelaksanaan();
 
-        return $this->email_peminjam === $email
-            && in_array($this->status, ['menunggu', 'disetujui'], true)
-            && $this->melibatkanRuangan()
-            && $pelaksanaan !== null
-            && ($sekarang ?? now())->lt($pelaksanaan);
+        return $this->status === 'disetujui' && $this->melibatkanRuangan()
+            && $pelaksanaan !== null && ($sekarang ?? now())->lt($pelaksanaan);
     }
 
     /**

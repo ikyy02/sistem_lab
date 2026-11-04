@@ -67,6 +67,9 @@ return [
 
     'timezone' => env('APP_TIMEZONE', 'Asia/Makassar'),
 
+    // Password akun admin awal untuk DatabaseSeeder (dibaca lewat config agar tetap bekerja setelah config:cache).
+    'admin_password' => env('ADMIN_PASSWORD'),
+
     /*
     |--------------------------------------------------------------------------
     | Application Locale Configuration

@@ -54,12 +54,13 @@ class AksesDataTest extends TestCase
         $dosenB = $this->dosen(['nama' => 'Dosen Lain Bbb']);
         $mhsMandiri = $this->mahasiswa(['nama' => 'Zulkarnain Mandiri']);
         $mhsAtas = $this->mahasiswa(['nama' => 'Yusuf AtasDosen']);
+        $mhsAtasB = $this->mahasiswa(['nama' => 'Yusuf AtasDosen']); // satu pengguna hanya boleh satu pengajuan aktif
 
         return [
             'dosenA' => $dosenA, 'dosenB' => $dosenB, 'mhsMandiri' => $mhsMandiri,
             'mandiri' => $this->ajukan($mhsMandiri->email),
             'atasA' => $this->ajukan($mhsAtas->email, ['jenis_peminjaman' => 'atas_dosen', 'email_dosen' => $dosenA->email]),
-            'atasB' => $this->ajukan($mhsAtas->email, ['jenis_peminjaman' => 'atas_dosen', 'email_dosen' => $dosenB->email]),
+            'atasB' => $this->ajukan($mhsAtasB->email, ['jenis_peminjaman' => 'atas_dosen', 'email_dosen' => $dosenB->email]),
             'belajarB' => $this->ajukan($dosenB->email),
         ];
     }

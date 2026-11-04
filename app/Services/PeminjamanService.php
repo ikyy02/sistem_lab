@@ -22,9 +22,6 @@ use Illuminate\Validation\ValidationException;
  */
 class PeminjamanService
 {
-    /** Nama hari sesuai index Carbon format('w') (0 = minggu). */
-    private const HARI = ['minggu', 'senin', 'selasa', 'rabu', 'kamis', 'jumat', 'sabtu'];
-
     /**
      * @param  array{jenis_peminjaman?:string, email_dosen?:?string, tanggal_peminjaman:mixed, tanggal_rencana_kembali:mixed, keterangan?:?string,
      *               detail?:array<int,array{id_katalog:int,jumlah:int}>, ruangan?:array<int,array{id_ruangan:int}>}  $data
@@ -79,7 +76,7 @@ class PeminjamanService
             }
             // Semua peminjaman (semua role & jenis sumber daya) maksimal satu hari operasional; dicek bersama urutan waktu.
             // Cek jam/hari operasional; aturan jam diambil dari Pengaturan Operasional.
-            if (($salah = $this->cekSatuHariOperasional($pinjam, $kembali)) !== null) {
+            if (($salah = PengaturanOperasional::ambil()->cekSatuHari($pinjam, $kembali)) !== null) {
                 $err[$salah[0]] ??= $salah[1];
             }
         }
@@ -123,11 +120,16 @@ class PeminjamanService
 
         // Header + detail barang + ruangan disimpan bersama; gagal sebagian = batal semua.
         return DB::transaction(function () use ($pengaju, $jenis, $emailDosen, $sekarang, $pinjam, $kembali, $data, $barang, $ruangan) {
+            // Kunci baris akun pengaju: dua pengajuan bersamaan dari akun yang sama diproses bergantian.
+            Akun::whereKey($pengaju->email)->lockForUpdate()->first();
+            if (Peminjaman::aktifMilik($pengaju->email)->exists()) {
+                $this->gagal(['status' => 'Anda masih memiliki peminjaman yang berjalan (status Menunggu Persetujuan atau Disetujui). Selesaikan atau batalkan peminjaman tersebut sebelum mengajukan yang baru.']);
+            }
             $p = Peminjaman::create([
                 'email_peminjam' => $pengaju->email,
                 'jenis_peminjaman' => $jenis,
                 'email_dosen' => $emailDosen,
-                'tanggal_pengajuan' => $sekarang,
+                'tanggal_pengajuan' => $sekarang->copy()->startOfMinute(),
                 'tanggal_peminjaman' => $pinjam,
                 'tanggal_rencana_kembali' => $kembali,
                 'status' => 'menunggu',
@@ -298,10 +300,10 @@ class PeminjamanService
     }
 
     /**
-     * Batalkan peminjaman yang melibatkan ruangan oleh peminjam sendiri, paling lambat pukul 23.59 H-1
-     * (berdasarkan tanggal kalender). Bila sudah disetujui, stok alat/bahan dikembalikan.
+     * Batalkan oleh peminjam sendiri. Menunggu: semua jenis, tanpa batas H-1 (stok belum dipotong).
+     * Disetujui: hanya yang melibatkan ruangan, paling lambat 23.59 H-1; stok alat/bahan dikembalikan.
      */
-    // Pembatalan oleh peminjam: hanya yang melibatkan ruangan, sebelum H-1 23.59, dan belum ada pengembalian.
+    // Pembatalan oleh peminjam; aturan lengkap ada di Peminjaman::bisaDibatalkanOleh.
     public function batalkan(int $idPeminjaman, string $emailPeminjam, ?CarbonInterface $sekarang = null): Peminjaman
     {
         $sekarang = $sekarang ? Carbon::instance($sekarang) : now();
@@ -314,11 +316,10 @@ class PeminjamanService
             if (! in_array($p->status, ['menunggu', 'disetujui'], true)) {
                 $this->gagal(['status' => 'Peminjaman dengan status ini tidak dapat dibatalkan.']);
             }
-            if (! $p->melibatkanRuangan()) {
-                $this->gagal(['status' => 'Hanya peminjaman yang melibatkan ruangan yang dapat dibatalkan.']);
-            }
             if (! $p->bisaDibatalkanOleh($emailPeminjam, $sekarang)) {
-                $this->gagal(['status' => 'Pembatalan hanya dapat dilakukan sampai pukul 23.59 pada H-1 tanggal pelaksanaan.']);
+                $this->gagal(['status' => $p->melibatkanRuangan()
+                    ? 'Pembatalan peminjaman yang sudah disetujui hanya dapat dilakukan sampai pukul 23.59 pada H-1 tanggal pelaksanaan.'
+                    : 'Peminjaman yang sudah disetujui dan hanya berisi alat/bahan tidak dapat dibatalkan; selesaikan lewat pengembalian.']);
             }
             // Barang yang sudah dikembalikan sudah menambah stok; membatalkan lagi akan menambah stok dua kali.
             if ($p->pengembalians()->exists()) {
@@ -482,7 +483,7 @@ class PeminjamanService
     }
 
     /** Pesan konflik bila periode ruangan beririsan dengan JADWAL aktif atau peminjaman ruangan lain yang disetujui; null bila bebas. */
-    // Cek bentrok ruangan: (1) peminjaman lain yang sudah disetujui, (2) jadwal kuliah aktif tiap tanggal pada rentang.
+    // Cek bentrok ruangan: (1) peminjaman lain yang sudah disetujui, (2) jadwal kuliah aktif pada hari peminjaman.
     public function konflikRuangan(PeminjamanRuangan $r): ?string
     {
         $mulai = Carbon::parse($r->tanggal_mulai);
@@ -502,17 +503,10 @@ class PeminjamanService
             return 'Ruangan bentrok dengan peminjaman lain yang sudah disetujui.';
         }
 
-        // 2) Jadwal kuliah aktif (mingguan): periksa tiap tanggal pada rentang.
-        $hari = ['minggu', 'senin', 'selasa', 'rabu', 'kamis', 'jumat', 'sabtu'];
+        // 2) Jadwal kuliah aktif (mingguan). Peminjaman selalu satu hari operasional (cekSatuHari), jadi cukup satu tanggal.
         $tgl = $mulai->copy()->startOfDay();
-        $batas = $selesai->copy()->startOfDay();
-        for ($i = 0; $tgl->lte($batas) && $i < 400; $i++, $tgl->addDay()) {
-            $namaHari = $hari[$tgl->dayOfWeek];
-            if ($namaHari === 'minggu') {
-                continue;
-            }
-            $awal = $tgl->isSameDay($mulai) ? $mulai->format('H:i:s') : '00:00:00';
-            $akhir = $tgl->isSameDay($selesai) ? $selesai->format('H:i:s') : '24:00:00';
+        $namaHari = PengaturanOperasional::NAMA_HARI[$tgl->dayOfWeek];
+        if ($namaHari !== 'minggu') { // jadwal kuliah tidak ada pada hari minggu
             [$tahun, $semester] = self::periodeAkademik($tgl);
             $ada = Jadwal::where('id_ruangan', $r->id_ruangan)
                 ->where('status', 'aktif')->where('hari', $namaHari)
@@ -520,7 +514,7 @@ class PeminjamanService
                 // Jadwal hanya berlaku pada tanggal di dalam periodenya.
                 ->where(fn ($q) => $q->whereNull('id_periode')->orWhereIn('id_periode', PeriodeJadwal::query()
                     ->where('tanggal_mulai', '<=', $tgl->toDateString())->where('tanggal_berakhir', '>=', $tgl->toDateString())->select('id_periode')))
-                ->where('jam_mulai', '<', $akhir)->where('jam_selesai', '>', $awal)
+                ->where('jam_mulai', '<', $selesai->format('H:i:s'))->where('jam_selesai', '>', $mulai->format('H:i:s'))
                 ->exists();
             if ($ada) {
                 return 'Ruangan bentrok dengan jadwal kuliah aktif.';
@@ -544,86 +538,6 @@ class PeminjamanService
         $awal = $bulan >= 8 ? $tahun : $tahun - 1;
 
         return [$awal.'/'.($awal + 1), ($bulan >= 8 || $bulan === 1) ? 'ganjil' : 'genap'];
-    }
-
-    /**
-     * Aturan jam kerja laboratorium dari Pengaturan Operasional (dapat diubah lewat menu tersebut).
-     *
-     * @return array{jam_buka:string, jam_tutup:string, hari:array<int,string>}
-     */
-    // Jam buka/tutup dan hari aktif dibaca dari tabel pengaturan operasional.
-    public function aturanJamKerja(): array
-    {
-        $pengaturan = PengaturanOperasional::ambil();
-
-        return [
-            'jam_buka' => substr((string) $pengaturan->jam_buka, 0, 5),
-            'jam_tutup' => substr((string) $pengaturan->jam_tutup, 0, 5),
-            'hari' => $pengaturan->hariAktif(),
-        ];
-    }
-
-    /**
-     * Waktu paling awal yang masih boleh dipilih Dosen: hari operasional pertama yang jamnya
-     * masih buka dan waktu tersebut belum lewat. null bila tidak ditemukan dalam 60 hari.
-     */
-    // Dipakai form pengajuan untuk menentukan batas waktu paling awal yang boleh dipilih.
-    public function waktuPalingAwal(?CarbonInterface $sekarang = null): ?Carbon
-    {
-        $sekarang = ($sekarang ? Carbon::instance($sekarang) : now())->copy()->startOfMinute();
-        $aturan = $this->aturanJamKerja();
-        [$jamBuka, $menitBuka, $detikBuka] = $this->pecahJam($aturan['jam_buka']);
-        [$jamTutup, $menitTutup, $detikTutup] = $this->pecahJam($aturan['jam_tutup']);
-        $hari = $sekarang->copy()->startOfDay();
-
-        for ($i = 0; $i < 60; $i++, $hari->addDay()) {
-            if (! in_array(self::HARI[(int) $hari->format('w')], $aturan['hari'], true)) {
-                continue;
-            }
-            $buka = $hari->copy()->setTime($jamBuka, $menitBuka, $detikBuka);
-            $tutup = $hari->copy()->setTime($jamTutup, $menitTutup, $detikTutup);
-            $mulai = $sekarang->lt($buka) ? $buka : $sekarang->copy();
-            if ($mulai->lt($tutup)) {
-                return $mulai;
-            }
-        }
-
-        return null;
-    }
-
-    /**
-     * Aturan satu hari operasional: mulai dan selesai harus pada tanggal yang sama, pada hari operasional,
-     * dan di dalam jam buka–tutup (selesai tepat pada jam tutup masih boleh). null bila memenuhi.
-     *
-     * @return array{0:string,1:string}|null [nama field, pesan]
-     */
-    // Aturan: satu hari, hari operasional, dan dalam jam buka-tutup. Mengembalikan [field, pesan] atau null.
-    public function cekSatuHariOperasional(CarbonInterface $mulai, CarbonInterface $selesai): ?array
-    {
-        $aturan = $this->aturanJamKerja();
-        $rentang = $aturan['jam_buka'].' – '.$aturan['jam_tutup'];
-        if (! $mulai->isSameDay($selesai)) {
-            return ['tanggal_rencana_kembali', "Peminjaman hanya berlaku dalam satu hari operasional: mulai dan selesai harus pada tanggal yang sama (jam operasional {$rentang})."];
-        }
-        if (! in_array(self::HARI[(int) $mulai->format('w')], $aturan['hari'], true)) {
-            return ['tanggal_peminjaman', 'Peminjaman hanya dapat dijadwalkan pada hari operasional laboratorium ('.implode(', ', $aturan['hari']).').'];
-        }
-        if ($mulai->format('H:i') < $aturan['jam_buka'] || $mulai->format('H:i') >= $aturan['jam_tutup']) {
-            return ['tanggal_peminjaman', "Waktu mulai harus berada dalam jam operasional laboratorium ({$rentang})."];
-        }
-        if ($selesai->format('H:i') > $aturan['jam_tutup']) {
-            return ['tanggal_rencana_kembali', "Waktu selesai tidak boleh melewati jam tutup laboratorium ({$rentang})."];
-        }
-
-        return null;
-    }
-
-    /** "08:00" | "08:00:00" -> [8, 0, 0]. */
-    private function pecahJam(string $jam): array
-    {
-        $bagian = array_map('intval', explode(':', $jam));
-
-        return [$bagian[0] ?? 0, $bagian[1] ?? 0, $bagian[2] ?? 0];
     }
 
     /** Kewenangan memutuskan menurut tahap alur persetujuan (Dosen tahap 1, Laboran tahap akhir). */

@@ -10,6 +10,7 @@ use App\Http\Controllers\MahasiswaController;
 use App\Http\Controllers\PengajuanController;
 use App\Http\Controllers\PeriodeJadwalController;
 use App\Http\Controllers\PengembalianController;
+use App\Http\Controllers\ProfilController;
 use App\Http\Controllers\PeminjamanController;
 use App\Http\Controllers\PengaturanLaboratoriumController;
 use App\Http\Controllers\UserManagementController;
@@ -32,7 +33,7 @@ Route::post('logout', [AuthController::class, 'logout'])->name('logout');
 
 // Semua route di dalam grup ini wajib login (middleware silab.auth = SilabAuth).
 // Middleware 'silab.role:...' membatasi route per role; tambah role baru di sini.
-Route::middleware('silab.auth')->group(function () {
+Route::middleware(['silab.auth', 'silab.password'])->group(function () {
 
     // Beranda: dashboard ringkas sesuai role
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
@@ -40,7 +41,10 @@ Route::middleware('silab.auth')->group(function () {
     // Katalog: dapat dilihat semua role (hanya-baca untuk selain Laboran/Admin)
     Route::get('katalog', [AlatBahanController::class, 'index'])->name('katalog');
 
-    // Kelola Profil dinonaktifkan sementara (route, menu, dan halaman dihapus; data & kolom profil tetap ada).
+    // Profil Saya: semua role boleh ubah profil sendiri dan ganti password.
+    Route::get('profil', [ProfilController::class, 'index'])->name('profil.index');
+    Route::put('profil', [ProfilController::class, 'update'])->name('profil.update');
+    Route::put('profil/password', [ProfilController::class, 'password'])->name('profil.password');
 
     // Staf Prodi dan Laboran/Admin (Super Admin)
     Route::middleware('silab.role:' . Role::STAFF . ',' . Role::LABORAN)->group(function () {
@@ -79,7 +83,7 @@ Route::middleware('silab.auth')->group(function () {
     // Transaksi Peminjaman: pengajuan & riwayat (hanya Mahasiswa dan Dosen yang dapat mengajukan)
     Route::middleware('silab.role:' . Role::MAHASISWA . ',' . Role::DOSEN)->group(function () {
         Route::get('peminjaman', [PeminjamanController::class, 'index'])->name('peminjaman.index');
-        Route::post('peminjaman', [PeminjamanController::class, 'store'])->name('peminjaman.store');
+        Route::post('peminjaman', [PeminjamanController::class, 'store'])->middleware('throttle:10,1')->name('peminjaman.store');
         Route::get('peminjaman/riwayat', [PeminjamanController::class, 'riwayat'])->name('peminjaman.riwayat');
     });
 

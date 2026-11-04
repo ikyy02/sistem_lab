@@ -77,11 +77,11 @@
                     <td style="font-size:.82rem;">{{ $p->tanggal_pengajuan?->format('d/m/Y H:i') }}</td>
                     <td>
                         <div class="fw-semibold">{{ $p->nama_peminjam }}</div>
-                        <div style="font-size:.75rem;color:var(--text-muted);">{{ $p->identitas_peminjam }} · {{ $p->label_jenis }}</div>
+                        <div style="font-size:.8rem;color:var(--text-muted);">{{ $p->identitas_peminjam }} · {{ $p->label_jenis }}</div>
                     </td>
                     <td>
                         <span class="d-inline-block text-truncate align-middle" style="max-width:300px;" title="{{ $p->ringkasan }}">{{ $p->ringkasan }}</span>
-                        @if($p->keterangan)<div style="font-size:.75rem;color:var(--text-muted);text-truncate;" title="{{ $p->keterangan }}">{{ $p->keterangan }}</div>@endif
+                        @if($p->keterangan)<div style="font-size:.8rem;color:var(--text-muted);text-truncate;" title="{{ $p->keterangan }}">{{ $p->keterangan }}</div>@endif
                     </td>
                     <td>{{ $p->jumlah_barang }}</td>
                     <td style="font-size:.8rem;">
@@ -91,12 +91,12 @@
                     <td>
                         @include('peminjaman._status', ['status' => $p->status, 'terlambat' => $p->terlambat])
                         @if($p->menungguDosen())
-                            <div style="font-size:.75rem;color:var(--text-muted);">Menunggu keputusan Dosen</div>
+                            <div style="font-size:.8rem;color:var(--text-muted);">Menunggu keputusan Dosen</div>
                         @elseif($p->diteruskanKeLaboran())
-                            <div style="font-size:.75rem;color:var(--text-muted);">Disetujui Dosen, menunggu Laboran</div>
+                            <div style="font-size:.8rem;color:var(--text-muted);">Disetujui Dosen, menunggu Laboran</div>
                         @endif
                         @if($p->status === 'ditolak' && $p->alasan_ditolak)
-                            <div style="font-size:.75rem;color:var(--text-muted);" title="{{ $p->alasan_ditolak }}">Alasan: {{ \Illuminate\Support\Str::limit($p->alasan_ditolak, 40) }}</div>
+                            <div style="font-size:.8rem;color:var(--text-muted);" title="{{ $p->alasan_ditolak }}">Alasan: {{ \Illuminate\Support\Str::limit($p->alasan_ditolak, 40) }}</div>
                         @endif
                     </td>
                     <td class="text-end pe-4">

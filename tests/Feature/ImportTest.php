@@ -56,6 +56,7 @@ class ImportTest extends TestCase
         $akun = Akun::find('budi1@mhs.politala.ac.id');
         $this->assertSame('mahasiswa', $akun->role);
         $this->assertSame('3310100001', $akun->password); // password awal = NIM
+        $this->assertTrue($akun->wajib_ganti_password); // wajib diganti saat login pertama
     }
 
     public function test_import_mahasiswa_all_or_nothing_dan_email_unik_lintas_role(): void
@@ -77,7 +78,7 @@ class ImportTest extends TestCase
     {
         $this->prodi('D3 Uji');
         $file = $this->excel(['NUPTK/NIDN', 'Nama', 'Prodi', 'Email', 'WhatsApp', 'Status', 'Password'], [
-            ['0011', 'Dosen Satu', 'D3 Uji', 'd1@politala.ac.id', '', 'Aktif', 'abcd'],
+            ['0011', 'Dosen Satu', 'D3 Uji', 'd1@politala.ac.id', '', 'Aktif', 'abcd1234'],
         ]);
         $this->admin()->post(route('kelola-user.import', 'dosen'), ['file' => $file])->assertSessionHas('success');
         $this->assertSame('dosen', Akun::find('d1@politala.ac.id')->role);

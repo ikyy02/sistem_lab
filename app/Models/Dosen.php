@@ -23,4 +23,10 @@ class Dosen extends Model
     {
         return $this->belongsTo(Prodi::class, 'id_prodi', 'id_prodi');
     }
+
+    /** Batas prodi Staf Prodi (AuthService::batasProdi()); null (Laboran) = semua prodi. */
+    public function scopeBatasProdi($query, ?int $idProdi)
+    {
+        return $query->when($idProdi, fn ($q) => $q->where('dosens.id_prodi', $idProdi));
+    }
 }

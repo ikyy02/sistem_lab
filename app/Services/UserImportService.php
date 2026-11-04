@@ -2,11 +2,11 @@
 
 namespace App\Services;
 
-use App\Http\Controllers\UserManagementController;
 use App\Models\Akun;
 use App\Support\ExcelFile;
 use App\Support\Options;
 use App\Support\Role;
+use App\Support\UserKonfigurasi;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -15,7 +15,7 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 /**
  * Import & template untuk Dosen, Staff Prodi, Laboran/Admin (Excel .xlsx/.xls).
  * (Mahasiswa memakai MahasiswaImportService sendiri karena aturan email institusi & kelas-nya lebih khusus.)
- * Kolom mengikuti field kategori pada UserManagementController::config() + kolom Password.
+ * Kolom mengikuti field kategori pada UserKonfigurasi::config() + kolom Password.
  * Semua-atau-tidak-sama-sekali: satu baris bermasalah -> tidak ada data yang disimpan.
  */
 class UserImportService
@@ -24,11 +24,11 @@ class UserImportService
     public const MAX_ERRORS = 100;
 
     /** Judul kolom template => nama kolom database, untuk kategori selain mahasiswa. */
-    // Judul kolom Excel dibuat dari field form kategori + kolom Password; ubah field di UserManagementController::config otomatis ikut.
+    // Judul kolom Excel dibuat dari field form kategori + kolom Password; ubah field di UserKonfigurasi::config otomatis ikut.
     public static function columns(string $kategori): array
     {
         $map = ['Password' => 'password'];
-        foreach (UserManagementController::config($kategori)['fields'] as $f) {
+        foreach (UserKonfigurasi::config($kategori)['fields'] as $f) {
             $map = [$f['label'] => $f['name']] + $map;
         }
 
@@ -48,7 +48,7 @@ class UserImportService
         }
 
         $guide = $book->createSheet()->setTitle('Petunjuk');
-        $rows = [['Petunjuk pengisian'], ['Isi data pada sheet "Data" mulai baris ke-2. Jangan ubah judul kolom.'], ['Password minimal 4 karakter.']];
+        $rows = [['Petunjuk pengisian'], ['Isi data pada sheet "Data" mulai baris ke-2. Jangan ubah judul kolom.'], ['Password minimal 8 karakter.']];
         if ($kategori === Role::DOSEN || $kategori === Role::STAFF) {
             $rows[] = ['Prodi harus salah satu dari: ' . implode(', ', Options::prodi())];
         }
@@ -69,21 +69,8 @@ class UserImportService
         $rows = ExcelFile::rows($file, self::MAX_ROWS + 50);
 
         $header = array_shift($rows) ?? [];
-        // $index = peta nama kolom database => nomor kolom di Excel (judul dicocokkan tanpa peduli huruf besar/spasi).
-        $index = [];
-        foreach ($header as $i => $h) {
-            $key = preg_replace('/[^a-z]/', '', mb_strtolower(trim((string) $h)));
-            foreach ($columns as $label => $col) {
-                if ($key === preg_replace('/[^a-z]/', '', mb_strtolower($label))) {
-                    $index[$col] = $i;
-                }
-            }
-        }
-        $missing = array_diff(array_values($columns), array_keys($index));
-        if ($missing) {
-            $labels = array_flip($columns);
-            throw new \RuntimeException('Judul kolom tidak sesuai template. Kolom tidak ditemukan: ' . implode(', ', array_map(fn ($c) => $labels[$c], $missing)) . '.');
-        }
+        // $index = peta nama kolom database => nomor kolom di Excel.
+        $index = ExcelFile::matchHeaders($header, $columns);
 
         // Muat email/ID yang sudah ada sekali saja agar pengecekan duplikat cepat (tanpa query per baris).
         $existingEmail = [];
@@ -92,7 +79,7 @@ class UserImportService
         }
         $existingUnique = [];
         $uniqueCol = (new $model)->getKeyName(); // nuptk_nidn / id_pegawai
-        $keyLabel = array_column(UserManagementController::config($kategori)['fields'], 'label', 'name')[$uniqueCol];
+        $keyLabel = array_column(UserKonfigurasi::config($kategori)['fields'], 'label', 'name')[$uniqueCol];
         {
             foreach ($model::pluck($uniqueCol) as $v) {
                 $existingUnique[mb_strtolower((string) $v)] = true;
@@ -119,7 +106,7 @@ class UserImportService
             $msg = [];
             $record = [];
 
-            foreach (UserManagementController::config($kategori)['fields'] as $f) {
+            foreach (UserKonfigurasi::config($kategori)['fields'] as $f) {
                 $val = preg_replace('/\s+/u', ' ', $get($f['name']));
                 if ($f['required'] && $val === '') {
                     $msg[] = $f['label'] . ' wajib diisi.';
@@ -136,7 +123,7 @@ class UserImportService
                 if ($f['name'] === 'email' && $val !== '' && (! filter_var($val, FILTER_VALIDATE_EMAIL) || mb_strlen($val) > 50)) {
                     $msg[] = 'Format Email tidak valid (maksimal 50 karakter).';
                 }
-                if ($f['name'] === 'no_whatsapp' && $val !== '' && ! preg_match(UserManagementController::WA_REGEX, $val)) {
+                if ($f['name'] === 'no_whatsapp' && $val !== '' && ! preg_match(UserKonfigurasi::WA_REGEX, $val)) {
                     $msg[] = 'WhatsApp tidak valid. Gunakan format 08xxxxxxxxxx.';
                 }
                 $record[$f['name']] = $val !== '' ? $val : null;
@@ -144,8 +131,8 @@ class UserImportService
 
             // Password dibaca apa adanya dari Excel (hashing ditunda).
             $password = $get('password');
-            if (mb_strlen($password) < 4) {
-                $msg[] = 'Password minimal 4 karakter.';
+            if (mb_strlen($password) < 8) {
+                $msg[] = 'Password minimal 8 karakter.';
             }
 
             $email = mb_strtolower((string) $record['email']);

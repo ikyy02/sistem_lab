@@ -54,7 +54,7 @@ class MahasiswaMandiriTest extends TestCase
 
         $admin->post(route('kelola-user.store', 'mahasiswa'), [
             'nim' => '2210109001', 'nama' => 'Tanpa Kelas', 'id_prodi' => $prodi->id_prodi,
-            'email' => 'tanpakelas@mhs.politala.ac.id', 'password' => 'abcd',
+            'email' => 'tanpakelas@mhs.politala.ac.id', 'password' => 'abcd1234',
         ])->assertSessionHasNoErrors();
         $this->assertNotNull(Mahasiswa::find('2210109001'));
 

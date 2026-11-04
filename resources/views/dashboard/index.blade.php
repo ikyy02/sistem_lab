@@ -13,7 +13,7 @@
 
 <div class="d-flex flex-wrap align-items-start justify-content-between gap-3 mb-4">
     <div>
-        <h2 class="font-display fw-semibold mb-1" style="font-size:1.7rem;">{{ $sapaan }}, {{ explode(' ', $me['nama'])[0] }}.</h2>
+        <h2 class="greet mb-1">{{ $sapaan }}, <em>{{ explode(' ', $me['nama'])[0] }}</em>.</h2>
         <p class="mb-0" style="color:var(--text-muted);font-size:.9rem;">{{ $isAdmin ? 'Ringkasan pengajuan dan peminjaman yang perlu ditangani.' : 'Ringkasan pengajuan peminjaman Anda dan pengajuan yang perlu Anda proses.' }}</p>
     </div>
     @unless($isAdmin)
@@ -30,7 +30,7 @@
                 <div class="d-flex align-items-center gap-3">
                     <div style="width:44px;height:44px;border-radius:10px;background:var(--gold-tint);color: var(--gold-text);display:flex;align-items:center;justify-content:center;"><i class="bi bi-hourglass-split fs-5"></i></div>
                     <div>
-                        <div class="fw-bold" style="font-size:1.4rem;">{{ $menunggu }}</div>
+                        <div class="stat-num">{{ $menunggu }}</div>
                         <div style="font-size:.8rem;color:var(--text-muted);">Pengajuan menunggu persetujuan</div>
                     </div>
                 </div>
@@ -41,7 +41,7 @@
                 <div class="d-flex align-items-center gap-3">
                     <div style="width:44px;height:44px;border-radius:10px;background:var(--primary-soft);color:var(--ink);display:flex;align-items:center;justify-content:center;"><i class="bi bi-arrow-left-right fs-5"></i></div>
                     <div>
-                        <div class="fw-bold" style="font-size:1.4rem;">{{ $berlangsung }}</div>
+                        <div class="stat-num">{{ $berlangsung }}</div>
                         <div style="font-size:.8rem;color:var(--text-muted);">Peminjaman sedang berlangsung</div>
                     </div>
                 </div>
@@ -86,7 +86,7 @@
         <div class="col-12 col-lg-6">
             <div class="card-modern p-4 h-100">
                 <div class="d-flex align-items-center justify-content-between mb-2">
-                    <h3 class="font-display fw-semibold mb-0" style="font-size:1.05rem;">Pengajuan terbaru</h3>
+                    <h3 class="h-card mb-0">Pengajuan terbaru</h3>
                     <a href="{{ route('peminjaman.riwayat') }}" style="font-size:.8rem;">Lihat semua</a>
                 </div>
                 @if($terbaru->isEmpty())
@@ -100,7 +100,7 @@
                         <a href="{{ route('peminjaman.show', $p->id_peminjaman) }}" class="list-group-item list-group-item-action px-0 py-2 d-flex align-items-center gap-3">
                             <div class="min-w-0 flex-grow-1">
                                 <div class="fw-semibold text-truncate" style="font-size:.86rem;">#{{ $p->id_peminjaman }} · {{ $p->ringkasan }}</div>
-                                <div style="font-size:.75rem;color:var(--text-muted);">{{ $p->tanggal_pengajuan?->format('d/m/Y H:i') }}</div>
+                                <div style="font-size:.8rem;color:var(--text-muted);">{{ $p->tanggal_pengajuan?->format('d/m/Y H:i') }}</div>
                             </div>
                             @include('peminjaman._status', ['status' => $p->status, 'terlambat' => $p->terlambat])
                         </a>
@@ -111,7 +111,7 @@
         </div>
         <div class="col-12 col-lg-6">
             <div class="card-modern p-4 h-100">
-                <h3 class="font-display fw-semibold mb-2" style="font-size:1.05rem;">Peminjaman terdekat</h3>
+                <h3 class="h-card mb-2">Peminjaman terdekat</h3>
                 @if($terdekat)
                     <div class="d-flex align-items-start gap-3">
                         <div style="width:44px;height:44px;border-radius:10px;background:var(--primary-soft);color:var(--ink);display:flex;align-items:center;justify-content:center;"><i class="bi bi-calendar-event fs-5"></i></div>

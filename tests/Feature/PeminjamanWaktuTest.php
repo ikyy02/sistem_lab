@@ -75,8 +75,9 @@ class PeminjamanWaktuTest extends TestCase
     public function test_service_menolak_waktu_tidak_valid_dan_tidak_menyimpan_apa_pun(string $mulai, string $selesai, array $gagal): void
     {
         $svc = app(PeminjamanService::class);
-        foreach (['mahasiswa' => $this->mahasiswa(), 'dosen' => $this->dosen()] as $profil) {
+        foreach ([fn () => $this->mahasiswa(), fn () => $this->dosen()] as $buat) {
             foreach (['ruangan', 'alat', 'bahan', 'gabungan'] as $jenis) {
+                $profil = $buat(); // pengguna baru tiap pengajuan: satu pengguna hanya boleh satu pengajuan aktif
                 $data = $this->payload($mulai, $selesai, $jenis);
                 if ($gagal === []) {
                     $this->assertSame('menunggu', $svc->ajukan($profil->email, $data)->status);
@@ -113,6 +114,14 @@ class PeminjamanWaktuTest extends TestCase
             $this->tidakAdaData(); // tidak ada transaksi parsial
         }
         $this->assertSame($gagal === [] ? 2 : 0, Peminjaman::count());
+    }
+
+    public function test_ajukan_di_menit_sekarang_tidak_melanggar_check_tanggal(): void
+    {
+        Carbon::setTestNow('2030-01-07 08:00:30');
+        $p = app(PeminjamanService::class)->ajukan($this->mahasiswa()->email, $this->payload('2030-01-07 08:00', '2030-01-07 09:00', 'alat'));
+        $p = $p->fresh();
+        $this->assertTrue($p->tanggal_pengajuan->lte($p->tanggal_peminjaman));
     }
 
     public function test_jam_18_selesai_17_tidak_menghasilkan_transaksi_baru(): void

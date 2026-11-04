@@ -24,22 +24,29 @@ class AkademikImportService
     public const MAX_ERRORS = 100;
 
     /** Judul kolom template => kunci data. */
-    public static function columns(string $tab): array
+    // Mata Kuliah milik satu prodi: Staf Prodi otomatis prodinya sendiri (tanpa kolom Prodi); Laboran wajib mengisi kolom Prodi.
+    public static function columns(string $tab, ?int $batasProdi = null): array
     {
-        return $tab === 'kelas'
-            ? ['Nama Kelas' => 'nama_kelas', 'Prodi' => 'prodi']
-            : ['Kode' => 'kode_mk', 'Mata Kuliah' => 'nama_mk', 'SKS' => 'sks', 'Semester' => 'semester'];
+        if ($tab === 'kelas') {
+            return ['Nama Kelas' => 'nama_kelas', 'Prodi' => 'prodi'];
+        }
+
+        return ['Kode' => 'kode_mk', 'Mata Kuliah' => 'nama_mk', 'SKS' => 'sks', 'Semester' => 'semester']
+            + ($batasProdi === null ? ['Prodi' => 'prodi'] : []);
     }
 
-    public function template(string $tab): array
+    public function template(string $tab, ?int $batasProdi = null): array
     {
-        $headers = array_keys(self::columns($tab));
+        $headers = array_keys(self::columns($tab, $batasProdi));
         $guides = ['Petunjuk pengisian', 'Isi data pada sheet "Data" mulai baris ke-2. Jangan ubah judul kolom.'];
         if ($tab === 'kelas') {
             $guides[] = 'Nama Kelas maksimal 100 karakter; harus unik pada prodi yang sama.';
-            $guides[] = 'Prodi harus salah satu dari: ' . (implode(', ', Options::prodi()) ?: '(belum ada prodi)') . '.';
+            $guides[] = 'Prodi harus salah satu dari: ' . (implode(', ', Options::prodi($batasProdi)) ?: '(belum ada prodi)') . '.';
         } else {
-            $guides[] = 'Kode maksimal 15 karakter dan Mata Kuliah maksimal 100 karakter; keduanya harus unik.';
+            $guides[] = 'Kode maksimal 15 karakter dan Mata Kuliah maksimal 100 karakter; keduanya harus unik pada prodi yang sama.';
+            $guides[] = $batasProdi === null
+                ? 'Prodi harus salah satu dari: ' . (implode(', ', Options::prodi()) ?: '(belum ada prodi)') . '.'
+                : 'Mata kuliah otomatis masuk ke prodi Anda; tidak perlu kolom Prodi.';
             $guides[] = 'SKS: angka bulat 1 sampai 10.';
             $guides[] = 'Semester: ' . implode(' atau ', array_map('ucfirst', Jadwal::SEMESTER)) . '.';
         }
@@ -61,38 +68,26 @@ class AkademikImportService
     }
 
     /** @return array{success: bool, total: int, inserted?: int, error_count?: int, errors?: array} */
-    public function import(UploadedFile $file, string $tab): array
+    public function import(UploadedFile $file, string $tab, ?int $batasProdi = null): array
     {
         $kelas = $tab === 'kelas';
-        $map = self::columns($tab);
+        $map = self::columns($tab, $batasProdi);
         $rows = ExcelFile::rows($file, self::MAX_ROWS + 50);
         $header = array_shift($rows) ?? [];
 
-        $index = [];
-        foreach ($header as $i => $h) {
-            $key = preg_replace('/[^a-z]/', '', mb_strtolower(trim((string) $h)));
-            foreach ($map as $title => $col) {
-                if ($key === preg_replace('/[^a-z]/', '', mb_strtolower($title))) {
-                    $index[$col] = $i;
-                }
-            }
-        }
-        $missing = array_diff(array_values($map), array_keys($index));
-        if ($missing) {
-            $labels = array_flip($map);
-            throw new RuntimeException('Judul kolom tidak sesuai template. Kolom tidak ditemukan: ' . implode(', ', array_map(fn ($c) => $labels[$c], $missing)) . '.');
-        }
+        $index = ExcelFile::matchHeaders($header, $map);
 
-        $prodi = array_map('mb_strtolower', Options::prodi());
+        $prodi = array_map('mb_strtolower', Options::prodi($batasProdi)); // Staf Prodi: hanya prodinya, prodi lain dilaporkan "tidak ada"
         $existing = [];
         if ($kelas) {
             foreach (Kelas::get(['nama_kelas', 'id_prodi']) as $k) {
                 $existing[$k->id_prodi . '|' . mb_strtolower($k->nama_kelas)] = true;
             }
         } else {
-            foreach (MataKuliah::get(['kode_mk', 'nama_mk']) as $m) {
-                $existing['k|' . mb_strtolower($m->kode_mk)] = true;
-                $existing['n|' . mb_strtolower($m->nama_mk)] = true;
+            // Kode dan nama unik per prodi.
+            foreach (MataKuliah::get(['kode_mk', 'nama_mk', 'id_prodi']) as $m) {
+                $existing['k|' . $m->id_prodi . '|' . mb_strtolower($m->kode_mk)] = true;
+                $existing['n|' . $m->id_prodi . '|' . mb_strtolower($m->nama_mk)] = true;
             }
         }
 
@@ -140,8 +135,13 @@ class AkademikImportService
                 if (! in_array($sem, Jadwal::SEMESTER, true)) {
                     $msg[] = 'Semester hanya Ganjil atau Genap.';
                 }
-                $keys = ['k|' . mb_strtolower($kode), 'n|' . mb_strtolower($nama)];
-                $record = ['kode_mk' => $kode, 'nama_mk' => $nama, 'sks' => (int) $sks, 'semester' => $sem];
+                // Staf Prodi: prodinya sendiri; Laboran: dari kolom Prodi (prodi tak dikenal dilaporkan).
+                $idProdi = $batasProdi ?? array_search(mb_strtolower($get('prodi')), $prodi, true);
+                if ($idProdi === false) {
+                    $msg[] = 'Prodi "' . $get('prodi') . '" tidak ada.';
+                }
+                $keys = ['k|' . $idProdi . '|' . mb_strtolower($kode), 'n|' . $idProdi . '|' . mb_strtolower($nama)];
+                $record = ['kode_mk' => $kode, 'nama_mk' => $nama, 'sks' => (int) $sks, 'semester' => $sem, 'id_prodi' => $idProdi];
             }
 
             if (! $msg) {

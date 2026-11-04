@@ -6,9 +6,11 @@ use App\Http\Requests\MahasiswaRequest;
 use App\Services\AkunService;
 use App\Services\AuthService;
 use App\Services\UserImportService;
+use App\Support\Cari;
 use App\Support\ExcelFile;
 use App\Support\Options;
 use App\Support\Role;
+use App\Support\UserKonfigurasi;
 use Illuminate\Validation\Rule;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -22,65 +24,11 @@ class UserManagementController extends Controller
 {
     public const PER_PAGE_OPTIONS = [10, 25, 50, 100];
 
-    public const WA_REGEX = '/^(?:\+62|62|0)8[1-9][0-9]{7,11}$/';
-
-    /**
-     * Konfigurasi tiap kategori.
-     * columns: kolom tabel [key => [label, sortable]]; search: kolom yang dicari; fields: input form.
-     */
-    // Satu menu untuk 4 role. Tambah kolom/field form per kategori di sini (match menurut role).
-    public static function config(string $kategori): array
-    {
-        $wa = ['name' => 'no_whatsapp', 'label' => 'WhatsApp', 'type' => 'text', 'placeholder' => '08xxxxxxxxxx', 'required' => false];
-        $email = fn ($ph = 'nama@domain.ac.id') => ['name' => 'email', 'label' => 'Email', 'type' => 'email', 'placeholder' => $ph, 'required' => true];
-        $nama = ['name' => 'nama', 'label' => 'Nama', 'type' => 'text', 'placeholder' => 'Nama lengkap', 'required' => true];
-        $idPegawai = ['name' => 'id_pegawai', 'label' => 'ID Pegawai/NIP', 'type' => 'text', 'placeholder' => 'ID Pegawai/NIP', 'required' => true];
-        $prodi = ['name' => 'id_prodi', 'label' => 'Prodi', 'type' => 'select', 'options' => Options::prodi(), 'placeholder' => 'Pilih Prodi', 'required' => true];
-
-        // Tiap role punya kolom tabel, kolom pencarian, urutan default, dan field form sendiri.
-        return match ($kategori) {
-            Role::MAHASISWA => [
-                'columns' => ['nim' => ['NIM', true], 'nama' => ['Nama', true], 'nama_prodi' => ['Prodi', true], 'email' => ['Email', true], 'no_whatsapp' => ['WhatsApp', false]],
-                'search' => ['mahasiswas.nim', 'mahasiswas.nama', 'prodis.nama_prodi', 'mahasiswas.email', 'mahasiswas.no_whatsapp'],
-                'default_sort' => 'nim',
-                'fields' => [
-                    ['name' => 'nim', 'label' => 'NIM', 'type' => 'text', 'placeholder' => 'Contoh: 2210101001', 'required' => true],
-                    $nama,
-                    $prodi,
-                    $email('nim@' . MahasiswaRequest::EMAIL_DOMAIN),
-                    $wa,
-                ],
-            ],
-            Role::DOSEN => [
-                'columns' => ['nuptk_nidn' => ['NUPTK/NIDN', true], 'nama' => ['Nama', true], 'nama_prodi' => ['Prodi', true], 'email' => ['Email', true], 'no_whatsapp' => ['WhatsApp', false], 'status' => ['Status', false]],
-                'search' => ['dosens.nuptk_nidn', 'dosens.nama', 'prodis.nama_prodi', 'dosens.email', 'dosens.no_whatsapp'],
-                'default_sort' => 'nama',
-                'fields' => [
-                    ['name' => 'nuptk_nidn', 'label' => 'NUPTK/NIDN', 'type' => 'text', 'placeholder' => 'NUPTK atau NIDN', 'required' => true],
-                    $nama, $prodi, $email(), $wa,
-                    ['name' => 'status', 'label' => 'Status', 'type' => 'select', 'options' => ['aktif' => 'Aktif', 'nonaktif' => 'Nonaktif'], 'placeholder' => 'Pilih Status', 'required' => true],
-                ],
-            ],
-            Role::STAFF => [
-                'columns' => ['id_pegawai' => ['ID Pegawai/NIP', true], 'nama' => ['Nama', true], 'nama_prodi' => ['Prodi', true], 'email' => ['Email', true], 'no_whatsapp' => ['WhatsApp', false]],
-                'search' => ['staff_prodis.id_pegawai', 'staff_prodis.nama', 'prodis.nama_prodi', 'staff_prodis.email', 'staff_prodis.no_whatsapp'],
-                'default_sort' => 'nama',
-                'fields' => [$idPegawai, $nama, $prodi, $email(), $wa],
-            ],
-            default => [
-                'columns' => ['id_pegawai' => ['ID Pegawai/NIP', true], 'nama' => ['Nama', true], 'email' => ['Email', true], 'no_whatsapp' => ['WhatsApp', false]],
-                'search' => ['laborans.id_pegawai', 'laborans.nama', 'laborans.email', 'laborans.no_whatsapp'],
-                'default_sort' => 'nama',
-                'fields' => [$idPegawai, $nama, $email(), $wa],
-            ],
-        };
-    }
-
     // Daftar user per kategori: pencarian multi-kata, urut kolom whitelist, pagination.
     public function index(Request $request)
     {
         $kategori = $this->kategori($request->query('kategori'));
-        $config = self::config($kategori);
+        $config = UserKonfigurasi::config($kategori);
         $model = Role::MODELS[$kategori];
         $table = (new $model)->getTable();
         $search = mb_substr(trim($this->str($request->query('search'))), 0, 100);
@@ -96,15 +44,7 @@ class UserManagementController extends Controller
         if ($kategori !== Role::LABORAN) {
             $query->join('prodis', 'prodis.id_prodi', '=', $table . '.id_prodi')->addSelect('prodis.nama_prodi');
         }
-        $words = preg_split('/\s+/u', $search, -1, PREG_SPLIT_NO_EMPTY) ?: [];
-        foreach (array_slice($words, 0, 5) as $word) {
-            $like = '%' . str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $word) . '%';
-            $query->where(function ($group) use ($config, $like) {
-                foreach ($config['search'] as $col) {
-                    $group->orWhereRaw("{$col} LIKE ? ESCAPE '!'", [$like]);
-                }
-            });
-        }
+        Cari::kolom($query, $search, $config['search']);
         $sortColumn = $sort === 'nama_prodi' ? 'prodis.nama_prodi' : $table . '.' . $sort;
         $data = $query->orderBy($sortColumn, $direction)->orderBy($table . '.' . (new $model)->getKeyName())->paginate($perPage)->withQueryString();
         if ($data->currentPage() > $data->lastPage()) {
@@ -222,7 +162,7 @@ class UserManagementController extends Controller
         $nama = ['bail', 'required', 'string', 'min:2', 'max:100'];
         $prodi = ['bail', 'required', 'integer', Rule::exists('prodis', 'id_prodi')];
         $email = ['bail', 'required', 'email', 'max:50', $emailUnique];
-        $wa = ['bail', 'nullable', 'string', 'max:20', 'regex:' . self::WA_REGEX];
+        $wa = ['bail', 'nullable', 'string', 'max:20', 'regex:' . UserKonfigurasi::WA_REGEX];
         $rules = match ($kategori) {
             Role::MAHASISWA => [
                 'nim' => ['bail', 'required', 'string', 'max:20', 'regex:/^[A-Za-z0-9]+$/', Rule::unique($table, 'nim')->ignore($id, 'nim')],
@@ -239,7 +179,7 @@ class UserManagementController extends Controller
             default => ['id_pegawai' => $pegawaiRule, 'nama' => $nama, 'email' => $email, 'no_whatsapp' => $wa],
         };
         // Password wajib saat tambah, boleh kosong saat edit (hashing ditunda ke tahap lain).
-        $rules['password'] = [$id ? 'nullable' : 'required', 'string', 'min:4', 'max:100'];
+        $rules['password'] = [$id ? 'nullable' : 'required', 'string', 'min:8', 'max:100'];
         $validator = Validator::make($input, $rules, MahasiswaRequest::errorMessages() + [
             'no_whatsapp.regex' => 'Nomor WhatsApp tidak valid. Gunakan format 08xxxxxxxxxx.',
             'nuptk_nidn.unique' => 'NUPTK/NIDN sudah terdaftar.',
@@ -267,7 +207,7 @@ class UserManagementController extends Controller
     // Rapikan input (spasi, huruf kecil email, dst.) sebelum divalidasi.
     private function normalize(Request $request, string $kategori): array
     {
-        $fields = array_column(self::config($kategori)['fields'], 'name');
+        $fields = array_column(UserKonfigurasi::config($kategori)['fields'], 'name');
         $in = $request->only($fields);
         $base = MahasiswaRequest::normalize($in + ['nim' => null, 'nama' => null, 'id_prodi' => null, 'email' => null, 'no_whatsapp' => null]);
         $out = [];

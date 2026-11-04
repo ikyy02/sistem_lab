@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Akun;
+use App\Models\StaffProdi;
 use App\Support\Role;
 use Illuminate\Http\Request;
 
@@ -25,8 +26,23 @@ class AuthService
         if (! $profil) {
             return null; // setiap role wajib punya profil
         }
+        // Dosen nonaktif tidak boleh masuk; hasilnya sama dengan password salah agar status tidak bocor.
+        if ($akun->role === Role::DOSEN && $profil->status !== 'aktif') {
+            return null;
+        }
 
         return ['role' => $akun->role, 'key' => (string) $profil->getKey(), 'nama' => $profil->nama, 'email' => $akun->email];
+    }
+
+    /** id_prodi yang membatasi data pengguna: Staf Prodi = prodinya sendiri; role lain (Laboran) = null (tanpa batas). */
+    public static function batasProdi(): ?int
+    {
+        $me = self::user();
+        if (($me['role'] ?? null) !== Role::STAFF) {
+            return null;
+        }
+
+        return (int) StaffProdi::where('email', $me['email'])->value('id_prodi') ?: abort(403);
     }
 
     public function login(Request $request, array $identity): void

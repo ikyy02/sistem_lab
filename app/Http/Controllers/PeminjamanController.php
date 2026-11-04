@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\Cari;
 use App\Models\AlatBahan;
 use App\Models\Dosen;
 use App\Models\Peminjaman;
+use App\Models\PengaturanOperasional;
 use App\Models\Ruangan;
 use App\Services\AuthService;
 use App\Services\PeminjamanService;
@@ -26,9 +28,10 @@ class PeminjamanController extends Controller
     public const PESAN_MINIMAL_ITEM = 'Pilih minimal satu ruangan, alat, atau bahan yang ingin dipinjam sebelum mengajukan peminjaman.';
 
     /** Halaman Ajukan Peminjaman + data pilihan form (katalog, ruangan, dosen, jam kerja). */
-    public function index(PeminjamanService $service)
+    public function index()
     {
         $me = AuthService::user();
+        $operasional = PengaturanOperasional::ambil();
         $roleDosen = ($me['role'] ?? null) === Role::DOSEN;
 
         // Form pengajuan hanya menampilkan katalog yang stoknya masih ada.
@@ -46,9 +49,10 @@ class PeminjamanController extends Controller
             'opsiDosen' => Dosen::where('status', 'aktif')->orderBy('nama')->get(['nama', 'email']),
             'me' => $me,
             'roleDosen' => $roleDosen,
-            'aturanJamKerja' => $service->aturanJamKerja(),
+            'peminjamanAktif' => Peminjaman::aktifMilik($me['email'])->orderByDesc('id_peminjaman')->first(),
+            'aturanJamKerja' => $operasional->aturan(),
             // Batas waktu terendah (hari & jam operasional pertama yang belum lewat).
-            'awalIzin' => $service->waktuPalingAwal(),
+            'awalIzin' => $operasional->waktuPalingAwal(),
         ]);
     }
 
@@ -184,8 +188,8 @@ class PeminjamanController extends Controller
             ->with(Peminjaman::withProfil())
             ->where('email_peminjam', $me['email'])
             ->when($status, fn ($q) => $q->where('status', $status));
-        foreach (array_slice(preg_split('/\s+/u', $search, -1, PREG_SPLIT_NO_EMPTY) ?: [], 0, 5) as $word) {
-            $like = '%'.str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $word).'%';
+        foreach (Cari::kata($search) as $word) {
+            $like = Cari::like($word);
             $query->where(function ($g) use ($like) {
                 $g->whereRaw("peminjamans.keterangan LIKE ? ESCAPE '!'", [$like])
                     ->orWhereExists(fn ($q) => $q->selectRaw('1')->from('peminjaman_details as d')
@@ -255,7 +259,7 @@ class PeminjamanController extends Controller
         ]);
     }
 
-    /** Batalkan peminjaman ber-ruangan (peminjam, sampai 23.59 H-1). */
+    /** Batalkan peminjaman oleh peminjam (aturan di Peminjaman::bisaDibatalkanOleh). */
     public function batalkan(int $id, PeminjamanService $service)
     {
         $service->batalkan($id, AuthService::user()['email']);

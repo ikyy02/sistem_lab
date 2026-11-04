@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\Cari;
 use App\Models\Peminjaman;
 use App\Services\AuthService;
 use App\Services\PeminjamanService;
@@ -31,8 +32,8 @@ class PengajuanController extends Controller
             ->dapatDiprosesOleh($me['email'], $me['role'])
             ->when($status === 'menunggu', fn ($q) => $q->menungguTindakan($me['email'], $me['role']))
             ->when(! in_array($status, ['semua', 'menunggu'], true), fn ($q) => $q->where('status', $status));
-        foreach (array_slice(preg_split('/\s+/u', $search, -1, PREG_SPLIT_NO_EMPTY) ?: [], 0, 5) as $word) {
-            $like = '%'.str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $word).'%';
+        foreach (Cari::kata($search) as $word) {
+            $like = Cari::like($word);
             $query->where(function ($g) use ($like) {
                 $g->whereRaw("email_peminjam LIKE ? ESCAPE '!'", [$like])
                     ->orWhereRaw("keterangan LIKE ? ESCAPE '!'", [$like])

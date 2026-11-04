@@ -9,6 +9,7 @@ use App\Models\Jadwal;
 use App\Models\Kelas;
 use App\Models\Laboran;
 use App\Models\Mahasiswa;
+use App\Models\MataKuliah;
 use App\Models\Prodi;
 use App\Models\Ruangan;
 use App\Models\Satuan;
@@ -84,6 +85,13 @@ trait MembuatData
             'nama' => "Barang {$n}", 'jenis' => $jenis, 'id_satuan' => $this->satuan()->id_satuan, 'stok' => $stok,
             'harga' => 1000, 'id_ruangan' => ($o['id_ruangan'] ?? $this->ruangan()->id_ruangan), 'gambar' => 'x.jpg',
         ]);
+    }
+
+    protected function mataKuliah(array $o = []): MataKuliah
+    {
+        $n = $this->n();
+
+        return MataKuliah::create($o + ['kode_mk' => "MK{$n}", 'nama_mk' => "Mata Kuliah {$n}", 'sks' => 3, 'semester' => 'ganjil', 'id_prodi' => $this->prodi()->id_prodi]);
     }
 
     protected function kelas(): Kelas

@@ -19,7 +19,7 @@ class JadwalService
     public function simpan(array $data, ?Jadwal $jadwal = null): Jadwal
     {
         $v = Validator::make($data, [
-            'id_mata_kuliah' => ['nullable', 'integer', Rule::exists('mata_kuliahs', 'id_mata_kuliah')],
+            'id_mata_kuliah' => ['required', 'integer', Rule::exists('mata_kuliahs', 'id_mata_kuliah')],
             'id_kelas' => ['required', 'integer', Rule::exists('kelas', 'id_kelas')],
             'nuptk_nidn' => ['required', 'string', Rule::exists('dosens', 'nuptk_nidn')],
             'id_ruangan' => ['required', 'integer', Rule::exists('ruangans', 'id_ruangan')],
@@ -31,6 +31,8 @@ class JadwalService
             'semester' => ['required', Rule::in(['ganjil', 'genap'])],
         ], [
             'tahun_akademik.regex' => 'Tahun akademik berformat 2025/2026.',
+            'id_mata_kuliah.required' => 'Pilih mata kuliah dari daftar.',
+            'id_mata_kuliah.exists' => 'Pilih mata kuliah dari daftar.',
         ]);
         // Validasi lanjutan: tahun akademik harus berurutan dan jam mulai < jam selesai.
         $v->after(function ($v) use ($data) {

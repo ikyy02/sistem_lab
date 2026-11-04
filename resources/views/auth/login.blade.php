@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Masuk — SIARKA</title>
     <meta name="application-name" content="SIARKA">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+    @include('layouts._fonts')
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
     @include('layouts._theme')
@@ -16,16 +16,16 @@
         .lg-side { background: var(--ink); color: #fff; padding: 48px; display: flex; flex-direction: column; justify-content: space-between;
             background-image: linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px); background-size: 44px 44px; }
         .lg-brand { display: flex; align-items: center; gap: 12px; text-decoration: none; color: #fff; }
-        .lg-brand-name { font-family: 'Fraunces', serif; font-weight: 600; font-size: 1.3rem; letter-spacing: .02em; line-height: 1.1; }
-        .lg-side h1 { font-family: 'Fraunces', serif; font-weight: 600; font-size: clamp(1.7rem, 2.6vw, 2.3rem); line-height: 1.2; margin: 0 0 14px; }
-        .lg-side h1 em { font-style: normal; color: var(--gold-bright); }
-        .lg-side p { color: #D6D3CB; line-height: 1.7; max-width: 400px; margin: 0; }
+        .lg-brand-name { font-family: var(--font-accent); font-weight: 600; font-size: 1.15rem; letter-spacing: .02em; line-height: 1.1; }
+        .lg-side h1 { font-family: var(--font-serif); font-weight: 500; font-size: clamp(2.1rem, 3.4vw, 3rem); line-height: 1.08; letter-spacing: -.025em; margin: 0 0 18px; text-wrap: balance; }
+        .lg-side h1 em { font-style: italic; font-weight: 400; color: var(--gold-bright); }
+        .lg-side p { color: #D6D3CB; line-height: 1.7; max-width: 38ch; margin: 0; }
         .lg-main { display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 40px 24px; }
         .lg-top { width: 100%; max-width: 440px; margin-bottom: 16px; }
         .lg-back { display: inline-flex; align-items: center; gap: 8px; color: var(--ink); text-decoration: none; font-size: .86rem; font-weight: 600; padding: 6px 2px; }
         .lg-back:hover { color: var(--gold-text); }
         .lg-card { width: 100%; max-width: 440px; background: #fff; border: 1px solid var(--border-color); border-radius: 16px; padding: 34px; box-shadow: 0 18px 40px rgba(43,42,40,.08); }
-        .lg-card h2 { font-family: 'Fraunces', serif; font-weight: 600; font-size: 1.7rem; margin-bottom: 4px; }
+        .lg-card h2 { font-family: var(--font-serif); font-weight: 500; font-size: 2rem; letter-spacing: -.02em; line-height: 1.1; margin-bottom: 6px; }
         .lg-error { min-height: 0; }
         @media (max-width: 991.98px) {
             .lg-wrap { display: block; }
@@ -47,7 +47,7 @@
             <h1>Laboratorium Komputer Politala <em>dalam satu sistem</em>.</h1>
             <p>Sistem Informasi Administrasi, Reservasi, Katalog, dan Aktivitas Laboratorium — Jurusan Komputer dan Bisnis.</p>
         </div>
-        <div style="font-size:.8rem;color:#9C988C;">&copy; {{ date('Y') }} SIARKA &middot; Politeknik Negeri Tanah Laut</div>
+        <div style="font-size:.82rem;color:#9C988C;">&copy; {{ date('Y') }} SIARKA &middot; Politeknik Negeri Tanah Laut</div>
     </aside>
 
     <main class="lg-main">

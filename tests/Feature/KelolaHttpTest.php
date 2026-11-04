@@ -71,12 +71,12 @@ class KelolaHttpTest extends TestCase
     {
         $prodi = $this->prodi();
         $this->admin()->post(route('kelola-user.store', 'mahasiswa'), [
-            'nim' => '2210101001', 'nama' => 'Budi', 'id_prodi' => $prodi->id_prodi, 'email' => 'Budi@MHS.politala.ac.id', 'no_whatsapp' => '', 'password' => 'abcd',
+            'nim' => '2210101001', 'nama' => 'Budi', 'id_prodi' => $prodi->id_prodi, 'email' => 'Budi@MHS.politala.ac.id', 'no_whatsapp' => '', 'password' => 'abcd1234',
         ])->assertSessionHasNoErrors();
 
         $akun = Akun::find('budi@mhs.politala.ac.id');
         $this->assertSame('mahasiswa', $akun->role);
-        $this->assertSame('abcd', $akun->password);
+        $this->assertSame('abcd1234', $akun->password);
         $m = Mahasiswa::find('2210101001');
         $this->assertSame('budi@mhs.politala.ac.id', $m->email);
         $this->assertNull($m->no_whatsapp);
@@ -86,10 +86,10 @@ class KelolaHttpTest extends TestCase
     {
         $dosen = $this->dosen();
         $prodi = $this->prodi();
-        $base = ['nuptk_nidn' => 'D999', 'nama' => 'Dosen Baru', 'id_prodi' => $prodi->id_prodi, 'email' => $dosen->email, 'password' => 'abcd'];
+        $base = ['nuptk_nidn' => 'D999', 'nama' => 'Dosen Baru', 'id_prodi' => $prodi->id_prodi, 'email' => $dosen->email, 'password' => 'abcd1234'];
         $admin = $this->admin();
         $admin->post(route('kelola-user.store', 'dosen'), $base)->assertSessionHasErrors('email');
-        $admin->post(route('kelola-user.store', 'staff_prodi'), ['id_pegawai' => 'P1', 'nama' => 'S', 'id_prodi' => $prodi->id_prodi, 'email' => $dosen->email, 'password' => 'abcd'])->assertSessionHasErrors('email');
+        $admin->post(route('kelola-user.store', 'staff_prodi'), ['id_pegawai' => 'P1', 'nama' => 'S', 'id_prodi' => $prodi->id_prodi, 'email' => $dosen->email, 'password' => 'abcd1234'])->assertSessionHasErrors('email');
         $admin->post(route('kelola-user.store', 'dosen'), ['email' => str_repeat('a', 45) . '@x.test'] + $base)->assertSessionHasErrors('email'); // > 50
         $admin->post(route('kelola-user.store', 'dosen'), ['id_prodi' => 99999, 'email' => 'ok@uji.test'] + $base)->assertSessionHasErrors('id_prodi');
         $admin->post(route('kelola-user.store', 'dosen'), ['password' => ''] + ['email' => 'ok2@uji.test'] + $base)->assertSessionHasErrors('password');
@@ -99,7 +99,7 @@ class KelolaHttpTest extends TestCase
 
     public function test_laboran_tanpa_prodi_dan_whatsapp_boleh_kosong(): void
     {
-        $this->admin()->post(route('kelola-user.store', 'laboran'), ['id_pegawai' => 'LB9', 'nama' => 'Lab Baru', 'email' => 'lab9@uji.test', 'no_whatsapp' => '', 'password' => 'abcd'])->assertSessionHasNoErrors();
+        $this->admin()->post(route('kelola-user.store', 'laboran'), ['id_pegawai' => 'LB9', 'nama' => 'Lab Baru', 'email' => 'lab9@uji.test', 'no_whatsapp' => '', 'password' => 'abcd1234'])->assertSessionHasNoErrors();
         $this->assertSame('laboran', Akun::find('lab9@uji.test')->role);
         $this->assertFalse(\Illuminate\Support\Facades\Schema::hasColumn('laborans', 'id_prodi'));
     }
@@ -177,13 +177,29 @@ class KelolaHttpTest extends TestCase
     public function test_edit_katalog_tanpa_ganti_gambar_dan_jenis_tidak_berubah_setelah_dipinjam(): void
     {
         $k = $this->katalog('alat', 5, ['nama' => 'Tang']);
-        $this->admin()->put(route('kelola-katalog.update', ['kategori' => 'alat', 'id' => $k->id_katalog]), $this->katalogPost(['nama' => 'Tang', 'gambar' => null, 'stok' => 9]))->assertSessionHasNoErrors();
-        $this->assertSame([9, 'x.jpg'], [$k->fresh()->stok, $k->fresh()->gambar]);
+        $this->admin()->put(route('kelola-katalog.update', ['kategori' => 'alat', 'id' => $k->id_katalog]), $this->katalogPost(['nama' => 'Tang', 'gambar' => null, 'stok' => 5]))->assertSessionHasNoErrors();
+        $this->assertSame([5, 'x.jpg'], [$k->fresh()->stok, $k->fresh()->gambar]);
 
         $p = Peminjaman::create(['email_peminjam' => $this->mahasiswa()->email, 'jenis_peminjaman' => 'pribadi', 'tanggal_pengajuan' => now(), 'tanggal_peminjaman' => now(), 'tanggal_rencana_kembali' => now(), 'status' => 'menunggu']);
         PeminjamanDetail::create(['id_peminjaman' => $p->id_peminjaman, 'id_katalog' => $k->id_katalog, 'jumlah' => 1]);
         $this->expectException(\DomainException::class);
         $k->fresh()->update(['jenis' => 'bahan']);
+    }
+
+    public function test_edit_katalog_tidak_mengubah_stok(): void
+    {
+        $k = $this->katalog('alat', 5, ['nama' => 'Tang']);
+        $this->admin()->put(route('kelola-katalog.update', ['kategori' => 'alat', 'id' => $k->id_katalog]), $this->katalogPost(['nama' => 'Tang Baru', 'gambar' => null, 'stok' => 99]))->assertSessionHasNoErrors();
+        $this->assertSame(['Tang Baru', 5], [$k->fresh()->nama, $k->fresh()->stok]);
+    }
+
+    public function test_urut_katalog_menurut_ruangan_tidak_error(): void
+    {
+        $this->katalog('alat', 1, ['nama' => 'Tang']);
+        $this->katalog('bahan', 1, ['nama' => 'Timah']);
+        foreach (['alat', 'bahan'] as $kategori) {
+            $this->admin()->get(route('kelola-katalog.index', ['kategori' => $kategori, 'sort' => 'ruangans.nama_ruangan']))->assertOk();
+        }
     }
 
     public function test_jenis_bebas_diubah_sebelum_pernah_dipinjam(): void

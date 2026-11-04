@@ -59,6 +59,9 @@ class AkunService
             });
         // Foreign key RESTRICT menolak hapus bila masih dipakai peminjaman/jadwal.
         } catch (QueryException $e) {
+            if ($e->getCode() !== '23000') {
+                throw $e;
+            }
             throw new \RuntimeException('Data tidak dapat dihapus karena sudah dipakai pada data lain (histori transaksi atau jadwal).');
         }
     }

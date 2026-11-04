@@ -60,21 +60,21 @@
                     <th class="ps-4" style="width:56px;">No</th>
                     <th style="width:170px;">
                         @php $next = ($sort === 'tanggal_pengajuan' && $direction === 'asc') ? 'desc' : 'asc'; @endphp
-                        <a class="sort-link {{ $sort === 'tanggal_pengajuan' ? 'active' : '' }}" href="{{ route('peminjaman.riwayat', array_merge(request()->query(), ['sort' => 'tanggal_pengajuan', 'direction' => $next, 'page' => null])) }}">Pengajuan <i class="bi {{ $sort === 'tanggal_pengajuan' ? ($direction === 'asc' ? 'bi-sort-up' : 'bi-sort-down') : 'bi-arrow-down-up' }}" style="font-size:.75rem;"></i></a>
+                        <a class="sort-link {{ $sort === 'tanggal_pengajuan' ? 'active' : '' }}" href="{{ route('peminjaman.riwayat', array_merge(request()->query(), ['sort' => 'tanggal_pengajuan', 'direction' => $next, 'page' => null])) }}">Pengajuan <i class="bi {{ $sort === 'tanggal_pengajuan' ? ($direction === 'asc' ? 'bi-sort-up' : 'bi-sort-down') : 'bi-arrow-down-up' }}" style="font-size:.8rem;"></i></a>
                     </th>
                     <th>Barang / Ruangan</th>
                     <th style="width:80px;">Jumlah</th>
                     <th style="width:150px;">
                         @php $next = ($sort === 'tanggal_peminjaman' && $direction === 'asc') ? 'desc' : 'asc'; @endphp
-                        <a class="sort-link {{ $sort === 'tanggal_peminjaman' ? 'active' : '' }}" href="{{ route('peminjaman.riwayat', array_merge(request()->query(), ['sort' => 'tanggal_peminjaman', 'direction' => $next, 'page' => null])) }}">Peminjaman <i class="bi {{ $sort === 'tanggal_peminjaman' ? ($direction === 'asc' ? 'bi-sort-up' : 'bi-sort-down') : 'bi-arrow-down-up' }}" style="font-size:.75rem;"></i></a>
+                        <a class="sort-link {{ $sort === 'tanggal_peminjaman' ? 'active' : '' }}" href="{{ route('peminjaman.riwayat', array_merge(request()->query(), ['sort' => 'tanggal_peminjaman', 'direction' => $next, 'page' => null])) }}">Peminjaman <i class="bi {{ $sort === 'tanggal_peminjaman' ? ($direction === 'asc' ? 'bi-sort-up' : 'bi-sort-down') : 'bi-arrow-down-up' }}" style="font-size:.8rem;"></i></a>
                     </th>
                     <th style="width:150px;">
                         @php $next = ($sort === 'tanggal_rencana_kembali' && $direction === 'asc') ? 'desc' : 'asc'; @endphp
-                        <a class="sort-link {{ $sort === 'tanggal_rencana_kembali' ? 'active' : '' }}" href="{{ route('peminjaman.riwayat', array_merge(request()->query(), ['sort' => 'tanggal_rencana_kembali', 'direction' => $next, 'page' => null])) }}">Pengembalian <i class="bi {{ $sort === 'tanggal_rencana_kembali' ? ($direction === 'asc' ? 'bi-sort-up' : 'bi-sort-down') : 'bi-arrow-down-up' }}" style="font-size:.75rem;"></i></a>
+                        <a class="sort-link {{ $sort === 'tanggal_rencana_kembali' ? 'active' : '' }}" href="{{ route('peminjaman.riwayat', array_merge(request()->query(), ['sort' => 'tanggal_rencana_kembali', 'direction' => $next, 'page' => null])) }}">Pengembalian <i class="bi {{ $sort === 'tanggal_rencana_kembali' ? ($direction === 'asc' ? 'bi-sort-up' : 'bi-sort-down') : 'bi-arrow-down-up' }}" style="font-size:.8rem;"></i></a>
                     </th>
                     <th style="width:180px;">
                         @php $next = ($sort === 'status' && $direction === 'asc') ? 'desc' : 'asc'; @endphp
-                        <a class="sort-link {{ $sort === 'status' ? 'active' : '' }}" href="{{ route('peminjaman.riwayat', array_merge(request()->query(), ['sort' => 'status', 'direction' => $next, 'page' => null])) }}">Status <i class="bi {{ $sort === 'status' ? ($direction === 'asc' ? 'bi-sort-up' : 'bi-sort-down') : 'bi-arrow-down-up' }}" style="font-size:.75rem;"></i></a>
+                        <a class="sort-link {{ $sort === 'status' ? 'active' : '' }}" href="{{ route('peminjaman.riwayat', array_merge(request()->query(), ['sort' => 'status', 'direction' => $next, 'page' => null])) }}">Status <i class="bi {{ $sort === 'status' ? ($direction === 'asc' ? 'bi-sort-up' : 'bi-sort-down') : 'bi-arrow-down-up' }}" style="font-size:.8rem;"></i></a>
                     </th>
                     <th class="text-end pe-4" style="width:100px;">Aksi</th>
                 </tr>
@@ -86,7 +86,7 @@
                     <td class="ps-4 text-muted">{{ $data->firstItem() + $loop->index }}</td>
                     <td>
                         <div class="fw-semibold">{{ $p->tanggal_pengajuan?->format('d/m/Y H:i') }}</div>
-                        <div style="font-size:.75rem;color:var(--text-muted);">{{ $p->label_jenis }}</div>
+                        <div style="font-size:.8rem;color:var(--text-muted);">{{ $p->label_jenis }}</div>
                     </td>
                     <td>
                         <span class="d-inline-block text-truncate align-middle" style="max-width:320px;" title="{{ $p->ringkasan }}">{{ $p->ringkasan }}</span>

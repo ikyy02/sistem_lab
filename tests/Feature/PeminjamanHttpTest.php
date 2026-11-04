@@ -180,10 +180,15 @@ class PeminjamanHttpTest extends TestCase
             ->assertDontSee('name="jenis_peminjaman"', false)->assertDontSee('name="email_dosen"', false);
     }
 
-    public function test_profil_dinonaktifkan(): void
+    public function test_profil_saya_aktif_dan_dosen_nonaktif_tidak_dapat_membukanya(): void
     {
-        $this->sebagai('mahasiswa', $this->mahasiswa())->get('/profil')->assertNotFound();
-        $this->get(route('dashboard'))->assertOk()->assertDontSee('Profil Saya');
+        // Profil Saya aktif lagi (route, menu, halaman): akun normal bisa membukanya.
+        $this->sebagai('mahasiswa', $this->mahasiswa())->get('/profil')->assertOk();
+        $this->get(route('dashboard'))->assertOk()->assertSee(route('profil.index'), false);
+
+        // Profil dosen yang dinonaktifkan: sesi dicabut SilabAuth, diarahkan ke login (bukan 200).
+        $nonaktif = $this->dosen(['status' => 'nonaktif']);
+        $this->sebagai('dosen', $nonaktif)->get('/profil')->assertRedirect(route('login'));
     }
 
     public function test_pengajuan_hanya_ruangan_atau_hanya_alat_dan_dosen_otomatis_pembelajaran(): void
@@ -196,6 +201,7 @@ class PeminjamanHttpTest extends TestCase
         $this->sebagai('mahasiswa', $m);
         $this->post(route('peminjaman.store'), $waktu + ['jenis_peminjaman' => 'pribadi', 'keterangan' => 'Rapat', 'ruangan' => [['id_ruangan' => $r->id_ruangan]]])
             ->assertSessionHasNoErrors();
+        $this->sebagai('mahasiswa', $this->mahasiswa()); // satu pengguna hanya boleh satu pengajuan aktif
         $this->post(route('peminjaman.store'), $waktu + ['jenis_peminjaman' => 'pribadi', 'keterangan' => 'Alat', 'detail' => [['id_katalog' => $k->id_katalog, 'jumlah' => 1]]])
             ->assertSessionHasNoErrors();
         $this->post(route('peminjaman.store'), $waktu + ['jenis_peminjaman' => 'pribadi', 'keterangan' => 'Kosong'])
@@ -209,6 +215,7 @@ class PeminjamanHttpTest extends TestCase
         $this->assertSame(2, Peminjaman::count());
 
         // token form yang sama tidak membuat pengajuan ganda
+        $this->sebagai('mahasiswa', $this->mahasiswa());
         $kirim = $waktu + ['jenis_peminjaman' => 'pribadi', 'keterangan' => 'Ganda', 'token_pengajuan' => 'token-uji-1',
             'detail' => [['id_katalog' => $k->id_katalog, 'jumlah' => 1]]];
         $this->post(route('peminjaman.store'), $kirim)->assertSessionHasNoErrors();
@@ -216,6 +223,7 @@ class PeminjamanHttpTest extends TestCase
         $this->assertSame(3, Peminjaman::count());
 
         // pengajuan yang gagal tidak menghabiskan token
+        $this->sebagai('mahasiswa', $this->mahasiswa());
         $gagal = $kirim + [];
         $gagal['token_pengajuan'] = 'token-uji-2';
         $gagal['detail'] = [['id_katalog' => $k->id_katalog, 'jumlah' => 99]];

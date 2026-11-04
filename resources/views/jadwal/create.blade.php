@@ -26,7 +26,7 @@
                 </div>
                 <div>
                     <div class="fw-bold" style="font-size:.95rem;">Tambah Jadwal Perkuliahan</div>
-                    <div style="font-size:.75rem;color:var(--text-muted);">Kolom bertanda <span class="text-danger">*</span> wajib diisi</div>
+                    <div style="font-size:.8rem;color:var(--text-muted);">Kolom bertanda <span class="text-danger">*</span> wajib diisi</div>
                 </div>
             </div>
 

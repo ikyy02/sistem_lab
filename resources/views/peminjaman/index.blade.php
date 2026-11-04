@@ -28,7 +28,7 @@
 @push('styles')
 <style>
     .pj-wrap { max-width: 1100px; margin-inline: auto; }
-    .pj-card .pj-judul { font-size: 1.05rem; font-weight: 600; margin: 0 0 .25rem; font-family: var(--font-display, inherit); }
+    .pj-card .pj-judul { font-size: 1.05rem; font-weight: 600; margin: 0 0 .25rem; font-family: var(--font-sans); }
     .pj-card .pj-ket { font-size: .8rem; color: var(--text-muted); margin: 0 0 1rem; }
     .pj-kategori + .pj-kategori { margin-top: 1.25rem; padding-top: 1.25rem; border-top: 1px solid var(--border-color); }
     .pj-kategori-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem; margin-bottom: .6rem; }
@@ -70,9 +70,19 @@
     </p>
 </div>
 
+@if($peminjamanAktif)
+    <div class="alert alert-warning mb-3" role="alert">
+        Anda masih memiliki peminjaman yang berjalan (status {{ $peminjamanAktif->label_status }}). Selesaikan atau batalkan
+        <a href="{{ route('peminjaman.show', $peminjamanAktif->id_peminjaman) }}" class="alert-link">peminjaman #{{ $peminjamanAktif->id_peminjaman }}</a>
+        sebelum mengajukan yang baru.
+    </div>
+@endif
+
 <form method="POST" action="{{ route('peminjaman.store') }}" id="formPinjam" data-no-lock novalidate>
     @csrf
     <input type="hidden" name="token_pengajuan" value="{{ old('token_pengajuan') ?: \Illuminate\Support\Str::uuid() }}">
+    {{-- Fieldset nonaktif mematikan semua isian dan tombol di dalamnya, termasuk yang dibuat JavaScript. --}}
+    <fieldset @disabled($peminjamanAktif) class="border-0 p-0 m-0 min-w-0">
     @include($roleDosen ? 'peminjaman._form_dosen' : 'peminjaman._form_mahasiswa')
 
     @include('peminjaman._sumber_daya')
@@ -87,6 +97,7 @@
             </button>
         </div>
     </div>
+    </fieldset>
 </form>
 </div>
 @endsection

@@ -62,7 +62,7 @@
                     Batas kembali <strong>{{ $p->tanggal_rencana_kembali?->format('d/m/Y H:i') }}</strong>
                 </div>
                 @if($p->ruangans->isNotEmpty())
-                    <div style="font-size:.75rem;color:var(--text-muted);">
+                    <div style="font-size:.8rem;color:var(--text-muted);">
                         Ruangan: {{ $p->ruangans->map(fn ($r) => $r->ruangan?->nama_ruangan ?? '—')->implode(', ') }}
                     </div>
                 @endif
@@ -135,7 +135,7 @@
                                             </select>
                                             @error('kondisi.'.$d->id_detail)<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                                         @elseif($bisaInput)
-                                            <span style="color:var(--text-muted);font-size:.75rem;">Tanpa kondisi</span>
+                                            <span style="color:var(--text-muted);font-size:.8rem;">Tanpa kondisi</span>
                                         @else
                                             <span style="color:var(--text-muted);">—</span>
                                         @endif
@@ -160,7 +160,7 @@
                             </button>
                         </div>
                     </div>
-                    <p class="mb-0 mt-2" style="font-size:.75rem;color:var(--text-muted);">
+                    <p class="mb-0 mt-2" style="font-size:.8rem;color:var(--text-muted);">
                         Kosongkan kolom jumlah agar barang tidak dikembalikan. Stok hanya bertambah untuk barang <strong>baik</strong> dan bahan.
                     </p>
                 @endif

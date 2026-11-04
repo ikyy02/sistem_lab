@@ -78,22 +78,7 @@ class KatalogImportService
         $rows = ExcelFile::rows($file, self::MAX_ROWS + 50);
         $map = self::columns($kategori);
         $header = array_shift($rows) ?? [];
-        $index = [];
-        
-        foreach ($header as $i => $h) {
-            $key = preg_replace('/[^a-z]/', '', mb_strtolower(trim((string) $h)));
-            foreach ($map as $title => $col) {
-                if ($key === mb_strtolower($title)) {
-                    $index[$col] = $i;
-                }
-            }
-        }
-        
-        $missing = array_diff(array_values($map), array_keys($index));
-        if ($missing) {
-            $labels = array_flip($map);
-            throw new RuntimeException('Judul kolom tidak sesuai template. Kolom tidak ditemukan: ' . implode(', ', array_map(fn ($c) => $labels[$c], $missing)) . '.');
-        }
+        $index = ExcelFile::matchHeaders($header, $map);
         
         $room = $kategori === 'ruangan';
         // Peta nama (huruf kecil) => id untuk mengubah teks Excel menjadi id_satuan/id_ruangan.

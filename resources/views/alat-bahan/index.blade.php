@@ -69,7 +69,7 @@
                     <div class="p-3 d-flex flex-column flex-grow-1">
                         <div class="d-flex align-items-start justify-content-between gap-2 mb-1">
                             <span class="fw-semibold" style="font-size:.95rem;">{{ $nama }}</span>
-                            <span class="badge badge-tab text-nowrap" style="font-weight:600;padding:4px 10px;font-size:.75rem;">{{ $room ? 'Ruangan' : ($jenisLabel[$item->jenis] ?? $item->jenis) }}</span>
+                            <span class="badge badge-tab text-nowrap" style="font-weight:600;padding:4px 10px;font-size:.8rem;">{{ $room ? 'Ruangan' : ($jenisLabel[$item->jenis] ?? $item->jenis) }}</span>
                         </div>
                         @unless($room)
                         <div class="mb-1" style="font-size:.82rem;color:var(--text-muted);">{{ $item->stok }} {{ $item->nama_satuan }} · Rp{{ number_format((float) $item->harga, 2, ',', '.') }} / {{ $item->nama_satuan }}</div>

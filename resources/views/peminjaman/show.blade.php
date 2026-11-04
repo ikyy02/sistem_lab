@@ -92,13 +92,17 @@
     </div>
 @endif
 
-{{-- Tombol Batalkan: hanya peminjam, sebelum H-1 23.59, dan belum ada pengembalian. --}}
+{{-- Tombol Batalkan: lihat Peminjaman::bisaDibatalkanOleh (menunggu = bebas; disetujui = ruangan, sampai H-1 23.59). --}}
 @if($dapatBatalkan)
     <div class="card-modern p-4 mb-3">
         <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
             <div style="font-size:.85rem;color:var(--text-muted);">
                 <i class="bi bi-calendar-x me-1"></i>
-                Peminjaman ini dapat dibatalkan sampai <strong>pukul 23.59 pada H-1</strong> ({{ $p->tanggalPelaksanaan()?->copy()->subDay()->format('d/m/Y') }}). Mulai tanggal pelaksanaan tidak dapat dibatalkan.
+                @if($p->status === 'menunggu')
+                    Peminjaman ini belum diproses sehingga masih dapat dibatalkan.
+                @else
+                    Peminjaman ini dapat dibatalkan sampai <strong>pukul 23.59 pada H-1</strong> ({{ $p->tanggalPelaksanaan()?->copy()->subDay()->format('d/m/Y') }}). Mulai tanggal pelaksanaan tidak dapat dibatalkan.
+                @endif
             </div>
             <form action="{{ route('peminjaman.batal', $p->id_peminjaman) }}" method="POST" class="d-inline"
                   data-konfirmasi="Batalkan peminjaman #{{ $p->id_peminjaman }}? Tindakan ini tidak dapat dibatalkan.">
@@ -112,7 +116,7 @@
 <div class="row g-3">
     <div class="col-12 col-lg-6">
         <div class="card-modern p-4 h-100">
-            <h3 class="font-display fw-semibold mb-3" style="font-size:1.05rem;">Data Peminjam</h3>
+            <h3 class="h-card mb-3">Data Peminjam</h3>
             <div class="table-responsive"><table class="table table-sm mb-0" style="font-size:.85rem;word-break:break-word;">
                 <tbody>
                     <tr><td style="width:170px;color:var(--text-muted);">Nama</td><td class="fw-semibold">{{ $p->nama_peminjam }}</td></tr>
@@ -130,7 +134,7 @@
 
     <div class="col-12 col-lg-6">
         <div class="card-modern p-4 h-100">
-            <h3 class="font-display fw-semibold mb-3" style="font-size:1.05rem;">Waktu & Proses</h3>
+            <h3 class="h-card mb-3">Waktu & Proses</h3>
             <div class="table-responsive"><table class="table table-sm mb-0" style="font-size:.85rem;word-break:break-word;">
                 <tbody>
                     <tr><td style="width:190px;color:var(--text-muted);">Waktu Pengajuan</td><td>{{ $p->tanggal_pengajuan?->format('d/m/Y H:i') }}</td></tr>
@@ -155,7 +159,7 @@
 
 <div class="card-modern overflow-hidden mt-3">
     <div class="p-4 pb-2">
-        <h3 class="font-display fw-semibold mb-1" style="font-size:1.05rem;">Barang yang Dipinjam</h3>
+        <h3 class="h-card mb-1">Barang yang Dipinjam</h3>
         <p class="mb-0" style="font-size:.8rem;color:var(--text-muted);">Jumlah yang sudah dikembalikan dicatat melalui menu Pengembalian.</p>
     </div>
     @if($p->details->isEmpty())
@@ -197,7 +201,7 @@
 @if($p->ruangans->isNotEmpty())
 <div class="card-modern overflow-hidden mt-3">
     <div class="p-4 pb-2">
-        <h3 class="font-display fw-semibold mb-0" style="font-size:1.05rem;">Ruangan yang Dipinjam</h3>
+        <h3 class="h-card mb-0">Ruangan yang Dipinjam</h3>
     </div>
     <div class="table-responsive">
         <table class="table table-silab mb-0">
@@ -226,7 +230,7 @@
 
 <div class="card-modern overflow-hidden mt-3">
     <div class="p-4 pb-2">
-        <h3 class="font-display fw-semibold mb-1" style="font-size:1.05rem;">Riwayat Pengembalian</h3>
+        <h3 class="h-card mb-1">Riwayat Pengembalian</h3>
         <p class="mb-0" style="font-size:.8rem;color:var(--text-muted);">Setiap pencatatan pengembalian beserta penerimanya.</p>
     </div>
     @if($p->pengembalians->isEmpty())

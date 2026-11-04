@@ -15,6 +15,7 @@ class Akun extends Model
     public $incrementing = false;
     protected $keyType = 'string';
     public $timestamps = false;
-    protected $fillable = ['email', 'password', 'role'];
+    protected $fillable = ['email', 'password', 'role', 'wajib_ganti_password'];
+    protected $casts = ['wajib_ganti_password' => 'boolean'];
     protected $hidden = ['password'];
 }

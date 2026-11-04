@@ -32,7 +32,7 @@
                     </div>
                     <div>
                         <div class="fw-bold" style="font-size:.95rem;">{{ $jadwal->mataKuliah->nama_mk ?? 'Tanpa Mata Kuliah' }}</div>
-                        <div style="font-size:.75rem;color:var(--text-muted);">
+                        <div style="font-size:.8rem;color:var(--text-muted);">
                             {{ $jadwal->mataKuliah->kode_mk ?? '—' }} · {{ $jadwal->kelas->nama_kelas ?? '—' }}
                         </div>
                     </div>
@@ -60,7 +60,7 @@
                     @foreach($baris as $b)
                     <div class="col-12 col-md-6">
                         <div class="p-3 h-100" style="background:var(--body-bg);border:1px solid var(--border-color);border-radius:10px;">
-                            <div class="d-flex align-items-center gap-2 mb-1" style="font-size:.75rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;">
+                            <div class="d-flex align-items-center gap-2 mb-1" style="font-size:.8rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;">
                                 <i class="bi {{ $b['icon'] }}"></i> {{ $b['label'] }}
                             </div>
                             <div class="fw-semibold" style="font-size:.9rem;">{{ $b['nilai'] }}</div>

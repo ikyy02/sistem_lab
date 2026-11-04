@@ -215,7 +215,7 @@
                                                 ? 'bi-sort-up'
                                                 : 'bi-sort-down')
                                             : 'bi-arrow-down-up' }}"
-                                        style="font-size:.75rem;">
+                                        style="font-size:.8rem;">
                                     </i>
                                 </a>
                             @else
@@ -489,6 +489,13 @@
             (edit ? 'Edit ' : 'Tambah ') + itemLabel;
 
         document.getElementById('itemMethod').disabled = !edit;
+
+        // Stok hanya diubah lewat tombol stok; saat edit input dikunci (tetap terkirim).
+        const stokInput = document.getElementById('f_stok');
+
+        if (stokInput) {
+            stokInput.readOnly = edit;
+        }
 
         form.action = edit
             ? form.dataset.update.replace('__ID__', id) +

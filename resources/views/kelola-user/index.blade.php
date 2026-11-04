@@ -78,7 +78,7 @@
                                 <a class="sort-link {{ $sort === $col ? 'active' : '' }}"
                                    href="{{ route('kelola-user.index', array_merge(request()->query(), ['kategori' => $kategori, 'sort' => $col, 'direction' => $next, 'page' => null])) }}">
                                     {{ $text }}
-                                    <i class="bi {{ $sort === $col ? ($direction === 'asc' ? 'bi-sort-up' : 'bi-sort-down') : 'bi-arrow-down-up' }}" style="font-size:.75rem;"></i>
+                                    <i class="bi {{ $sort === $col ? ($direction === 'asc' ? 'bi-sort-up' : 'bi-sort-down') : 'bi-arrow-down-up' }}" style="font-size:.8rem;"></i>
                                 </a>
                             @else
                                 {{ $text }}
@@ -158,7 +158,7 @@
             </div>
             <div class="modal-body p-4">
                 <div class="row g-3">
-                    {{-- Field form modal dibuat dinamis dari UserManagementController::config(). --}}
+                    {{-- Field form modal dibuat dinamis dari UserKonfigurasi::config(). --}}
                     @foreach($fields as $f)
                         <div class="col-12 {{ in_array($f['name'], ['nama', 'email', 'id_prodi']) ? '' : 'col-md-6' }}">
                             <label class="form-label" for="f_{{ $f['name'] }}">{{ $f['label'] }} @if($f['required'])<span class="text-danger">*</span>@endif</label>
@@ -178,7 +178,7 @@
                     @endforeach
                     <div class="col-12">
                         <label class="form-label" for="f_password">Password <span class="text-danger" id="pwStar">*</span></label>
-                        <input type="text" id="f_password" name="password" class="form-control @error('password') is-invalid @enderror" placeholder="Minimal 4 karakter">
+                        <input type="text" id="f_password" name="password" class="form-control @error('password') is-invalid @enderror" placeholder="Minimal 8 karakter">
                         <div class="form-text" id="pwHint" style="display:none;">Kosongkan jika password tidak diubah.</div>
                         @error('password')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
@@ -200,7 +200,7 @@
     const userFields = {!! json_encode($fieldNames) !!};
     const userLabel = {!! json_encode($label) !!};
 
-    // Buka modal tambah/edit user; field form dibuat dari konfigurasi kategori (UserManagementController::config).
+    // Buka modal tambah/edit user; field form dibuat dari konfigurasi kategori (UserKonfigurasi::config).
     function openUserModal(mode, btn, keepOld) {
         const form = document.getElementById('userForm');
         const edit = mode === 'edit';

@@ -7,7 +7,6 @@ use App\Services\MahasiswaImportService;
 use App\Support\ExcelFile;
 use App\Services\MahasiswaTemplateService;
 use Illuminate\Http\Request;
-use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 /**
@@ -20,10 +19,6 @@ class MahasiswaController extends Controller
      */
     public function template(Request $request, MahasiswaTemplateService $template)
     {
-        if ($missing = $this->spreadsheetLibraryMissing()) {
-            return $missing;
-        }
-
         $spreadsheet = $template->build();
 
         return response()->streamDownload(function () use ($spreadsheet) {
@@ -43,10 +38,6 @@ class MahasiswaController extends Controller
     {
         $request->validate(['file' => ExcelFile::rules(2048)], ExcelFile::messages(2048));
 
-        if ($missing = $this->spreadsheetLibraryMissing()) {
-            return $missing;
-        }
-
         try {
             $result = $importer->import($request->file('file'));
         } catch (MahasiswaImportException $e) {
@@ -64,21 +55,5 @@ class MahasiswaController extends Controller
         return redirect()
             ->route('kelola-user.index', ['kategori' => 'mahasiswa'])
             ->with('success', "Import berhasil: {$result['inserted']} data mahasiswa ditambahkan.");
-    }
-
-    /**
-     * Pastikan library PhpSpreadsheet sudah dipasang (composer require phpoffice/phpspreadsheet).
-     * Bila belum, tampilkan pesan yang jelas alih-alih error 500.
-     */
-    // Jika PhpSpreadsheet belum terpasang, tampilkan pesan jelas, bukan error 500.
-    private function spreadsheetLibraryMissing()
-    {
-        if (class_exists(IOFactory::class)) {
-            return null;
-        }
-
-        return redirect()
-            ->route('kelola-user.index', ['kategori' => 'mahasiswa'])
-            ->with('error', 'Library Excel belum terpasang. Jalankan perintah: composer require phpoffice/phpspreadsheet');
     }
 }

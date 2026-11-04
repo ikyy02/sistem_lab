@@ -42,11 +42,11 @@
                 </div>
                 <div class="d-flex align-items-center justify-content-between py-2" style="border-top:1px solid #EDF1F6;">
                     <span style="font-size:.85rem;">Jadwal perkuliahan</span>
-                    <span class="badge-status badge-tab" style="font-size:.75rem;">{{ $s['jadwal'] }}</span>
+                    <span class="badge-status badge-tab" style="font-size:.8rem;">{{ $s['jadwal'] }}</span>
                 </div>
                 <div class="d-flex align-items-center justify-content-between py-2" style="border-top:1px solid #EDF1F6;">
                     <span style="font-size:.85rem;">Mata kuliah</span>
-                    <span class="badge-status badge-tab" style="font-size:.75rem;">{{ $s['mata_kuliah'] }}</span>
+                    <span class="badge-status badge-tab" style="font-size:.8rem;">{{ $s['mata_kuliah'] }}</span>
                 </div>
             </div>
         </div>
@@ -102,6 +102,7 @@
                         <th>Mata Kuliah</th>
                         <th style="width:80px;">SKS</th>
                         <th style="width:120px;">Semester</th>
+                        @if($pilihProdiMk)<th>Prodi</th>@endif
                     @elseif($tab === 'kelas')
                         <th style="width:140px;">Kelas</th>
                         <th>Prodi</th>
@@ -121,23 +122,24 @@
                     $itemKey = $item->getKey();
                     $itemName = $tab === 'mata-kuliah' ? $item->nama_mk : $item->nama_kelas;
                     $itemData = $tab === 'mata-kuliah'
-                        ? ['kode_mk' => $item->kode_mk, 'nama_mk' => $item->nama_mk, 'sks' => $item->sks, 'semester' => $item->semester]
+                        ? ['kode_mk' => $item->kode_mk, 'nama_mk' => $item->nama_mk, 'sks' => $item->sks, 'semester' => $item->semester, 'id_prodi' => $item->id_prodi]
                         : ['nama_kelas' => $item->nama_kelas, 'id_prodi' => $item->id_prodi];
                 @endphp
                 <tr>
                     <td class="ps-4 text-muted">{{ $data->firstItem() + $loop->index }}</td>
                     @if($tab === 'mata-kuliah')
-                        <td><span class="badge-status badge-tab" style="font-size:.75rem;">{{ $item->kode_mk }}</span></td>
+                        <td><span class="badge-status badge-tab" style="font-size:.8rem;">{{ $item->kode_mk }}</span></td>
                         <td>
                             <span class="fw-semibold">{{ $item->nama_mk }}</span>
                         </td>
                         <td>{{ $item->sks }}</td>
                         <td class="text-capitalize">{{ $item->semester }}</td>
+                        @if($pilihProdiMk)<td>{{ $item->nama_prodi ?? '— (belum dipetakan)' }}</td>@endif
                     @elseif($tab === 'kelas')
                         <td><span class="fw-semibold">{{ $item->nama_kelas }}</span></td>
                         <td>{{ $item->nama_prodi ?? '—' }}</td>
                     @else
-                        <td><span class="badge-status badge-tab" style="font-size:.75rem;">{{ $item->nuptk_nidn }}</span></td>
+                        <td><span class="badge-status badge-tab" style="font-size:.8rem;">{{ $item->nuptk_nidn }}</span></td>
                         <td>
                             <span class="fw-semibold">{{ $item->nama }}</span>
                         </td>
@@ -145,9 +147,9 @@
                         <td>{{ $item->no_whatsapp ?? '—' }}</td>
                         <td>
                             @if(($item->status ?? 'aktif') === 'nonaktif')
-                                <span class="badge-status badge-status-bad" style="font-size:.75rem;">Nonaktif</span>
+                                <span class="badge-status badge-status-bad" style="font-size:.8rem;">Nonaktif</span>
                             @else
-                                <span class="badge-status badge-tab" style="font-size:.75rem;">Aktif</span>
+                                <span class="badge-status badge-tab" style="font-size:.8rem;">Aktif</span>
                             @endif
                         </td>
                     @endif
@@ -168,7 +170,7 @@
                     @endunless
                 </tr>
             @empty
-                <tr><td colspan="6" class="text-center py-5" style="color:var(--text-muted);">
+                <tr><td colspan="7" class="text-center py-5" style="color:var(--text-muted);">
                     <i class="bi bi-inbox fs-1 d-block mb-2" style="color:#c3cbdb;"></i>
                     {{ $search !== '' ? 'Tidak ada ' . strtolower($label) . ' yang cocok dengan “' . $search . '”.' : 'Belum ada data ' . strtolower($label) . '.' }}
                 </td></tr>
@@ -215,6 +217,18 @@
                                placeholder="Contoh: Basis Data" class="form-control @error('nama_mk') is-invalid @enderror">
                         @error('nama_mk')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                     </div>
+                    @if($pilihProdiMk)
+                    <div class="col-12">
+                        <label class="form-label" for="f_id_prodi_mk">Prodi <span class="text-danger">*</span></label>
+                        <select id="f_id_prodi_mk" name="id_prodi" class="form-select @error('id_prodi') is-invalid @enderror">
+                            <option value="">— Pilih Prodi —</option>
+                            @foreach($prodiOptions as $id => $teks)
+                                <option value="{{ $id }}" @selected((string) old('id_prodi') === (string) $id)>{{ $teks }}</option>
+                            @endforeach
+                        </select>
+                        @error('id_prodi')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+                    </div>
+                    @endif
                     <div class="col-12">
                         <label class="form-label" for="f_semester_mk">Semester <span class="text-danger">*</span></label>
                         <select id="f_semester_mk" name="semester" class="form-select @error('semester') is-invalid @enderror">
@@ -284,7 +298,7 @@
     const akademikTab = {!! json_encode($tab) !!};
     // Peta konfigurasi modal per tab: id elemen form dan nama field yang diisi saat edit. Tambah field baru di sini.
     const akadConfig = {
-        'mata-kuliah': { modal: 'mkModal', form: 'mkForm', method: 'mkMethod', title: 'mkModalTitle', fields: ['f_kode_mk', 'f_nama_mk', 'f_sks', 'f_semester_mk'], keys: ['kode_mk', 'nama_mk', 'sks', 'semester'] },
+        'mata-kuliah': { modal: 'mkModal', form: 'mkForm', method: 'mkMethod', title: 'mkModalTitle', fields: ['f_kode_mk', 'f_nama_mk', 'f_sks', 'f_semester_mk', 'f_id_prodi_mk'], keys: ['kode_mk', 'nama_mk', 'sks', 'semester', 'id_prodi'] },
         'kelas': { modal: 'kelasModal', form: 'kelasForm', method: 'kelasMethod', title: 'kelasModalTitle', fields: ['f_nama_kelas', 'f_id_prodi'], keys: ['nama_kelas', 'id_prodi'] },
     };
     const cfg = akadConfig[akademikTab];

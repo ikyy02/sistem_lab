@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\Cari;
 use App\Models\AlatBahan;
 use App\Models\PengaturanOperasional;
 use App\Models\Satuan;
@@ -39,15 +40,15 @@ class PengaturanLaboratoriumController extends Controller
         $perPage = in_array($perPage, self::PER_PAGE, true) ? $perPage : self::PER_PAGE[0];
 
         $query = Satuan::query()->selectRaw('id_satuan as id, nama_satuan as nama');
-        foreach (array_slice(preg_split('/\s+/u', $search, -1, PREG_SPLIT_NO_EMPTY) ?: [], 0, 5) as $word) {
-            $query->whereRaw("nama_satuan LIKE ? ESCAPE '!'", ['%'.str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $word).'%']);
-        }
+        Cari::kolom($query, $search, ['nama_satuan']);
         $data = $query->orderBy('nama_satuan')->orderBy('id_satuan')->paginate($perPage)->withQueryString();
         if ($data->currentPage() > $data->lastPage()) {
             return redirect()->route('pengaturan-lab.index', array_merge($request->query(), ['page' => $data->lastPage()]));
         }
         // Hitung berapa katalog yang memakai tiap satuan (untuk info sebelum hapus).
-        $data->getCollection()->each(fn ($r) => $r->used = AlatBahan::where('id_satuan', $r->id)->count());
+        $dipakai = AlatBahan::whereIn('id_satuan', $data->getCollection()->pluck('id'))
+            ->selectRaw('id_satuan, count(*) as total')->groupBy('id_satuan')->pluck('total', 'id_satuan');
+        $data->getCollection()->each(fn ($r) => $r->used = (int) ($dipakai[$r->id] ?? 0));
 
         return view('pengaturan-lab.index', [
             'tab' => $tab, 'tabs' => self::TABS, 'data' => $data,
@@ -84,6 +85,9 @@ class PengaturanLaboratoriumController extends Controller
         try {
             $record->delete(); // ON DELETE RESTRICT bila sudah direferensikan
         } catch (QueryException $e) {
+            if ($e->getCode() !== '23000') {
+                throw $e;
+            }
             return $this->back('Satuan "'.$record->nama_satuan.'" masih dipakai data lain dan tidak dapat dihapus.', 'error', $request);
         }
 

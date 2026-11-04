@@ -2,12 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\Cari;
+use App\Models\Dosen;
 use App\Models\Jadwal;
+use App\Models\Kelas;
+use App\Models\MataKuliah;
 use App\Models\PeriodeJadwal;
+use App\Services\AuthService;
 use App\Services\JadwalService;
 use App\Support\Options;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 /**
  * Kelola Jadwal Perkuliahan (khusus Staf Prodi): daftar, tambah, lihat, ubah, hapus.
@@ -41,6 +46,8 @@ class JadwalController extends Controller
             ->leftJoin('ruangans', 'ruangans.id_ruangan', '=', 'jadwals.id_ruangan')
             ->leftJoin('kelas', 'kelas.id_kelas', '=', 'jadwals.id_kelas');
 
+        // Staf Prodi hanya melihat jadwal kelas prodinya (jadwal terhubung ke prodi lewat kelas).
+        $query->when(AuthService::batasProdi(), fn ($q, $prodi) => $q->where('kelas.id_prodi', $prodi));
         if ($periode !== 'semua') {
             $query->where('jadwals.id_periode', (int) $periode);
         }
@@ -51,16 +58,8 @@ class JadwalController extends Controller
             $query->where('jadwals.status', $status);
         }
         // Pencarian multi-kata (maks 5), tiap kata harus cocok di salah satu kolom.
-        $words = preg_split('/\s+/u', $search, -1, PREG_SPLIT_NO_EMPTY) ?: [];
-        foreach (array_slice($words, 0, 5) as $word) {
-            $like = '%' . str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $word) . '%';
-            $query->where(function ($group) use ($like) {
-                foreach (['mata_kuliahs.nama_mk', 'mata_kuliahs.kode_mk', 'dosens.nama', 'dosens.nuptk_nidn',
-                    'ruangans.nama_ruangan', 'kelas.nama_kelas', 'jadwals.tahun_akademik'] as $col) {
-                    $group->orWhereRaw("{$col} LIKE ? ESCAPE '!'", [$like]);
-                }
-            });
-        }
+        Cari::kolom($query, $search, ['mata_kuliahs.nama_mk', 'mata_kuliahs.kode_mk', 'dosens.nama', 'dosens.nuptk_nidn',
+            'ruangans.nama_ruangan', 'kelas.nama_kelas', 'jadwals.tahun_akademik']);
 
         // Eager load periode agar tidak query berulang per baris.
         $query->with('periode');
@@ -91,7 +90,6 @@ class JadwalController extends Controller
     // Simpan lewat JadwalService (di dalamnya ada cek bentrok jadwal).
     public function store(Request $request, JadwalService $service)
     {
-        $this->validateJadwal($request);
         $service->simpan($this->payload($request));
 
         return redirect()->route('jadwal.index')->with('success', 'Jadwal perkuliahan berhasil ditambahkan.');
@@ -99,6 +97,7 @@ class JadwalController extends Controller
 
     public function show(Jadwal $jadwal)
     {
+        $this->pastikanMilikProdi($jadwal);
         $jadwal->load(['mataKuliah', 'kelas.prodi', 'dosen.prodi', 'ruangan']);
 
         return view('jadwal.show', ['jadwal' => $jadwal] + $this->form());
@@ -106,6 +105,7 @@ class JadwalController extends Controller
 
     public function edit(Jadwal $jadwal)
     {
+        $this->pastikanMilikProdi($jadwal);
         $this->pastikanBisaDiubah($jadwal);
 
         return view('jadwal.edit', ['jadwal' => $jadwal] + $this->form());
@@ -113,8 +113,8 @@ class JadwalController extends Controller
 
     public function update(Request $request, Jadwal $jadwal, JadwalService $service)
     {
+        $this->pastikanMilikProdi($jadwal);
         $this->pastikanBisaDiubah($jadwal);
-        $this->validateJadwal($request);
         $service->simpan($this->payload($request), $jadwal);
 
         return redirect()->route('jadwal.index')->with('success', 'Jadwal perkuliahan berhasil diperbarui.');
@@ -122,10 +122,18 @@ class JadwalController extends Controller
 
     public function destroy(Jadwal $jadwal)
     {
+        $this->pastikanMilikProdi($jadwal);
         $this->pastikanBisaDiubah($jadwal);
         $jadwal->delete();
 
         return redirect()->route('jadwal.index')->with('success', 'Jadwal perkuliahan berhasil dihapus.');
+    }
+
+    /** Staf Prodi hanya boleh membuka jadwal kelas prodinya; jadwal prodi lain 404 (Laboran tanpa batas). */
+    private function pastikanMilikProdi(Jadwal $jadwal): void
+    {
+        $prodi = AuthService::batasProdi();
+        abort_if($prodi !== null && (int) $jadwal->kelas?->id_prodi !== $prodi, 404);
     }
 
     /** Jadwal periode arsip hanya dapat dilihat. */
@@ -140,40 +148,41 @@ class JadwalController extends Controller
     // Data dropdown untuk form tambah/ubah/lihat.
     private function form(): array
     {
+        $prodi = AuthService::batasProdi();
+
         return [
-            'mataKuliahOptions' => Options::mataKuliah(),
-            'kelasOptions' => Options::kelas(),
-            'dosenOptions' => Options::dosen(),
+            'mataKuliahOptions' => Options::mataKuliah($prodi),
+            'kelasOptions' => Options::kelas($prodi),
+            'dosenOptions' => Options::dosen($prodi),
             'ruanganOptions' => Options::ruangan(),
         ];
-    }
-
-    // Validasi input form jadwal; validasi lanjutan dan cek bentrok ada di JadwalService.
-    private function validateJadwal(Request $request): void
-    {
-        $request->validate([
-            'id_mata_kuliah' => ['required', Rule::exists('mata_kuliahs', 'id_mata_kuliah')],
-            'id_kelas' => ['required', Rule::exists('kelas', 'id_kelas')],
-            'nuptk_nidn' => ['required', Rule::exists('dosens', 'nuptk_nidn')],
-            'id_ruangan' => ['required', Rule::exists('ruangans', 'id_ruangan')],
-            'hari' => ['required', Rule::in(Jadwal::HARI)],
-            'jam_mulai' => ['required', 'date_format:H:i:s,H:i'],
-            'jam_selesai' => ['required', 'date_format:H:i:s,H:i'],
-            'status' => ['required', Rule::in(Jadwal::STATUS)],
-            'tahun_akademik' => ['required', 'regex:/^\d{4}\/\d{4}$/'],
-            'semester' => ['required', Rule::in(Jadwal::SEMESTER)],
-        ], [
-            'tahun_akademik.regex' => 'Tahun akademik berformat 2025/2026.',
-            'id_mata_kuliah.exists' => 'Pilih mata kuliah dari daftar.',
-        ]);
     }
 
     /** @return array<string,mixed> */
     private function payload(Request $request): array
     {
-        return $request->only([
+        $data = $request->only([
             'id_mata_kuliah', 'id_kelas', 'nuptk_nidn', 'id_ruangan', 'hari',
             'jam_mulai', 'jam_selesai', 'status', 'tahun_akademik', 'semester',
         ]);
+        // Staf Prodi tidak boleh memakai kelas, mata kuliah, atau dosen prodi lain (dropdown hanya pilihan; ini penegakan di backend).
+        $prodi = AuthService::batasProdi();
+        if ($prodi !== null) {
+            $salah = [];
+            if (filled($data['id_kelas'] ?? null) && ! Kelas::whereKey($data['id_kelas'])->where('id_prodi', $prodi)->exists()) {
+                $salah['id_kelas'] = 'Pilih kelas dari daftar.';
+            }
+            if (filled($data['id_mata_kuliah'] ?? null) && ! MataKuliah::whereKey($data['id_mata_kuliah'])->batasProdi($prodi)->exists()) {
+                $salah['id_mata_kuliah'] = 'Pilih mata kuliah dari daftar.';
+            }
+            if (filled($data['nuptk_nidn'] ?? null) && ! Dosen::whereKey($data['nuptk_nidn'])->batasProdi($prodi)->exists()) {
+                $salah['nuptk_nidn'] = 'Pilih dosen dari daftar.';
+            }
+            if ($salah) {
+                throw ValidationException::withMessages($salah);
+            }
+        }
+
+        return $data;
     }
 }

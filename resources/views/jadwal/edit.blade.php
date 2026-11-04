@@ -26,7 +26,7 @@
                 </div>
                 <div>
                     <div class="fw-bold" style="font-size:.95rem;">Ubah Jadwal Perkuliahan</div>
-                    <div style="font-size:.75rem;color:var(--text-muted);">
+                    <div style="font-size:.8rem;color:var(--text-muted);">
                         {{ $jadwal->mataKuliah->nama_mk ?? 'Tanpa mata kuliah' }} · {{ $jadwal->kelas->nama_kelas ?? '—' }}
                     </div>
                 </div>

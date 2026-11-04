@@ -13,8 +13,6 @@ use Illuminate\Validation\Rule;
 /** Profil Saya: lihat/ubah profil sendiri dan ubah password (password disimpan apa adanya, sesuai project). */
 class ProfilController extends Controller
 {
-    private const WA_REGEX = '/^(?:\+62|62|0)8[1-9][0-9]{7,11}$/';
-
     public function index()
     {
         $me = AuthService::user();
@@ -49,7 +47,7 @@ class ProfilController extends Controller
         $v = Validator::make($input, [
             'nama' => ['bail', 'required', 'string', 'min:2', 'max:100'],
             'email' => $email,
-            'no_whatsapp' => ['nullable', 'string', 'max:20', 'regex:' . self::WA_REGEX],
+            'no_whatsapp' => ['nullable', 'string', 'max:20', 'regex:' . \App\Support\UserKonfigurasi::WA_REGEX],
         ], [
             'required' => ':attribute wajib diisi.', 'min' => ':attribute minimal :min karakter.', 'max' => ':attribute maksimal :max karakter.',
             'email' => 'Format email tidak valid.', 'email.unique' => 'Email sudah terdaftar di sistem.',
@@ -67,14 +65,14 @@ class ProfilController extends Controller
         return redirect()->route('profil.index')->with('success', 'Profil berhasil diperbarui.');
     }
 
-    // Ganti password: cek password lama, password baru minimal 4 karakter dan berbeda dari yang lama.
+    // Ganti password: cek password lama, password baru minimal 8 karakter dan berbeda dari yang lama.
     public function password(Request $request)
     {
         $me = AuthService::user();
         $akun = Akun::findOrFail($me['email']);
         $request->validate([
             'password_lama' => ['required', 'string'],
-            'password_baru' => ['required', 'string', 'min:4', 'max:100', 'confirmed', 'different:password_lama'],
+            'password_baru' => ['required', 'string', 'min:8', 'max:100', 'confirmed', 'different:password_lama'],
         ], [
             'required' => ':attribute wajib diisi.', 'min' => ':attribute minimal :min karakter.', 'max' => ':attribute maksimal :max karakter.',
             'password_baru.confirmed' => 'Konfirmasi password baru tidak sama.',
@@ -84,7 +82,7 @@ class ProfilController extends Controller
         if (! hash_equals((string) $akun->password, (string) $request->input('password_lama'))) {
             return back()->withErrors(['password_lama' => 'Password lama salah.']);
         }
-        $akun->update(['password' => $request->input('password_baru')]);
+        $akun->update(['password' => $request->input('password_baru'), 'wajib_ganti_password' => false]);
 
         return redirect()->route('profil.index')->with('success', 'Password berhasil diubah.');
     }

@@ -88,7 +88,7 @@ class HakAksesSuperAdminTest extends TestCase
         $lab = $this->laboran();
         $this->sebagai('laboran')->post(route('kelola-user.store', 'dosen'), [
             'nuptk_nidn' => '1234567890', 'nama' => 'Uji Role', 'id_prodi' => $this->prodi()->id_prodi,
-            'email' => 'uji.role@uji.test', 'status' => 'aktif', 'password' => 'rahasia', 'role' => 'laboran',
+            'email' => 'uji.role@uji.test', 'status' => 'aktif', 'password' => 'rahasia123', 'role' => 'laboran',
         ]);
         $this->assertDatabaseHas('akuns', ['email' => 'uji.role@uji.test', 'role' => 'dosen']);
         $this->sebagai('dosen')->post(route('kelola-user.store', 'laboran'), ['role' => 'laboran'])->assertForbidden();

@@ -1,5 +1,5 @@
 @php
-    $kolomHint = implode(', ', array_keys(\App\Services\AkademikImportService::columns($tab)));
+    $kolomHint = implode(', ', array_keys(\App\Services\AkademikImportService::columns($tab, \App\Services\AuthService::batasProdi())));
 @endphp
 
 <!-- Modal Import -->
