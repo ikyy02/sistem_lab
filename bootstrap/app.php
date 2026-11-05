@@ -1,0 +1,29 @@
+<?php
+
+use Illuminate\Foundation\Application;
+use Illuminate\Foundation\Configuration\Exceptions;
+use Illuminate\Foundation\Configuration\Middleware;
+
+return Application::configure(basePath: dirname(__DIR__))
+    ->withRouting(
+        web: __DIR__.'/../routes/web.php',
+        commands: __DIR__.'/../routes/console.php',
+        health: '/up',
+    )
+    ->withMiddleware(function (Middleware $middleware): void {
+        // Alias middleware: 'silab.auth' (wajib login) dan 'silab.role' (batasi role) dipakai di routes/web.php.
+        $middleware->alias([
+            'silab.auth' => \App\Http\Middleware\SilabAuth::class,
+            'silab.role' => \App\Http\Middleware\SilabRole::class,
+            'silab.password' => \App\Http\Middleware\WajibGantiPassword::class,
+        ]);
+
+        // Percayai proxy hanya bila TRUSTED_PROXIES diisi (daftar IP dipisah koma; '*' diabaikan).
+        $proxies = array_values(array_filter(array_map('trim', explode(',', (string) env('TRUSTED_PROXIES'))), fn ($ip) => $ip !== '' && $ip !== '*'));
+        if ($proxies) {
+            $middleware->trustProxies(at: $proxies);
+        }
+    })
+    ->withExceptions(function (Exceptions $exceptions): void {
+        //
+    })->create();

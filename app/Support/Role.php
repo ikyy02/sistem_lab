@@ -1,0 +1,37 @@
+<?php
+
+namespace App\Support;
+
+use App\Models\Dosen;
+use App\Models\Laboran;
+use App\Models\Mahasiswa;
+use App\Models\StaffProdi;
+
+/**
+ * Definisi 4 role/kategori pengguna. Satu tempat untuk model, label, dan halaman awal tiap role.
+ */
+class Role
+{
+    public const MAHASISWA = 'mahasiswa';
+    public const DOSEN = 'dosen';
+    public const STAFF = 'staff_prodi';
+    public const LABORAN = 'laboran';
+
+    public const ALL = [self::MAHASISWA, self::DOSEN, self::STAFF, self::LABORAN];
+
+    // Peta role -> model profil; dipakai AkunService dan AuthService.
+    public const MODELS = [
+        self::MAHASISWA => Mahasiswa::class,
+        self::DOSEN => Dosen::class,
+        self::STAFF => StaffProdi::class,
+        self::LABORAN => Laboran::class,
+    ];
+
+    // Label tampilan role di antarmuka.
+    public const LABELS = [
+        self::MAHASISWA => 'Mahasiswa',
+        self::DOSEN => 'Dosen',
+        self::STAFF => 'Staff Prodi',
+        self::LABORAN => 'Laboran/Admin',
+    ];
+}

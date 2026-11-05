@@ -1,0 +1,190 @@
+<?php
+
+namespace App\Services;
+
+use App\Models\Akun;
+use App\Support\ExcelFile;
+use App\Support\Options;
+use App\Support\Role;
+use App\Support\UserKonfigurasi;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+
+/**
+ * Import & template untuk Dosen, Staff Prodi, Laboran/Admin (Excel .xlsx/.xls).
+ * (Mahasiswa memakai MahasiswaImportService sendiri karena aturan email institusi & kelas-nya lebih khusus.)
+ * Kolom mengikuti field kategori pada UserKonfigurasi::config() + kolom Password.
+ * Semua-atau-tidak-sama-sekali: satu baris bermasalah -> tidak ada data yang disimpan.
+ */
+class UserImportService
+{
+    public const MAX_ROWS = 2000;
+    public const MAX_ERRORS = 100;
+
+    /** Judul kolom template => nama kolom database, untuk kategori selain mahasiswa. */
+    // Judul kolom Excel dibuat dari field form kategori + kolom Password; ubah field di UserKonfigurasi::config otomatis ikut.
+    public static function columns(string $kategori): array
+    {
+        $map = ['Password' => 'password'];
+        foreach (UserKonfigurasi::config($kategori)['fields'] as $f) {
+            $map = [$f['label'] => $f['name']] + $map;
+        }
+
+        return $map;
+    }
+
+    // Buat file template: sheet Data (judul kolom) dan sheet Petunjuk.
+    public function template(string $kategori): array
+    {
+        $columns = self::columns($kategori);
+        $book = new Spreadsheet();
+        $sheet = $book->getActiveSheet()->setTitle('Data');
+        $sheet->fromArray([array_keys($columns)], null, 'A1');
+        $sheet->getStyle('A1:' . chr(64 + count($columns)) . '1')->getFont()->setBold(true);
+        foreach (array_keys($columns) as $i => $label) {
+            $sheet->getColumnDimensionByColumn($i + 1)->setWidth(max(16, min(40, mb_strlen($label) + 12)));
+        }
+
+        $guide = $book->createSheet()->setTitle('Petunjuk');
+        $rows = [['Petunjuk pengisian'], ['Isi data pada sheet "Data" mulai baris ke-2. Jangan ubah judul kolom.'], ['Password minimal 8 karakter.']];
+        if ($kategori === Role::DOSEN || $kategori === Role::STAFF) {
+            $rows[] = ['Prodi harus salah satu dari: ' . implode(', ', Options::prodi())];
+        }
+        $guide->fromArray($rows, null, 'A1');
+        $guide->getStyle('A1')->getFont()->setBold(true);
+        $guide->getColumnDimension('A')->setWidth(100);
+        $book->setActiveSheetIndex(0);
+
+        return [new Xlsx($book), 'template-' . $kategori . '.xlsx'];
+    }
+
+    /** @return array{success: bool, total: int, inserted?: int, error_count?: int, errors?: array} */
+    // Alur impor: baca Excel -> cocokkan judul kolom -> validasi tiap baris -> kalau semua valid simpan dalam satu transaksi.
+    public function import(UploadedFile $file, string $kategori): array
+    {
+        $model = Role::MODELS[$kategori];
+        $columns = self::columns($kategori);
+        $rows = ExcelFile::rows($file, self::MAX_ROWS + 50);
+
+        $header = array_shift($rows) ?? [];
+        // $index = peta nama kolom database => nomor kolom di Excel.
+        $index = ExcelFile::matchHeaders($header, $columns);
+
+        // Muat email/ID yang sudah ada sekali saja agar pengecekan duplikat cepat (tanpa query per baris).
+        $existingEmail = [];
+        foreach (Akun::pluck('email') as $e) {
+            $existingEmail[mb_strtolower($e)] = true;
+        }
+        $existingUnique = [];
+        $uniqueCol = (new $model)->getKeyName(); // nuptk_nidn / id_pegawai
+        $keyLabel = array_column(UserKonfigurasi::config($kategori)['fields'], 'label', 'name')[$uniqueCol];
+        {
+            foreach ($model::pluck($uniqueCol) as $v) {
+                $existingUnique[mb_strtolower((string) $v)] = true;
+            }
+        }
+
+        $valid = [];
+        $errors = [];
+        $total = 0;
+        $seenEmail = [];
+        $seenUnique = [];
+
+        // Validasi per baris; error dikumpulkan (maks 100) dengan nomor baris Excel.
+        foreach ($rows as $n => $row) {
+            $line = $n + 2;
+            $get = fn ($col) => trim((string) ($row[$index[$col]] ?? ''));
+            if (! array_filter($row, fn ($v) => trim((string) $v) !== '')) {
+                continue;
+            }
+            if (++$total > self::MAX_ROWS) {
+                throw new \RuntimeException('Jumlah baris melebihi batas ' . self::MAX_ROWS . '.');
+            }
+
+            $msg = [];
+            $record = [];
+
+            foreach (UserKonfigurasi::config($kategori)['fields'] as $f) {
+                $val = preg_replace('/\s+/u', ' ', $get($f['name']));
+                if ($f['required'] && $val === '') {
+                    $msg[] = $f['label'] . ' wajib diisi.';
+                }
+                if (($f['type'] ?? '') === 'select' && $val !== '') {
+                    $id = array_search(mb_strtolower($val), array_map('mb_strtolower', $f['options']), true);
+                    if ($id === false) {
+                        $msg[] = $f['label'] . ' harus salah satu dari: ' . implode(', ', $f['options']) . '.';
+                        $val = '';
+                    } else {
+                        $val = (string) $id;
+                    }
+                }
+                if ($f['name'] === 'email' && $val !== '' && (! filter_var($val, FILTER_VALIDATE_EMAIL) || mb_strlen($val) > 50)) {
+                    $msg[] = 'Format Email tidak valid (maksimal 50 karakter).';
+                }
+                if ($f['name'] === 'no_whatsapp' && $val !== '' && ! preg_match(UserKonfigurasi::WA_REGEX, $val)) {
+                    $msg[] = 'WhatsApp tidak valid. Gunakan format 08xxxxxxxxxx.';
+                }
+                $record[$f['name']] = $val !== '' ? $val : null;
+            }
+
+            // Password dibaca apa adanya dari Excel (hashing ditunda).
+            $password = $get('password');
+            if (mb_strlen($password) < 8) {
+                $msg[] = 'Password minimal 8 karakter.';
+            }
+
+            $email = mb_strtolower((string) $record['email']);
+            if ($email !== '') {
+                if (isset($seenEmail[$email])) {
+                    $msg[] = 'Email duplikat dengan baris ' . $seenEmail[$email] . ' di file.';
+                } elseif (isset($existingEmail[$email])) {
+                    $msg[] = 'Email sudah terdaftar di sistem.';
+                } else {
+                    $seenEmail[$email] = $line;
+                }
+            }
+
+            if (! empty($record[$uniqueCol])) {
+                $u = mb_strtolower((string) $record[$uniqueCol]);
+                if (! preg_match($uniqueCol === 'nuptk_nidn' ? '/^[A-Za-z0-9]{1,30}$/' : '/^[A-Za-z0-9._\-]{1,30}$/', (string) $record[$uniqueCol])) {
+                    $msg[] = $keyLabel . ' tidak valid (maksimal 30 karakter, tanpa spasi/simbol).';
+                } elseif (isset($seenUnique[$u])) {
+                    $msg[] = $keyLabel . ' duplikat dengan baris ' . $seenUnique[$u] . ' di file.';
+                } elseif (isset($existingUnique[$u])) {
+                    $msg[] = $keyLabel . ' sudah terdaftar.';
+                } else {
+                    $seenUnique[$u] = $line;
+                }
+            }
+
+            if ($msg) {
+                $errors[] = ['row' => $line, 'nama' => $record['nama'] ?? '', 'messages' => $msg];
+                continue;
+            }
+
+            $valid[] = $record + ['password' => $password];
+        }
+
+        if ($total === 0) {
+            throw new \RuntimeException('File tidak berisi data. Isi data mulai baris ke-2.');
+        }
+        // Ada satu saja error => tidak ada data yang disimpan, laporan dikembalikan.
+        if ($errors) {
+            return ['success' => false, 'total' => $total, 'error_count' => count($errors), 'errors' => array_slice($errors, 0, self::MAX_ERRORS)];
+        }
+
+        $akun = app(AkunService::class);
+        // Simpan semua akun + profil dalam satu transaksi.
+        DB::transaction(function () use ($akun, $kategori, $valid) {
+            foreach ($valid as $row) {
+                $password = $row['password'];
+                $email = mb_strtolower($row['email']);
+                unset($row['password'], $row['email']);
+                $akun->buat($kategori, $email, $password, $row);
+            }
+        });
+        return ['success' => true, 'total' => $total, 'inserted' => count($valid)];
+    }
+}

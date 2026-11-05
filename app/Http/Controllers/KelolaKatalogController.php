@@ -1,0 +1,330 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Support\Cari;
+use App\Models\AlatBahan;
+use App\Models\Ruangan;
+use App\Services\AuthService;
+use App\Services\KatalogImportService;
+use App\Support\ExcelFile;
+use App\Support\GambarKatalog;
+use App\Support\Options;
+use Illuminate\Database\QueryException;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
+
+/**
+ * Kelola Katalog: Alat & Bahan (tabel alat_bahans, dibedakan kolom jenis) dan Ruangan (tabel ruangans).
+ * Lokasi penyimpanan alat/bahan = id_ruangan. Harga = harga untuk 1 satuan.
+ */
+class KelolaKatalogController extends Controller
+{
+    public const KATEGORI = ['alat' => 'Alat', 'bahan' => 'Bahan', 'ruangan' => 'Ruangan'];
+    public const PER_PAGE = [10, 25, 50, 100];
+
+    // Konfigurasi kolom tabel, kolom pencarian, dan field form per kategori. Tambah/ubah kolom form di sini.
+    public static function config(string $kategori): array
+    {
+        $ket = ['name' => 'keterangan', 'label' => 'Keterangan', 'type' => 'textarea', 'placeholder' => 'Keterangan tambahan', 'required' => false];
+        if ($kategori === 'ruangan') {
+            return [
+                'columns' => ['nama_ruangan' => ['Nama', true], 'keterangan' => ['Keterangan', false]],
+                'search' => ['nama_ruangan', 'keterangan'],
+                'fields' => [
+                    ['name' => 'nama_ruangan', 'label' => 'Nama', 'type' => 'text', 'placeholder' => 'Nama ruangan', 'required' => true],
+                    $ket,
+                ],
+            ];
+        }
+
+        return [
+            'columns' => [
+                'nama' => ['Nama', true], 'nama_satuan' => ['Satuan', true], 'stok' => ['Stok', true],
+                'harga' => ['Harga / Satuan', true], 'keterangan' => ['Keterangan', false], 'satuans.id_satuan' => ['ID Satuan', false], 'ruangans.id_ruangan' => ['ID Ruangan', false], 'ruangans.nama_ruangan' => ['Ruangan', true],
+            ],
+            'search' => ['alat_bahans.nama', 'satuans.nama_satuan', 'ruangans.nama_ruangan', 'alat_bahans.keterangan'],
+            'fields' => [
+                ['name' => 'nama', 'label' => 'Nama', 'type' => 'text', 'placeholder' => 'Nama ' . strtolower(self::KATEGORI[$kategori]), 'required' => true],
+                ['name' => 'id_satuan', 'label' => 'Satuan', 'type' => 'select', 'options' => Options::satuan(), 'placeholder' => 'Pilih Satuan', 'required' => true],
+                ['name' => 'stok', 'label' => 'Stok', 'type' => 'number', 'placeholder' => 'Jumlah stok', 'required' => true],
+                ['name' => 'harga', 'label' => 'Harga per Satuan (Rp)', 'type' => 'number', 'placeholder' => 'Contoh: 491.80', 'required' => true],
+                ['name' => 'id_ruangan', 'label' => 'Ruangan Penyimpanan', 'type' => 'select', 'options' => Options::ruangan(), 'placeholder' => 'Pilih Ruangan', 'required' => true],
+                $ket,
+            ],
+        ];
+    }
+
+    public function index(Request $request)
+    {
+        $kategori = $this->kategori($request->query('kategori'));
+        $config = self::config($kategori);
+        $room = $kategori === 'ruangan';
+        $search = mb_substr(trim((string) $request->query('search', '')), 0, 100);
+        // Hanya kolom bertanda true yang boleh dipakai mengurutkan (whitelist).
+        $sortable = array_keys(array_filter($config['columns'], fn ($c) => $c[1]));
+        $default = $room ? 'nama_ruangan' : 'nama';
+        $sort = in_array($request->query('sort'), $sortable, true) ? $request->query('sort') : $default;
+        $direction = strtolower((string) $request->query('direction')) === 'desc' ? 'desc' : 'asc';
+        $perPage = (int) $request->query('per_page');
+        $perPage = in_array($perPage, self::PER_PAGE, true) ? $perPage : self::PER_PAGE[0];
+
+        if ($room) {
+            $query = Ruangan::query();
+            $sortColumn = $sort;
+            $pk = 'id_ruangan';
+        } else {
+            $query = AlatBahan::query()
+                ->select('alat_bahans.*', 'satuans.nama_satuan', 'ruangans.nama_ruangan')
+                ->join('satuans', 'satuans.id_satuan', '=', 'alat_bahans.id_satuan')
+                ->join('ruangans', 'ruangans.id_ruangan', '=', 'alat_bahans.id_ruangan')
+                ->where('alat_bahans.jenis', $kategori);
+            // Nama kolom urut dipetakan ke kolom tabel asli (join) agar aman dan tidak ambigu.
+            $sortColumn = match ($sort) {
+                'nama_satuan' => 'satuans.nama_satuan',
+                'ruangans.nama_ruangan' => 'ruangans.nama_ruangan',
+                default => 'alat_bahans.' . $sort,
+            };
+            $pk = 'alat_bahans.id_katalog';
+        }
+        Cari::kolom($query, $search, $config['search']);
+        $data = $query->orderBy($sortColumn, $direction)->orderBy($pk)->paginate($perPage)->withQueryString();
+        if ($data->currentPage() > $data->lastPage()) {
+            return redirect()->route('kelola-katalog.index', array_merge($request->query(), ['page' => $data->lastPage()]));
+        }
+
+        return view('kelola-katalog.index', [
+            'kategori' => $kategori, 'labels' => self::KATEGORI, 'config' => $config, 'data' => $data,
+            'search' => $search, 'sort' => $sort, 'direction' => $direction, 'perPage' => $perPage,
+            'perPageOptions' => self::PER_PAGE,
+        ]);
+    }
+
+    // Tambah data: validasi, simpan gambar ke storage, lalu buat record sesuai kategori.
+    public function store(Request $request, string $kategori)
+    {
+        $v = $this->validator($request, $kategori, null);
+        if ($v->fails()) {
+            return $this->fail($v, $kategori, 'create', null);
+        }
+        $data = $v->validated();
+        $room = $kategori === 'ruangan';
+        $dir = $room ? Ruangan::GAMBAR_DIR : AlatBahan::GAMBAR_DIR;
+        // Nama file gambar yang disimpan ke database hanya nama acak (uuid), bukan path penuh.
+        $data['gambar'] = $request->hasFile('gambar') ? $this->saveImage($request->file('gambar'), $dir) : null; // alat/bahan: gambar wajib (validator)
+        if ($room) {
+            Ruangan::create($data);
+        } else {
+            AlatBahan::create($data + ['jenis' => $kategori]);
+        }
+
+        return redirect()->route('kelola-katalog.index', ['kategori' => $kategori])
+            ->with('success', self::KATEGORI[$kategori] . ' berhasil ditambahkan.');
+    }
+
+    // Edit data. Gambar lama dihapus hanya bila gambar baru diunggah.
+    public function update(Request $request, string $kategori, int $id)
+    {
+        $item = $this->find($kategori, $id);
+        $v = $this->validator($request, $kategori, $item);
+        if ($v->fails()) {
+            return $this->fail($v, $kategori, 'edit', $id);
+        }
+        $data = $v->validated();
+        unset($data['stok']); // stok hanya berubah lewat stok(); form edit bisa memuat stok lama
+        $dir = $kategori === 'ruangan' ? Ruangan::GAMBAR_DIR : AlatBahan::GAMBAR_DIR;
+        unset($data['gambar']);
+        // Urutan: simpan gambar baru, simpan namanya ke database, baru hapus gambar lama.
+        $gambarLama = $item->gambar;
+        if ($request->hasFile('gambar')) {
+            $data['gambar'] = $this->saveImage($request->file('gambar'), $dir);
+        }
+        $item->update($data);
+        if ($request->hasFile('gambar')) {
+            $this->deleteImage($gambarLama, $dir);
+        }
+
+        return redirect()->route('kelola-katalog.index', $request->only(['search', 'sort', 'direction', 'per_page', 'page']) + ['kategori' => $kategori])
+            ->with('success', self::KATEGORI[$kategori] . ' berhasil diperbarui.');
+    }
+
+    /** Stok manual: tambah/kurangi stok Alat/Bahan. Jumlah harus bilangan bulat > 0 dan stok tidak boleh negatif. */
+    // Stok manual tambah/kurangi. Baris dikunci agar dua perubahan bersamaan tidak saling menimpa.
+    public function stok(Request $request, string $kategori, int $id)
+    {
+        $back = redirect()->route('kelola-katalog.index', $request->only(['search', 'sort', 'direction', 'per_page', 'page']) + ['kategori' => $kategori]);
+        $v = Validator::make($request->only(['aksi', 'jumlah']), [
+            'aksi' => ['required', Rule::in(['tambah', 'kurangi'])],
+            'jumlah' => ['bail', 'required', 'integer', 'min:1', 'max:4294967295'],
+        ], [
+            'aksi.required' => 'Pilih aksi tambah atau kurangi stok.', 'aksi.in' => 'Pilih aksi tambah atau kurangi stok.',
+            'jumlah.required' => 'Jumlah wajib diisi.', 'jumlah.integer' => 'Jumlah harus berupa angka bulat.',
+            'jumlah.min' => 'Jumlah minimal 1.', 'jumlah.max' => 'Jumlah terlalu besar.',
+        ]);
+        if ($v->fails()) {
+            return $back->with('error', $v->errors()->first());
+        }
+        $jumlah = (int) $v->validated()['jumlah'];
+        $tambah = $v->validated()['aksi'] === 'tambah';
+
+        $jejak = null;
+        $hasil = DB::transaction(function () use ($kategori, $id, $jumlah, $tambah, &$jejak) {
+            // lockForUpdate mengunci baris sampai transaksi selesai.
+            $item = AlatBahan::where('jenis', $kategori)->lockForUpdate()->findOrFail($id);
+            $baru = $tambah ? $item->stok + $jumlah : $item->stok - $jumlah;
+            if ($baru < 0) {
+                return "Stok \"{$item->nama}\" tidak mencukupi. Stok saat ini {$item->stok}.";
+            }
+            if ($baru > 4294967295) {
+                return 'Stok melebihi batas maksimum.';
+            }
+            $lama = $item->stok;
+            $item->update(['stok' => $baru]);
+            $jejak = ['id_katalog' => $item->id_katalog, 'nama' => $item->nama, 'stok_lama' => $lama, 'stok_baru' => $baru];
+
+            return null;
+        });
+        // Jejak perubahan stok manual (tanpa tabel baru), dicatat setelah transaksi berhasil.
+        if ($jejak) {
+            Log::info('Stok katalog diubah manual.', ['pelaku' => AuthService::user()['email'] ?? null, 'aksi' => $tambah ? 'tambah' : 'kurangi', 'jumlah' => $jumlah] + $jejak);
+        }
+
+        return $hasil
+            ? $back->with('error', $hasil)
+            : $back->with('success', 'Stok berhasil ' . ($tambah ? 'ditambah' : 'dikurangi') . '.');
+    }
+
+    // Hapus data. Bila sudah dipakai data lain (foreign key RESTRICT) ditolak; gambar baru dihapus setelah berhasil.
+    public function destroy(Request $request, string $kategori, int $id)
+    {
+        $item = $this->find($kategori, $id);
+        $back = redirect()->route('kelola-katalog.index', $request->only(['search', 'sort', 'direction', 'per_page', 'page']) + ['kategori' => $kategori]);
+        try {
+            $item->delete(); // FK RESTRICT: ditolak bila sudah dipakai peminjaman/jadwal/katalog
+        } catch (QueryException $e) {
+            if ($e->getCode() !== '23000') {
+                throw $e;
+            }
+            return $back->with('error', self::KATEGORI[$kategori] . ' "' . ($item->nama ?? $item->nama_ruangan) . '" sudah dipakai data lain dan tidak dapat dihapus.');
+        }
+        $this->deleteImage($item->gambar, $kategori === 'ruangan' ? Ruangan::GAMBAR_DIR : AlatBahan::GAMBAR_DIR);
+
+        return $back->with('success', self::KATEGORI[$kategori] . ' berhasil dihapus.');
+    }
+
+    public function template(string $kategori, KatalogImportService $svc)
+    {
+        [$writer, $name] = $svc->template($kategori);
+
+        return response()->streamDownload(fn () => $writer->save('php://output'), $name);
+    }
+
+    // Import Excel katalog; hasil gagal ditampilkan sebagai laporan per baris.
+    public function import(Request $request, string $kategori, KatalogImportService $svc)
+    {
+        $request->validate(['file' => ExcelFile::rules(5120)], ExcelFile::messages(5120));
+        $back = redirect()->route('kelola-katalog.index', ['kategori' => $kategori]);
+        try {
+            $result = $svc->import($request->file('file'), $kategori);
+        } catch (\RuntimeException $e) {
+            return $back->with('error', $e->getMessage());
+        }
+
+        return $result['success']
+            ? $back->with('success', $result['inserted'] . ' data ' . self::KATEGORI[$kategori] . ' berhasil diimpor.')
+            : $back->with('inv_import_report', $result);
+    }
+
+    private function find(string $kategori, int $id)
+    {
+        return $kategori === 'ruangan'
+            ? Ruangan::findOrFail($id)
+            : AlatBahan::where('jenis', $kategori)->findOrFail($id);
+    }
+
+    // Aturan validasi dibedakan per kategori; pesan error dalam bahasa Indonesia.
+    private function validator(Request $request, string $kategori, $item)
+    {
+        $squish = fn ($v) => trim(preg_replace('/\s+/u', ' ', (string) $v));
+        if ($kategori === 'ruangan') {
+            $input = ['nama_ruangan' => $squish($request->input('nama_ruangan')), 'keterangan' => $request->input('keterangan'), 'gambar' => $request->file('gambar')];
+            $rules = [
+                'nama_ruangan' => ['bail', 'required', 'string', 'max:50', Rule::unique('ruangans', 'nama_ruangan')->ignore($item?->getKey(), 'id_ruangan')],
+                'keterangan' => ['nullable', 'string', 'max:2000'],
+                // Validasi upload: harus gambar jpg/png/webp, maksimal 2 MB.
+                'gambar' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            ];
+
+            return Validator::make($input, $rules, [
+                'required' => ':attribute wajib diisi.', 'max' => ':attribute maksimal :max karakter.',
+                'nama_ruangan.unique' => 'Nama ruangan sudah terdaftar.',
+                'gambar.image' => 'File harus berupa gambar.',
+                'gambar.mimes' => 'Gambar harus berformat JPG, PNG, atau WEBP.',
+                'gambar.max' => 'Ukuran gambar maksimal 2 MB.',
+            ], ['nama_ruangan' => 'Nama', 'keterangan' => 'Keterangan', 'gambar' => 'Gambar']);
+        }
+
+        $input = $request->only(['id_satuan', 'stok', 'harga', 'id_ruangan', 'keterangan']);
+        $input['nama'] = $squish($request->input('nama'));
+        $input['gambar'] = $request->file('gambar');
+        $rules = [
+            'nama' => ['bail', 'required', 'string', 'max:50', Rule::unique('alat_bahans', 'nama')->ignore($item?->getKey(), 'id_katalog')],
+            'id_satuan' => ['bail', 'required', 'integer', Rule::exists('satuans', 'id_satuan')],
+            'stok' => ['bail', 'required', 'integer', 'min:0', 'max:4294967295'],
+            'harga' => ['bail', 'required', 'numeric', 'gt:0', 'max:9999999999999.99', 'regex:/^\d+(\.\d{1,2})?$/'],
+            'id_ruangan' => ['bail', 'required', 'integer', Rule::exists('ruangans', 'id_ruangan')],
+            'keterangan' => ['nullable', 'string', 'max:2000'],
+            // Gambar wajib: pada tambah harus diunggah; pada edit sudah ada sehingga hanya perlu bila mengganti.
+            'gambar' => [($item && $item->gambar) ? 'nullable' : 'required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+        ];
+        return Validator::make($input, $rules, [
+            'required' => ':attribute wajib diisi.',
+            'nama.unique' => 'Nama sudah terdaftar pada katalog.',
+            'nama.max' => 'Nama maksimal :max karakter.',
+            'integer' => ':attribute harus berupa angka bulat.',
+            'min' => ':attribute minimal :min.',
+            'gt' => ':attribute harus lebih dari 0.',
+            'harga.regex' => 'Harga maksimal 2 angka di belakang koma.',
+            'id_satuan.exists' => 'Pilih Satuan dari daftar.',
+            'id_ruangan.exists' => 'Pilih Ruangan dari daftar.',
+            'gambar.image' => 'File harus berupa gambar.',
+            'gambar.mimes' => 'Gambar harus berformat JPG, PNG, atau WEBP.',
+            'gambar.max' => 'Ukuran gambar maksimal 2 MB.',
+        ], [
+            'nama' => 'Nama', 'id_satuan' => 'Satuan', 'stok' => 'Stok', 'harga' => 'Harga',
+            'id_ruangan' => 'Ruangan', 'keterangan' => 'Keterangan', 'gambar' => 'Gambar',
+        ]);
+    }
+
+    // Simpan gambar ke disk 'public' (storage/app/public) dengan nama acak; butuh `php artisan storage:link` agar bisa diakses.
+    private function saveImage($file, string $dir = AlatBahan::GAMBAR_DIR): string
+    {
+        $name = Str::uuid() . '.' . ($file->guessExtension() ?: 'jpg');
+        $file->storeAs($dir, $name, 'public'); // storage/app/public/{dir}; tampil lewat public/storage (storage:link)
+
+        return $name;
+    }
+
+    // Hapus file gambar (lokasi baru dan lokasi lama) lewat GambarKatalog.
+    private function deleteImage(?string $name, string $dir = AlatBahan::GAMBAR_DIR): void
+    {
+        GambarKatalog::hapus($name, $dir);
+    }
+
+    // Validasi gagal: kembali ke daftar dan buka lagi modal form dengan error.
+    private function fail($validator, string $kategori, string $mode, ?int $id)
+    {
+        return redirect()->route('kelola-katalog.index', ['kategori' => $kategori])
+            ->withErrors($validator)->withInput()
+            ->with('open_modal', ['mode' => $mode, 'id' => $id]);
+    }
+
+    private function kategori(mixed $v): string
+    {
+        return is_string($v) && isset(self::KATEGORI[$v]) ? $v : 'alat';
+    }
+}

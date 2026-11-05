@@ -1,0 +1,154 @@
+<?php
+
+use App\Http\Controllers\AlatBahanController;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DataAkademikController;
+use App\Http\Controllers\JadwalController;
+use App\Http\Controllers\KelolaKatalogController;
+use App\Http\Controllers\MahasiswaController;
+use App\Http\Controllers\NotifikasiController;
+use App\Http\Controllers\PengadaanTpkController;
+use App\Http\Controllers\PengajuanController;
+use App\Http\Controllers\PeriodeJadwalController;
+use App\Http\Controllers\PengembalianController;
+use App\Http\Controllers\ProfilController;
+use App\Http\Controllers\PeminjamanController;
+use App\Http\Controllers\PengaturanLaboratoriumController;
+use App\Http\Controllers\UserManagementController;
+use App\Support\Role;
+use Illuminate\Support\Facades\Route;
+
+/*
+|--------------------------------------------------------------------------
+| Web Routes
+|--------------------------------------------------------------------------
+| Role: mahasiswa | dosen | staff | laboran (Laboran/Admin)
+*/
+
+// Landing Page + Login / logout (tanpa registrasi: akun dikelola Laboran/Admin)
+Route::get('/', [AuthController::class, 'landing'])->name('landing');
+Route::get('login', [AuthController::class, 'showLogin'])->name('login');
+Route::post('login', [AuthController::class, 'login'])->name('login.attempt');
+Route::post('logout', [AuthController::class, 'logout'])->name('logout');
+
+// Semua route di dalam grup ini wajib login (middleware silab.auth = SilabAuth)
+// dan wajib ganti password awal bila ditandai (silab.password = WajibGantiPassword).
+Route::middleware(['silab.auth', 'silab.password'])->group(function () {
+
+    // Beranda: dashboard ringkas sesuai role
+    Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+    // Katalog: dapat dilihat semua role (hanya-baca untuk selain Laboran/Admin)
+    Route::get('katalog', [AlatBahanController::class, 'index'])->name('katalog');
+
+    // Notifikasi: semua role; tiap aksi dibatasi ke notifikasi milik akun yang login (dicek ulang di controller)
+    Route::get('notifikasi', [NotifikasiController::class, 'index'])->name('notifikasi.index');
+    Route::post('notifikasi/{id}/baca', [NotifikasiController::class, 'baca'])->name('notifikasi.baca');
+    Route::post('notifikasi/baca-semua', [NotifikasiController::class, 'bacaSemua'])->name('notifikasi.baca-semua');
+
+    // Profil Saya: semua role boleh ubah profil sendiri dan ganti password.
+    Route::get('profil', [ProfilController::class, 'index'])->name('profil.index');
+    Route::put('profil', [ProfilController::class, 'update'])->name('profil.update');
+    Route::put('profil/password', [ProfilController::class, 'password'])->name('profil.password');
+
+    // Staf Prodi dan Laboran/Admin (Super Admin)
+    Route::middleware('silab.role:' . Role::STAFF . ',' . Role::LABORAN)->group(function () {
+
+        // Data Akademik: Mata Kuliah, Kelas, Semester, dan Dosen (satu menu, empat tab)
+        $tabAkademik = ['mata-kuliah', 'kelas', 'dosen'];
+        Route::get('data-akademik', [DataAkademikController::class, 'index'])->name('data-akademik.index');
+        Route::get('data-akademik/{tab}/template', [DataAkademikController::class, 'template'])
+            ->whereIn('tab', $tabAkademik)->name('data-akademik.template');
+        Route::post('data-akademik/{tab}/import', [DataAkademikController::class, 'import'])
+            ->whereIn('tab', $tabAkademik)->name('data-akademik.import');
+        Route::post('data-akademik/{tab}', [DataAkademikController::class, 'store'])
+            ->whereIn('tab', $tabAkademik)->name('data-akademik.store');
+        Route::put('data-akademik/{tab}/{id}', [DataAkademikController::class, 'update'])
+            ->whereIn('tab', $tabAkademik)->where('id', '[A-Za-z0-9._\-]+')->name('data-akademik.update');
+        Route::delete('data-akademik/{tab}/{id}', [DataAkademikController::class, 'destroy'])
+            ->whereIn('tab', $tabAkademik)->where('id', '[A-Za-z0-9._\-]+')->name('data-akademik.destroy');
+
+        // Kelola Jadwal Perkuliahan (cek bentrok ruangan/hari/jam lewat JadwalService)
+        // Periode berlaku jadwal (periode lama otomatis menjadi arsip hanya-baca)
+        Route::get('jadwal/periode', [PeriodeJadwalController::class, 'index'])->name('jadwal.periode.index');
+        Route::post('jadwal/periode', [PeriodeJadwalController::class, 'store'])->name('jadwal.periode.store');
+        Route::put('jadwal/periode/{id}', [PeriodeJadwalController::class, 'update'])->whereNumber('id')->name('jadwal.periode.update');
+
+        Route::get('jadwal', [JadwalController::class, 'index'])->name('jadwal.index');
+        Route::get('jadwal/create', [JadwalController::class, 'create'])->name('jadwal.create');
+        Route::post('jadwal', [JadwalController::class, 'store'])->name('jadwal.store');
+        Route::get('jadwal/{jadwal}', [JadwalController::class, 'show'])->whereNumber('jadwal')->name('jadwal.show');
+        Route::get('jadwal/{jadwal}/edit', [JadwalController::class, 'edit'])->whereNumber('jadwal')->name('jadwal.edit');
+        Route::put('jadwal/{jadwal}', [JadwalController::class, 'update'])->whereNumber('jadwal')->name('jadwal.update');
+        Route::delete('jadwal/{jadwal}', [JadwalController::class, 'destroy'])->whereNumber('jadwal')->name('jadwal.destroy');
+    });
+
+    // Transaksi Peminjaman: pengajuan & riwayat (hanya Mahasiswa dan Dosen yang dapat mengajukan)
+    Route::middleware('silab.role:' . Role::MAHASISWA . ',' . Role::DOSEN)->group(function () {
+        Route::get('peminjaman', [PeminjamanController::class, 'index'])->name('peminjaman.index');
+        Route::post('peminjaman', [PeminjamanController::class, 'store'])->middleware('throttle:10,1')->name('peminjaman.store');
+        Route::get('peminjaman/riwayat', [PeminjamanController::class, 'riwayat'])->name('peminjaman.riwayat');
+    });
+
+    // Detail transaksi: pemilik pengajuan, Dosen, dan Laboran/Admin (dicek ulang di controller)
+    Route::get('peminjaman/{id}', [PeminjamanController::class, 'show'])->whereNumber('id')->name('peminjaman.show');
+
+    // Batalkan (peminjam) dan Selesai (pihak berwenang): hak akses dicek ulang di PeminjamanService
+    Route::post('peminjaman/{id}/batal', [PeminjamanController::class, 'batalkan'])->whereNumber('id')->name('peminjaman.batal');
+    Route::post('peminjaman/{id}/selesai', [PeminjamanController::class, 'selesai'])->whereNumber('id')->name('peminjaman.selesai');
+
+    // Transaksi Peminjaman: persetujuan/penolakan pengajuan (Dosen dan Laboran/Admin)
+    Route::middleware('silab.role:' . Role::DOSEN . ',' . Role::LABORAN)->group(function () {
+        Route::get('pengajuan-peminjaman', [PengajuanController::class, 'index'])->name('pengajuan.index');
+        Route::post('pengajuan-peminjaman/{id}/setujui', [PengajuanController::class, 'setujui'])->whereNumber('id')->name('pengajuan.setujui');
+        Route::post('pengajuan-peminjaman/{id}/tolak', [PengajuanController::class, 'tolak'])->whereNumber('id')->name('pengajuan.tolak');
+    });
+
+    // Khusus Laboran/Admin
+    Route::middleware('silab.role:' . Role::LABORAN)->group(function () {
+
+        // Pengembalian hanya dicatat Laboran/Admin (Dosen ditolak di tingkat route)
+        Route::get('pengembalian', [PengembalianController::class, 'index'])->name('pengembalian.index');
+        Route::post('pengembalian/{id}', [PengembalianController::class, 'store'])->whereNumber('id')->name('pengembalian.store');
+
+        // Kelola Katalog (Alat, Bahan, Ruangan — satu menu, 3 tab terpisah)
+        $kat = ['kategori' => array_keys(KelolaKatalogController::KATEGORI)];
+        Route::get('kelola-katalog', [KelolaKatalogController::class, 'index'])->name('kelola-katalog.index');
+        Route::post('kelola-katalog/{kategori}', [KelolaKatalogController::class, 'store'])->whereIn('kategori', $kat['kategori'])->name('kelola-katalog.store');
+        Route::put('kelola-katalog/{kategori}/{id}', [KelolaKatalogController::class, 'update'])->whereIn('kategori', $kat['kategori'])->whereNumber('id')->name('kelola-katalog.update');
+        Route::post('kelola-katalog/{kategori}/{id}/stok', [KelolaKatalogController::class, 'stok'])->whereIn('kategori', ['alat', 'bahan'])->whereNumber('id')->name('kelola-katalog.stok');
+        Route::delete('kelola-katalog/{kategori}/{id}', [KelolaKatalogController::class, 'destroy'])->whereIn('kategori', $kat['kategori'])->whereNumber('id')->name('kelola-katalog.destroy');
+        Route::get('kelola-katalog/{kategori}/template', [KelolaKatalogController::class, 'template'])->whereIn('kategori', $kat['kategori'])->name('kelola-katalog.template');
+        Route::post('kelola-katalog/{kategori}/import', [KelolaKatalogController::class, 'import'])->whereIn('kategori', $kat['kategori'])->name('kelola-katalog.import');
+
+        // Pengaturan Laboratorium: tab Satuan (dropdown alat/bahan) dan tab Operasional (jam & hari buka)
+        Route::get('pengaturan-lab', [PengaturanLaboratoriumController::class, 'index'])->name('pengaturan-lab.index');
+        Route::post('pengaturan-lab/satuan', [PengaturanLaboratoriumController::class, 'store'])->name('pengaturan-lab.satuan.store');
+        Route::put('pengaturan-lab/satuan/{id}', [PengaturanLaboratoriumController::class, 'update'])->whereNumber('id')->name('pengaturan-lab.satuan.update');
+        Route::delete('pengaturan-lab/satuan/{id}', [PengaturanLaboratoriumController::class, 'destroy'])->whereNumber('id')->name('pengaturan-lab.satuan.destroy');
+        Route::put('pengaturan-lab/operasional', [PengaturanLaboratoriumController::class, 'updateOperasional'])->name('pengaturan-lab.operasional.update');
+
+        // Pengadaan TPK (Sistem Pendukung Keputusan SAW)
+        Route::get('pengadaan-tpk', [PengadaanTpkController::class, 'index'])->name('pengadaan-tpk.index');
+        Route::get('pengadaan-tpk/cetak', [PengadaanTpkController::class, 'cetak'])->name('pengadaan-tpk.cetak');
+        Route::get('pengadaan-tpk/export-csv', [PengadaanTpkController::class, 'exportCsv'])->name('pengadaan-tpk.export-csv');
+
+        // Kelola Data User (satu menu, 4 kategori)
+        Route::get('kelola-user', [UserManagementController::class, 'index'])->name('kelola-user.index');
+        Route::get('kelola-user/{kategori}/template', [UserManagementController::class, 'template'])
+            ->whereIn('kategori', [Role::DOSEN, Role::STAFF, Role::LABORAN])->name('kelola-user.template');
+        Route::post('kelola-user/{kategori}/import', [UserManagementController::class, 'import'])
+            ->whereIn('kategori', [Role::DOSEN, Role::STAFF, Role::LABORAN])->name('kelola-user.import');
+        Route::post('kelola-user/{kategori}', [UserManagementController::class, 'store'])
+            ->whereIn('kategori', Role::ALL)->name('kelola-user.store');
+        Route::put('kelola-user/{kategori}/{key}', [UserManagementController::class, 'update'])
+            ->whereIn('kategori', Role::ALL)->where('key', '[A-Za-z0-9._\-]+')->name('kelola-user.update');
+        Route::delete('kelola-user/{kategori}/{key}', [UserManagementController::class, 'destroy'])
+            ->whereIn('kategori', Role::ALL)->where('key', '[A-Za-z0-9._\-]+')->name('kelola-user.destroy');
+
+        // Import & template Excel mahasiswa (dipakai di kategori Mahasiswa)
+        Route::get('mahasiswa/template', [MahasiswaController::class, 'template'])->name('mahasiswa.template');
+        Route::post('mahasiswa/import', [MahasiswaController::class, 'import'])->name('mahasiswa.import');
+    });
+});
