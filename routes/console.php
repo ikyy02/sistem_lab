@@ -2,13 +2,7 @@
 
 use App\Services\PengingatPeminjamanService;
 use App\Services\SinkronSelesaiService;
-use Illuminate\Foundation\Inspiring;
-use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
-
-Artisan::command('inspire', function () {
-    $this->comment(Inspiring::quote());
-})->purpose('Display an inspiring quote');
 
 // Status "selesai" ditentukan sistem (ruangan berakhir, bahan saja setelah rencana kembali): evaluasi berkala
 // sekaligus kirim PeminjamanSelesai sekali untuk tiap transaksi yang baru berubah menjadi selesai.

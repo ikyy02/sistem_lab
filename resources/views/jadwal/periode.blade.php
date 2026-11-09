@@ -8,12 +8,12 @@
 @php $tgl = fn ($d) => $d?->format('d/m/Y'); @endphp
 
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
-    <p class="mb-0" style="font-size:.83rem;color:var(--text-muted);">Perbarui periode setiap pergantian periode atau setengah semester. Jadwal periode sebelumnya disimpan sebagai arsip dan tidak dapat diubah.</p>
-    <a href="{{ route('jadwal.index') }}" class="btn btn-outline-silab d-flex align-items-center gap-2"><i class="bi bi-arrow-left"></i> Jadwal Perkuliahan</a>
+    <p class="mb-0" style="font-size:.875rem;color:var(--text-muted);">Perbarui periode setiap pergantian periode atau setengah semester. Jadwal periode sebelumnya disimpan sebagai arsip dan tidak dapat diubah.</p>
+    <a href="{{ route('jadwal.index') }}" class="btn btn-outline-silab d-flex align-items-center gap-2"><i class="bi bi-arrow-left" aria-hidden="true"></i> Jadwal Perkuliahan</a>
 </div>
 
 @if($errors->any())
-    <div class="alert alert-danger mb-3"><ul class="mb-0 ps-3">@foreach($errors->all() as $pesan)<li>{{ $pesan }}</li>@endforeach</ul></div>
+    <div class="alert alert-danger mb-3" role="alert"><ul class="mb-0 ps-3">@foreach($errors->all() as $pesan)<li>{{ $pesan }}</li>@endforeach</ul></div>
 @endif
 
 <div class="row g-3 mb-3">
@@ -46,7 +46,7 @@
               data-konfirmasi="Mulai periode baru? Periode berjalan akan diarsipkan dan jadwalnya tidak dapat diubah lagi.">
             @csrf
             <h5 class="fw-bold mb-1" style="font-size:1rem;">Mulai Periode Baru</h5>
-            <p class="mb-3" style="font-size:.8rem;color:var(--text-muted);">{{ $berjalan ? 'Periode berjalan saat ini akan diarsipkan.' : 'Belum ada periode berjalan.' }} Jadwal baru akan tercatat pada periode ini.</p>
+            <p class="mb-3" style="font-size:.875rem;color:var(--text-muted);">{{ $berjalan ? 'Periode berjalan saat ini akan diarsipkan.' : 'Belum ada periode berjalan.' }} Jadwal baru akan tercatat pada periode ini.</p>
             <div class="row g-3">
                 <div class="col-12">
                     <label class="form-label" for="b_nama">Nama Periode <span class="text-danger">*</span></label>
@@ -69,7 +69,8 @@
 <div class="card-modern overflow-hidden">
     <div class="table-responsive">
         <table class="table table-silab mb-0">
-            <thead><tr><th class="ps-4" style="width:56px;">No</th><th>Periode</th><th>Berlaku</th><th>Jumlah Jadwal</th><th class="pe-4">Status</th></tr></thead>
+<caption class="visually-hidden">{{ trim($__env->yieldContent('page-title')) }}</caption>
+            <thead><tr><th scope="col" class="ps-4" style="width:56px;">No</th><th scope="col">Periode</th><th scope="col">Berlaku</th><th scope="col">Jumlah Jadwal</th><th scope="col" class="pe-4">Status</th></tr></thead>
             <tbody>
             {{-- Hanya periode berjalan yang bisa diubah; periode lain berstatus arsip (hanya baca). --}}
             @forelse($periode as $p)
@@ -87,7 +88,7 @@
                     </td>
                 </tr>
             @empty
-                <tr><td colspan="5" class="text-center py-5" style="color:var(--text-muted);"><i class="bi bi-calendar-x fs-1 d-block mb-2" style="color:#c9bdb4;"></i>Belum ada periode jadwal.</td></tr>
+                <tr><td colspan="5" class="text-center py-5" style="color:var(--text-muted);"><i class="bi bi-calendar-x fs-1 d-block mb-2" aria-hidden="true" style="color:#c9bdb4;"></i>Belum ada periode jadwal.</td></tr>
             @endforelse
             </tbody>
         </table>

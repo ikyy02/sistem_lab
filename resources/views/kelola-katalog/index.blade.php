@@ -18,7 +18,7 @@
     $colspan = count($config['columns']) + 3;
 @endphp
 
-<p class="mb-3" style="font-size:.83rem;color:var(--text-muted);">
+<p class="mb-3" style="font-size:.875rem;color:var(--text-muted);">
     {{ $isRoom
         ? 'Ruangan dipakai sebagai lokasi penyimpanan alat/bahan dan untuk peminjaman ruangan.'
         : 'Harga adalah harga untuk 1 satuan. Lokasi penyimpanan dipilih pada form dan ditampilkan di kolom Keterangan.' }}
@@ -44,7 +44,7 @@
                     Import dibatalkan: {{ $report['error_count'] }} dari {{ $report['total'] }} baris bermasalah
                 </div>
 
-                <div style="font-size:.8rem;color:#be123c;">
+                <div style="font-size:.875rem;color:#be123c;">
                     Tidak ada data yang disimpan. Perbaiki baris berikut lalu unggah ulang.
                 </div>
             </div>
@@ -58,12 +58,13 @@
         </div>
 
         <div class="table-responsive" style="max-height:320px;overflow-y:auto;">
-            <table class="table table-sm mb-0" style="font-size:.82rem;">
+            <table class="table table-sm mb-0" style="font-size:.875rem;">
+<caption class="visually-hidden">{{ trim($__env->yieldContent('page-title')) }}</caption>
                 <thead>
                     <tr>
-                        <th class="ps-4" style="width:90px;">Baris</th>
-                        <th style="width:220px;">Nama</th>
-                        <th>Alasan</th>
+                        <th scope="col" class="ps-4" style="width:90px;">Baris</th>
+                        <th scope="col" style="width:220px;">Nama</th>
+                        <th scope="col">Alasan</th>
                     </tr>
                 </thead>
 
@@ -107,8 +108,8 @@
             <div class="input-group">
                 <span
                     class="input-group-text bg-white"
-                    style="border-color:var(--border-color);">
-                    <i class="bi bi-search"></i>
+                    style="border-color:var(--border);">
+                    <i class="bi bi-search" aria-hidden="true"></i>
                 </span>
 
                 <input
@@ -172,7 +173,7 @@
                 href="{{ route('kelola-katalog.index', ['kategori' => $kategori]) }}"
                 class="btn btn-outline-silab"
                 title="Reset">
-                <i class="bi bi-arrow-counterclockwise"></i>
+                <i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i>
             </a>
         </div>
     </div>
@@ -181,14 +182,15 @@
 <div class="card-modern overflow-hidden">
     <div class="table-responsive">
         <table class="table table-silab tbl-katalog mb-0">
+<caption class="visually-hidden">{{ trim($__env->yieldContent('page-title')) }}</caption>
             <thead>
                 <tr>
-                    <th class="ps-4 col-no" style="width:56px;">No</th>
+                    <th scope="col" class="ps-4 col-no" style="width:56px;">No</th>
 
-                    <th class="col-gambar" style="width:84px;">Gambar</th>
+                    <th scope="col" class="col-gambar" style="width:84px;">Gambar</th>
 
                     @foreach($config['columns'] as $col => [$text, $sortable])
-                        <th class="col-{{ $col }}">
+                        <th scope="col" class="col-{{ $col }}">
                             @if($sortable)
                                 @php
                                     $next = ($sort === $col && $direction === 'asc')
@@ -215,7 +217,7 @@
                                                 ? 'bi-sort-up'
                                                 : 'bi-sort-down')
                                             : 'bi-arrow-down-up' }}"
-                                        style="font-size:.8rem;">
+                                        style="font-size:.875rem;">
                                     </i>
                                 </a>
                             @else
@@ -224,7 +226,7 @@
                         </th>
                     @endforeach
 
-                    <th class="text-end pe-3 col-aksi">
+                    <th scope="col" class="text-end pe-3 col-aksi">
                         Aksi
                     </th>
                 </tr>
@@ -260,7 +262,7 @@
                                         onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
                                 @else
                                     <span class="thumb-empty">
-                                        <i class="bi bi-image"></i>
+                                        <i class="bi bi-image" aria-hidden="true"></i>
                                     </span>
                                 @endif
                             </td>
@@ -325,7 +327,7 @@
                                     data-id="{{ $item->getKey() }}"
                                     data-item="{{ json_encode($payload) }}"
                                     onclick="openItemModal('edit', this)">
-                                    <i class="bi bi-pencil"></i>
+                                    <i class="bi bi-pencil" aria-hidden="true"></i>
                                     <span class="btn-label">Edit</span>
                                 </button>
 
@@ -344,7 +346,7 @@
                                         type="submit"
                                         class="btn btn-del btn-aksi d-flex align-items-center gap-1 text-nowrap"
                                         title="Hapus">
-                                        <i class="bi bi-trash"></i>
+                                        <i class="bi bi-trash" aria-hidden="true"></i>
                                         <span class="btn-label">Hapus</span>
                                     </button>
                                 </form>

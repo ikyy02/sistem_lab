@@ -7,7 +7,7 @@
 @section('content')
 @php $satuan = $tab === 'satuan'; @endphp
 
-<p class="mb-3" style="font-size:.83rem;color:var(--text-muted);">
+<p class="mb-3" style="font-size:.875rem;color:var(--text-muted);">
     @if($satuan)Perubahan di sini otomatis mengikuti dropdown pada form Kelola Katalog.@else Jam dan hari operasional dipakai untuk memeriksa waktu pengajuan peminjaman.@endif
 </p>
 
@@ -27,7 +27,7 @@
         <div class="col-12 col-lg-6">
             <label class="form-label" for="search">Pencarian</label>
             <div class="input-group">
-                <span class="input-group-text bg-white" style="border-color:var(--border-color);"><i class="bi bi-search"></i></span>
+                <span class="input-group-text bg-white" style="border-color:var(--border);"><i class="bi bi-search" aria-hidden="true"></i></span>
                 <input type="text" id="search" name="search" value="{{ $search }}" maxlength="100" class="form-control" placeholder="Cari satuan...">
             </div>
         </div>
@@ -39,7 +39,7 @@
         </div>
         <div class="col-6 col-lg-4 d-flex gap-2">
             <button type="submit" class="btn btn-outline-silab flex-grow-1">Terapkan</button>
-            <a href="{{ route('pengaturan-lab.index', ['tab' => 'satuan']) }}" class="btn btn-outline-silab" title="Reset filter" aria-label="Reset filter"><i class="bi bi-arrow-counterclockwise"></i></a>
+            <a href="{{ route('pengaturan-lab.index', ['tab' => 'satuan']) }}" class="btn btn-outline-silab" title="Reset filter" aria-label="Reset filter"><i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i></a>
         </div>
     </div>
 </form>
@@ -47,12 +47,13 @@
 <div class="card-modern overflow-hidden">
     <div class="table-responsive">
         <table class="table table-silab mb-0">
+<caption class="visually-hidden">{{ trim($__env->yieldContent('page-title')) }}</caption>
             <thead>
                 <tr>
-                    <th class="text-center" style="width:60px;">NO</th>
-                    <th>SATUAN</th>
-                    <th class="text-center" style="width:120px;">DIPAKAI</th>
-                    <th class="text-end pe-4" style="width:160px;">AKSI</th>
+                    <th scope="col" class="text-center" style="width:60px;">NO</th>
+                    <th scope="col">SATUAN</th>
+                    <th scope="col" class="text-center" style="width:120px;">DIPAKAI</th>
+                    <th scope="col" class="text-end pe-4" style="width:160px;">AKSI</th>
                 </tr>
             </thead>
             <tbody>
@@ -67,22 +68,22 @@
                         <div class="d-flex justify-content-end gap-2">
                             <button type="button" class="btn btn-edit d-flex align-items-center gap-1" data-id="{{ $item->id }}"
                                     data-item="{{ json_encode(['nama' => $item->nama]) }}"
-                                    onclick="openMasterModal('edit', this)"><i class="bi bi-pencil"></i> Edit</button>
+                                    onclick="openMasterModal('edit', this)"><i class="bi bi-pencil" aria-hidden="true"></i> Edit</button>
                             <form action="{{ route('pengaturan-lab.satuan.destroy', ['id' => $item->id] + $listQuery) }}" method="POST"
                                   data-konfirmasi="Hapus satuan &quot;{{ $item->nama }}&quot;?">
                                 @csrf @method('DELETE')
-                                <button type="submit" class="btn btn-del d-flex align-items-center gap-1"><i class="bi bi-trash"></i> Hapus</button>
+                                <button type="submit" class="btn btn-del d-flex align-items-center gap-1"><i class="bi bi-trash" aria-hidden="true"></i> Hapus</button>
                             </form>
                         </div>
                     </td>
                 </tr>
             @empty
                 <tr><td colspan="4" class="text-center py-5" style="color:var(--text-muted);">
-                    <i class="bi bi-inbox fs-1 d-block mb-2" style="color:#c3cbdb;"></i>
+                    <i class="bi bi-inbox fs-1 d-block mb-2" aria-hidden="true" style="color:#c3cbdb;"></i>
                     <p class="mb-2">{{ $search !== '' ? 'Tidak ada satuan yang cocok dengan “' . $search . '”.' : 'Belum ada data satuan.' }}</p>
                     @if($search === '')
                         <button type="button" class="btn btn-primary btn-sm mt-1" onclick="openMasterModal('create')">
-                            <i class="bi bi-plus-lg"></i> Tambah Satuan
+                            <i class="bi bi-plus-lg" aria-hidden="true"></i> Tambah Satuan
                         </button>
                     @endif
                 </td></tr>
@@ -97,7 +98,7 @@
 </div>
 
 <!-- Modal Tambah/Edit Satuan -->
-<div class="modal fade" id="masterModal" tabindex="-1" aria-hidden="true">
+<div class="modal fade" id="masterModal" aria-labelledby="masterModalTitle" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <form method="POST" id="masterForm" class="modal-content" autocomplete="off"
               data-store="{{ route('pengaturan-lab.satuan.store') }}"

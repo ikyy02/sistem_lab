@@ -1,5 +1,5 @@
 <!-- Modal Import -->
-<div class="modal fade" id="importModal" tabindex="-1" aria-hidden="true">
+<div class="modal fade" id="importModal" aria-labelledby="importModal-judul" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <form
             action="{{ route('kelola-katalog.import', $kategori) }}"
@@ -11,7 +11,7 @@
             @csrf
 
             <div class="modal-header">
-                <h5 class="modal-title fw-bold" style="font-size:1rem;">
+                <h5 id="importModal-judul" class="modal-title fw-bold" style="font-size:1rem;">
                     Import Excel {{ $label }}
                 </h5>
 
@@ -62,9 +62,9 @@
 
                 <div
                     class="d-flex align-items-start gap-2 mt-3 p-3"
-                    style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; font-size:.8rem; color:#64748b;"
+                    style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; font-size:.875rem; color:#64748b;"
                 >
-                    <i class="bi bi-info-circle-fill" style="color:#2563eb; margin-top:2px;"></i>
+                    <i class="bi bi-info-circle-fill" aria-hidden="true" style="color:#2563eb; margin-top:2px;"></i>
                     <span>
                         Semua baris diperiksa lebih dulu. Jika ada satu saja yang bermasalah,
                         tidak ada data yang disimpan dan baris yang salah akan ditampilkan beserta alasannya.
@@ -87,7 +87,7 @@
                     id="importSubmit"
                     class="btn btn-primary d-flex align-items-center gap-2"
                 >
-                    <i class="bi bi-upload"></i> Import Data
+                    <i class="bi bi-upload" aria-hidden="true"></i> Import Data
                 </button>
             </div>
         </form>

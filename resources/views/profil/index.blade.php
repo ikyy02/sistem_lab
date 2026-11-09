@@ -73,7 +73,7 @@
 
             <div class="pb-3 mb-3 border-bottom">
                 <h2 class="h5 fw-bold mb-1" style="font-size:1.05rem;color:var(--text-primary);">Ubah Password</h2>
-                <p class="mb-0 text-muted" style="font-size:.82rem;">Pastikan menggunakan password yang aman dan unik.</p>
+                <p class="mb-0 text-muted" style="font-size:.875rem;">Pastikan menggunakan password yang aman dan unik.</p>
             </div>
 
             <div class="row g-3 flex-grow-1">
@@ -83,7 +83,7 @@
                     <div class="input-group">
                         <input type="password" id="{{ $name }}" name="{{ $name }}" class="form-control @error($name) is-invalid @enderror">
                         <button class="btn btn-outline-silab px-3" type="button" onclick="togglePasswordVisibility('{{ $name }}', this)" title="Tampilkan/sembunyikan password" aria-label="Tampilkan atau sembunyikan password">
-                            <i class="bi bi-eye"></i>
+                            <i class="bi bi-eye" aria-hidden="true"></i>
                         </button>
                     </div>
                     @if($name === 'password_baru')

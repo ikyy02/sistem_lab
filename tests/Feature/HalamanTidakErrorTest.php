@@ -33,7 +33,7 @@ class HalamanTidakErrorTest extends TestCase
 
     public function test_login_dibatasi_per_ip_walau_email_berganti(): void
     {
-        for ($i = 0; $i < 31; $i++) {
+        for ($i = 0; $i < 301; $i++) {
             $res = $this->post('/login', ['email' => "x{$i}@uji.test", 'password' => 'salah']);
         }
         $res->assertSessionHasErrors('email');

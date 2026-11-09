@@ -17,7 +17,7 @@
         <div class="col-12 col-lg-4">
             <label class="form-label" for="search">Pencarian</label>
             <div class="input-group">
-                <span class="input-group-text bg-white" style="border-color:var(--border-color);"><i class="bi bi-search"></i></span>
+                <span class="input-group-text bg-white" style="border-color:var(--border);"><i class="bi bi-search" aria-hidden="true"></i></span>
                 <input type="text" id="search" name="search" value="{{ $search }}" maxlength="100" class="form-control" placeholder="Cari nama, satuan, ruangan, keterangan...">
             </div>
         </div>
@@ -49,7 +49,7 @@
 
 @if($data->isEmpty())
     <div class="card-modern text-center py-5" style="color:var(--text-muted);">
-        <i class="bi bi-inbox fs-1 d-block mb-2" style="color:#c9bdb4;"></i>
+        <i class="bi bi-inbox fs-1 d-block mb-2" aria-hidden="true" style="color:#c9bdb4;"></i>
         {{ $search !== '' ? 'Tidak ada data yang cocok dengan “' . $search . '”.' : 'Belum ada data.' }}
     </div>
 @else
@@ -59,23 +59,23 @@
             @php $room = $jenis === 'ruangan'; $nama = $room ? $item->nama_ruangan : $item->nama; @endphp
             <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
                 <div class="card-modern h-100 overflow-hidden d-flex flex-column">
-                    <div style="height:150px;background:var(--body-bg);display:flex;align-items:center;justify-content:center;border-bottom:1px solid var(--border-color);">
+                    <div style="height:150px;background:var(--bg-page);display:flex;align-items:center;justify-content:center;border-bottom:1px solid var(--border);">
                         @if(! $room && $item->gambar_url)
                             <img src="{{ $item->gambar_url }}" alt="{{ $nama }}" style="width:100%;height:100%;object-fit:cover;cursor:zoom-in;" loading="lazy" tabindex="0" role="button" aria-label="Perbesar gambar {{ $nama }}" onclick="previewImage(this.src, this.alt)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
                         @else
-                            <i class="bi {{ $room ? $jenisIcon['ruangan'] : ($jenisIcon[$item->jenis] ?? 'bi-box') }}" style="font-size:2.2rem;color:var(--muted-blue);"></i>
+                            <i class="bi {{ $room ? $jenisIcon['ruangan'] : ($jenisIcon[$item->jenis] ?? 'bi-box') }}" aria-hidden="true" style="font-size:2.2rem;color:var(--text-secondary);"></i>
                         @endif
                     </div>
                     <div class="p-3 d-flex flex-column flex-grow-1">
                         <div class="d-flex align-items-start justify-content-between gap-2 mb-1">
                             <span class="fw-semibold" style="font-size:.95rem;">{{ $nama }}</span>
-                            <span class="badge badge-tab text-nowrap" style="font-weight:600;padding:4px 10px;font-size:.8rem;">{{ $room ? 'Ruangan' : ($jenisLabel[$item->jenis] ?? $item->jenis) }}</span>
+                            <span class="badge badge-tab text-nowrap" style="font-weight:600;padding:4px 10px;font-size:.875rem;">{{ $room ? 'Ruangan' : ($jenisLabel[$item->jenis] ?? $item->jenis) }}</span>
                         </div>
                         @unless($room)
-                        <div class="mb-1" style="font-size:.82rem;color:var(--text-muted);">{{ $item->stok }} {{ $item->nama_satuan }} · Rp{{ number_format((float) $item->harga, 2, ',', '.') }} / {{ $item->nama_satuan }}</div>
-                        <div class="mb-2" style="font-size:.8rem;color:var(--text-muted);"><i class="bi bi-geo-alt"></i> {{ $item->nama_ruangan }}</div>
+                        <div class="mb-1" style="font-size:.875rem;color:var(--text-muted);">{{ $item->stok }} {{ $item->nama_satuan }} · Rp{{ number_format((float) $item->harga, 2, ',', '.') }} / {{ $item->nama_satuan }}</div>
+                        <div class="mb-2" style="font-size:.875rem;color:var(--text-muted);"><i class="bi bi-geo-alt" aria-hidden="true"></i> {{ $item->nama_ruangan }}</div>
                         @endunless
-                        <p class="mb-0 mt-auto" style="font-size:.8rem;color:var(--text-muted);line-height:1.5;" title="{{ $item->keterangan }}">
+                        <p class="mb-0 mt-auto" style="font-size:.875rem;color:var(--text-muted);line-height:1.5;" title="{{ $item->keterangan }}">
                             {{ $item->keterangan ? \Illuminate\Support\Str::limit($item->keterangan, 90) : '—' }}
                         </p>
                     </div>
@@ -84,7 +84,7 @@
         @endforeach
     </div>
 
-    <div class="table-footer mt-3" style="border:1px solid var(--border-color);border-radius:10px;background:var(--card-bg);">
+    <div class="table-footer mt-3" style="border:1px solid var(--border);border-radius:10px;background:var(--bg-surface);">
         <div>{{ $data->total() > 0 ? 'Menampilkan ' . $data->firstItem() . '–' . $data->lastItem() . ' dari ' . $data->total() . ' data' : '0 data' }}</div>
         {{ $data->links('pagination.silab') }}
     </div>

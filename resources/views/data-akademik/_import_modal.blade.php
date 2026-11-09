@@ -3,12 +3,12 @@
 @endphp
 
 <!-- Modal Import -->
-<div class="modal fade" id="importModal" tabindex="-1" aria-hidden="true">
+<div class="modal fade" id="importModal" aria-labelledby="importModal-judul" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <form action="{{ route('data-akademik.import', ['tab' => $tab]) }}" method="POST" enctype="multipart/form-data" id="importForm" class="modal-content">
             @csrf
             <div class="modal-header">
-                <h5 class="modal-title fw-bold" style="font-size: 1rem;">Import Excel {{ $label }}</h5>
+                <h5 id="importModal-judul" class="modal-title fw-bold" style="font-size: 1rem;">Import Excel {{ $label }}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
             </div>
 

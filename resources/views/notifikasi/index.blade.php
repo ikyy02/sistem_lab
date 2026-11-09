@@ -9,7 +9,7 @@
 <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
     <div>
         <h2 class="font-display fw-semibold mb-1" style="font-size:1.5rem;">Notifikasi</h2>
-        <p class="mb-0" style="font-size:.83rem;color:var(--text-muted);">
+        <p class="mb-0" style="font-size:.875rem;color:var(--text-muted);">
             {{ $unread }} notifikasi belum dibaca dari total {{ $data->total() }} notifikasi.
         </p>
     </div>
@@ -17,7 +17,7 @@
         <form action="{{ route('notifikasi.baca-semua') }}" method="POST">
             @csrf
             <button type="submit" class="btn btn-outline-silab d-flex align-items-center gap-2">
-                <i class="bi bi-check2-all"></i> Tandai semua dibaca
+                <i class="bi bi-check2-all" aria-hidden="true"></i> Tandai semua dibaca
             </button>
         </form>
     @endif
@@ -32,26 +32,26 @@
                 <div class="d-flex flex-wrap align-items-center gap-2">
                     <span class="notif-judul" style="font-size:.95rem;">{{ $notif->data['judul'] ?? 'Notifikasi' }}</span>
                     @if($baru)
-                        <span class="badge-status" style="background:var(--accent-soft);color:var(--accent);border:1px solid rgba(47,93,138,.18);">Baru</span>
+                        <span class="badge-status" style="background:var(--bg-subtle);color:var(--primary);border:1px solid rgba(47,93,138,.18);">Baru</span>
                     @endif
                 </div>
-                <div class="notif-pesan" style="font-size:.85rem;margin-top:3px;">{{ $notif->data['pesan'] ?? '' }}</div>
+                <div class="notif-pesan" style="font-size:.875rem;margin-top:3px;">{{ $notif->data['pesan'] ?? '' }}</div>
                 <div class="notif-waktu mt-1">{{ $notif->created_at?->format('d/m/Y H:i') }}</div>
             </div>
             @if($baru)
                 <form action="{{ route('notifikasi.baca', $notif->id) }}" method="POST" class="align-self-center flex-shrink-0">
                     @csrf
                     <button type="submit" class="btn btn-edit d-flex align-items-center gap-1">
-                        <i class="bi bi-check2"></i> Tandai dibaca
+                        <i class="bi bi-check2" aria-hidden="true"></i> Tandai dibaca
                     </button>
                 </form>
             @endif
         </div>
     @empty
         <div class="text-center py-5" style="color:var(--text-muted);">
-            <i class="bi bi-bell-slash fs-1 d-block mb-2" style="color:#c9bdb4;"></i>
-            <div class="fw-semibold mb-1" style="font-size:.95rem;color:var(--text-dark);">Belum ada notifikasi</div>
-            <div style="font-size:.83rem;">Notifikasi aktivitas peminjaman dan akun Anda akan muncul di sini.</div>
+            <i class="bi bi-bell-slash fs-1 d-block mb-2" aria-hidden="true" style="color:#c9bdb4;"></i>
+            <div class="fw-semibold mb-1" style="font-size:.95rem;color:var(--text-primary);">Belum ada notifikasi</div>
+            <div style="font-size:.875rem;">Notifikasi aktivitas peminjaman dan akun Anda akan muncul di sini.</div>
         </div>
     @endforelse
 </div>

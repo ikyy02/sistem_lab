@@ -96,8 +96,8 @@
                 <span class="sidebar-app-sub">Lab Komputer & Bisnis</span>
             </div>
         </a>
-        <button type="button" class="sidebar-collapse-toggle d-none d-lg-flex" onclick="toggleSidebarCollapse()" title="Perkecil / Perluas Sidebar" aria-label="Toggle Collapse Sidebar">
-            <i class="bi bi-chevron-left collapse-icon"></i>
+        <button type="button" class="sidebar-collapse-toggle d-none d-lg-flex" data-sidebar="collapse" title="Perkecil / Perluas Sidebar" aria-label="Toggle Collapse Sidebar">
+            <i class="bi bi-chevron-left collapse-icon" aria-hidden="true"></i>
         </button>
     </div>
 
@@ -120,7 +120,7 @@
                         @endphp
                         <li class="sidebar-menu-item">
                             <a href="{{ $href }}" class="sidebar-link {{ $isActive ? 'is-active' : '' }}" title="{{ $item['label'] }}">
-                                <i class="bi {{ $item['icon'] }} sidebar-link-icon"></i>
+                                <i class="bi {{ $item['icon'] }} sidebar-link-icon" aria-hidden="true"></i>
                                 <span class="sidebar-link-text">{{ $item['label'] }}</span>
                                 @if(!empty($item['badge']) && $item['badge'] > 0)
                                     <span class="sidebar-item-badge">{{ $item['badge'] > 99 ? '99+' : $item['badge'] }}</span>

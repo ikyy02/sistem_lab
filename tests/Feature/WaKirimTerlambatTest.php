@@ -142,6 +142,35 @@ class WaKirimTerlambatTest extends TestCase
         ]);
     }
 
+    public function test_gateway_mati_tiga_jam_berturut_tidak_menghabiskan_jatah(): void
+    {
+        $this->travelTo('2026-10-19 09:00:00');
+        $p = $this->peminjamanTerlambat();
+        $mati = true;
+        Http::fake(function () use (&$mati) {
+            return $mati ? throw new ConnectionException('Gateway mati') : Http::response(['success' => true], 200);
+        });
+
+        foreach (['10:00', '11:00', '12:00'] as $jam) {
+            $this->travelTo("2026-10-19 {$jam}:00");
+            $this->artisan('wa:kirim-terlambat')->assertExitCode(0);
+        }
+
+        $this->assertSame(1, WaLog::where('id_peminjaman', $p->id_peminjaman)->count());
+        $this->assertDatabaseHas('wa_logs', ['id_peminjaman' => $p->id_peminjaman, 'ke_ke' => 1, 'status' => 'gagal']);
+
+        // Gateway pulih: tetap pengingat ke-1, lalu tidak dikirim lagi dalam 24 jam.
+        $mati = false;
+        $this->travelTo('2026-10-19 13:00:00');
+        $this->artisan('wa:kirim-terlambat')->assertExitCode(0);
+        $this->travelTo('2026-10-19 14:00:00');
+        $this->artisan('wa:kirim-terlambat')->assertExitCode(0);
+
+        $this->assertSame(1, WaLog::where('id_peminjaman', $p->id_peminjaman)->count());
+        $this->assertDatabaseHas('wa_logs', ['id_peminjaman' => $p->id_peminjaman, 'ke_ke' => 1, 'status' => 'terkirim']);
+        $this->assertSame('13:00', WaLog::where('id_peminjaman', $p->id_peminjaman)->first()->dikirim_at->format('H:i')); // jam 14:00 tidak kirim ulang
+    }
+
     public function test_berhenti_setelah_tiga_pengingat(): void
     {
         $this->travelTo('2026-10-19 10:00:00');

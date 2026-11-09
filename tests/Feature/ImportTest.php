@@ -55,8 +55,16 @@ class ImportTest extends TestCase
         $this->assertNull(Mahasiswa::find('3310100002')->no_whatsapp);
         $akun = Akun::find('budi1@mhs.politala.ac.id');
         $this->assertSame('mahasiswa', $akun->role);
-        $this->assertSame('3310100001', $akun->password); // password awal = NIM
+        $this->assertSame(10, strlen($akun->password)); // password awal acak, bukan NIM
+        $this->assertNotSame('3310100001', $akun->password);
+        $this->assertContains($akun->password, collect(session('import_report')['credentials'])->pluck('password')->all()); // dilaporkan ke laboran
         $this->assertTrue($akun->wajib_ganti_password); // wajib diganti saat login pertama
+
+        // Tombol salin/unduh membaca baris data-cred: jumlahnya harus sama dengan akun yang dibuat.
+        $jumlah = count(session('import_report')['credentials']);
+        $html = $this->admin()->withSession(['import_report' => session('import_report')])->get(route('kelola-user.index'))->getContent();
+        $this->assertSame($jumlah, substr_count($html, '<tr data-cred>'));
+        $this->assertStringContainsString('data-salin-password', $html);
     }
 
     public function test_import_mahasiswa_all_or_nothing_dan_email_unik_lintas_role(): void

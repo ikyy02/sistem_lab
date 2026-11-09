@@ -447,6 +447,21 @@ class PeminjamanServiceTest extends TestCase
         return $this->svc->ajukan($email, $this->data(['tanggal_peminjaman' => $mulai, 'tanggal_rencana_kembali' => $selesai, 'ruangan' => [['id_ruangan' => $r->id_ruangan]]]));
     }
 
+    public function test_selesai_lebih_awal_melepas_ruangan_untuk_pengajuan_lain(): void
+    {
+        $r = $this->ruangan();
+        $lab = $this->laboran();
+        $m = $this->mahasiswa();
+        $p = $this->ajukanRuangan($m->email, $r, '2030-01-08 08:00', '2030-01-08 14:00');
+        $this->svc->setujui($p->id_peminjaman, $lab->email);
+
+        Carbon::setTestNow('2030-01-08 10:00');
+        $this->svc->selesaikan($p->id_peminjaman, $m->email);
+
+        $q = $this->ajukanRuangan($this->mahasiswa()->email, $r, '2030-01-08 11:00', '2030-01-08 13:00');
+        $this->assertSame('disetujui', $this->svc->setujui($q->id_peminjaman, $lab->email)->status);
+    }
+
     public function test_konflik_ruangan_dengan_peminjaman_lain(): void
     {
         $r = $this->ruangan();

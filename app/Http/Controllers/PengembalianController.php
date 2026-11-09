@@ -8,7 +8,6 @@ use App\Models\PengembalianDetail;
 use App\Services\AuthService;
 use App\Services\PeminjamanService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
@@ -43,12 +42,7 @@ class PengembalianController extends Controller
 
         $ids = $data->pluck('id_peminjaman');
         // Jumlah yang sudah dikembalikan per detail (kunci: id_detail).
-        $sudah = DB::table('pengembalian_details as pd')
-            ->join('pengembalians as pg', 'pg.id_pengembalian', '=', 'pd.id_pengembalian')
-            ->whereIn('pg.id_peminjaman', $ids)
-            ->groupBy('pd.id_detail_peminjaman')
-            ->selectRaw('pd.id_detail_peminjaman as id_detail, SUM(pd.jumlah_dikembalikan) as total')
-            ->pluck('total', 'id_detail');
+        $sudah = app(PeminjamanService::class)->jumlahDikembalikan($ids);
         // Riwayat pengembalian (tanggal aktual & penerima) per transaksi.
         // Riwayat pengembalian per transaksi (tanggal dan rincian).
         $riwayat = Pengembalian::with('details.detailPeminjaman.katalog')

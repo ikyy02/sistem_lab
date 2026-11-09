@@ -6,10 +6,10 @@
 
 @section('content')
 
-<p class="mb-3" style="font-size:.83rem;color:var(--text-muted);">Peminjaman berstatus <strong>Disetujui</strong> dapat dicatat pengembaliannya. Pengembalian sebagian diperbolehkan.</p>
+<p class="mb-3" style="font-size:.875rem;color:var(--text-muted);">Peminjaman berstatus <strong>Disetujui</strong> dapat dicatat pengembaliannya. Pengembalian sebagian diperbolehkan.</p>
 
 @if($errors->any())
-    <div class="alert alert-danger mb-3">
+    <div class="alert alert-danger mb-3" role="alert">
         <ul class="mb-0 ps-3">
             @foreach($errors->all() as $pesan)<li>{{ $pesan }}</li>@endforeach
         </ul>
@@ -51,24 +51,24 @@
         }
     @endphp
     <div class="card-modern overflow-hidden mb-3" id="peminjaman-{{ $p->id_peminjaman }}">
-        <div class="p-4 d-flex flex-wrap align-items-center justify-content-between gap-3" style="border-bottom:1px solid var(--border-color);">
+        <div class="p-4 d-flex flex-wrap align-items-center justify-content-between gap-3" style="border-bottom:1px solid var(--border);">
             <div class="min-w-0">
                 <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
                     <span class="fw-semibold" style="font-size:1.02rem;">Peminjaman #{{ $p->id_peminjaman }}</span>
                     @include('peminjaman._status', ['status' => $p->status, 'terlambat' => $p->terlambat])
                 </div>
-                <div style="font-size:.8rem;color:var(--text-muted);">
+                <div style="font-size:.875rem;color:var(--text-muted);">
                     {{ $p->nama_peminjam }} · {{ $p->identitas_peminjam }} ·
                     Batas kembali <strong>{{ $p->tanggal_rencana_kembali?->format('d/m/Y H:i') }}</strong>
                 </div>
                 @if($p->ruangans->isNotEmpty())
-                    <div style="font-size:.8rem;color:var(--text-muted);">
+                    <div style="font-size:.875rem;color:var(--text-muted);">
                         Ruangan: {{ $p->ruangans->map(fn ($r) => $r->ruangan?->nama_ruangan ?? '—')->implode(', ') }}
                     </div>
                 @endif
             </div>
             <a href="{{ route('peminjaman.show', $p->id_peminjaman) }}" class="btn btn-outline-silab d-flex align-items-center gap-2">
-                <i class="bi bi-eye"></i> Detail
+                <i class="bi bi-eye" aria-hidden="true"></i> Detail
             </a>
         </div>
 
@@ -80,16 +80,17 @@
             @endif
                 <div class="table-responsive">
                     <table class="table table-silab mb-0">
+<caption class="visually-hidden">{{ trim($__env->yieldContent('page-title')) }}</caption>
                         <thead>
                             <tr>
-                                <th class="ps-0">Barang</th>
-                                <th style="width:80px;">Jenis</th>
-                                <th style="width:90px;">Dipinjam</th>
-                                <th style="width:110px;">Dikembalikan</th>
-                                <th style="width:80px;">Sisa</th>
+                                <th scope="col" class="ps-0">Barang</th>
+                                <th scope="col" style="width:80px;">Jenis</th>
+                                <th scope="col" style="width:90px;">Dipinjam</th>
+                                <th scope="col" style="width:110px;">Dikembalikan</th>
+                                <th scope="col" style="width:80px;">Sisa</th>
                                 @if($adaInput)
-                                    <th style="width:120px;">Jumlah</th>
-                                    <th style="width:130px;">Kondisi</th>
+                                    <th scope="col" style="width:120px;">Jumlah</th>
+                                    <th scope="col" style="width:130px;">Kondisi</th>
                                 @endif
                             </tr>
                         </thead>
@@ -119,7 +120,7 @@
                                             <input type="number" name="jumlah[{{ $d->id_detail }}]" min="1" max="{{ $sisaD }}"
                                                    value="{{ old('jumlah.' . $d->id_detail, $sisaD) }}"
                                                    class="form-control form-control-sm @error('jumlah.'.$d->id_detail) is-invalid @enderror"
-                                                   style="max-width:90px;" aria-label="Jumlah dikembalikan">
+                                                   style="max-width:90px;" aria-label="Jumlah {{ $d->katalog?->nama ?? 'barang' }} dikembalikan">
                                             @error('jumlah.'.$d->id_detail)<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                                         @else
                                             <span style="color:var(--text-muted);">—</span>
@@ -127,7 +128,7 @@
                                     </td>
                                     <td>
                                         @if($bisaInput && $isAlat)
-                                            <select name="kondisi[{{ $d->id_detail }}]"
+                                            <select name="kondisi[{{ $d->id_detail }}]" aria-label="Kondisi {{ $d->katalog?->nama ?? 'barang' }}"
                                                     class="form-select form-select-sm @error('kondisi.'.$d->id_detail) is-invalid @enderror" style="max-width:110px;">
                                                 <option value="">Pilih...</option>
                                                 <option value="baik" @selected(old('kondisi.'.$d->id_detail, 'baik') === 'baik')>Baik</option>
@@ -135,7 +136,7 @@
                                             </select>
                                             @error('kondisi.'.$d->id_detail)<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                                         @elseif($bisaInput)
-                                            <span style="color:var(--text-muted);font-size:.8rem;">Tanpa kondisi</span>
+                                            <span style="color:var(--text-muted);font-size:.875rem;">Tanpa kondisi</span>
                                         @else
                                             <span style="color:var(--text-muted);">—</span>
                                         @endif
@@ -156,11 +157,11 @@
                         </div>
                         <div class="col-12 col-lg-4 d-flex justify-content-lg-end">
                             <button type="submit" class="btn btn-gold d-flex align-items-center gap-2">
-                                <i class="bi bi-box-arrow-in-down"></i> Catat Pengembalian
+                                <i class="bi bi-box-arrow-in-down" aria-hidden="true"></i> Catat Pengembalian
                             </button>
                         </div>
                     </div>
-                    <p class="mb-0 mt-2" style="font-size:.8rem;color:var(--text-muted);">
+                    <p class="mb-0 mt-2" style="font-size:.875rem;color:var(--text-muted);">
                         Kosongkan kolom jumlah agar barang tidak dikembalikan. Stok hanya bertambah untuk barang <strong>baik</strong> dan bahan.
                     </p>
                 @endif
@@ -170,16 +171,17 @@
         </div>
 
         @if($riwayatP && $riwayatP->isNotEmpty())
-            <div class="px-4 pb-4 pt-3" style="border-top:1px solid var(--border-color);margin-top:1rem;">
-                <div class="fw-semibold mb-2" style="font-size:.85rem;"><i class="bi bi-clock-history me-1"></i> Riwayat Pengembalian</div>
+            <div class="px-4 pb-4 pt-3" style="border-top:1px solid var(--border);margin-top:1rem;">
+                <div class="fw-semibold mb-2" style="font-size:.875rem;"><i class="bi bi-clock-history me-1" aria-hidden="true"></i> Riwayat Pengembalian</div>
                 <div class="table-responsive">
-                    <table class="table table-sm mb-0" style="font-size:.8rem;">
+                    <table class="table table-sm mb-0" style="font-size:.875rem;">
+<caption class="visually-hidden">{{ trim($__env->yieldContent('page-title')) }}</caption>
                         <thead>
                             <tr>
-                                <th style="width:150px;">Tanggal</th>
-                                <th style="width:220px;">Penerima</th>
-                                <th>Barang</th>
-                                <th>Keterangan</th>
+                                <th scope="col" style="width:150px;">Tanggal</th>
+                                <th scope="col" style="width:220px;">Penerima</th>
+                                <th scope="col">Barang</th>
+                                <th scope="col">Keterangan</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -210,9 +212,9 @@
 @empty
     <div class="card-modern">
         <div class="text-center py-5" style="color:var(--text-muted);">
-            <i class="bi bi-inbox fs-1 d-block mb-2" style="color:#c9bdb4;"></i>
-            <div class="fw-semibold mb-1" style="font-size:.95rem;color:var(--text-dark);">Tidak ada peminjaman</div>
-            <div style="font-size:.83rem;">Belum ada peminjaman berstatus "{{ $status }}".</div>
+            <i class="bi bi-inbox fs-1 d-block mb-2" aria-hidden="true" style="color:#c9bdb4;"></i>
+            <div class="fw-semibold mb-1" style="font-size:.95rem;color:var(--text-primary);">Tidak ada peminjaman</div>
+            <div style="font-size:.875rem;">Belum ada peminjaman berstatus "{{ $status }}".</div>
         </div>
     </div>
 @endforelse

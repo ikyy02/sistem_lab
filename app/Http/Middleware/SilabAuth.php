@@ -17,12 +17,14 @@ class SilabAuth
         $user = AuthService::user();
         // Sesi tidak berlaku lagi bila akun dihapus, role-nya berubah, atau Dosen dinonaktifkan.
         // Cek sesi login dan akunnya masih ada dengan role yang sama; kalau tidak, paksa login ulang.
-        if (! $user || ! Akun::where('email', $user['email'])->where('role', $user['role'])->exists()
+        $akun = $user ? Akun::where('email', $user['email'])->where('role', $user['role'])->first() : null;
+        if (! $akun
             || ($user['role'] === Role::DOSEN && ! Dosen::where('email', $user['email'])->where('status', 'aktif')->exists())) {
             $request->session()->forget('silab_user');
 
             return redirect()->route('login');
         }
+        $request->attributes->set('akun', $akun); // dipakai WajibGantiPassword agar akun tidak di-query dua kali
 
         return $next($request);
     }

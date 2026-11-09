@@ -14,18 +14,18 @@
 <div class="d-flex flex-wrap justify-content-end mb-4">
     <div class="d-flex flex-wrap gap-2">
         <a href="{{ route('jadwal.periode.index') }}" class="btn btn-outline-silab d-flex align-items-center gap-2">
-            <i class="bi bi-calendar-range"></i> Periode Jadwal
+            <i class="bi bi-calendar-range" aria-hidden="true"></i> Periode Jadwal
         </a>
         <a href="{{ route('jadwal.create') }}" class="btn btn-primary d-flex align-items-center gap-2">
-            <i class="bi bi-plus-lg"></i> Tambah Jadwal
+            <i class="bi bi-plus-lg" aria-hidden="true"></i> Tambah Jadwal
         </a>
     </div>
 </div>
 
 @if(! $berjalan)
-    <div class="alert alert-warning mb-3">Belum ada periode berjalan. <a href="{{ route('jadwal.periode.index') }}" class="alert-link">Atur periode jadwal</a> agar jadwal baru tercatat pada periode yang berlaku.</div>
+    <div class="alert alert-warning mb-3" role="alert">Belum ada periode berjalan. <a href="{{ route('jadwal.periode.index') }}" class="alert-link">Atur periode jadwal</a> agar jadwal baru tercatat pada periode yang berlaku.</div>
 @elseif($periode !== 'semua' && (int) $periode !== $berjalan->id_periode)
-    <div class="alert alert-secondary mb-3"><i class="bi bi-archive me-1"></i> Anda melihat <strong>periode arsip</strong>. Jadwal arsip hanya dapat dilihat dan tidak dapat diubah.</div>
+    <div class="alert alert-secondary mb-3" role="status"><i class="bi bi-archive me-1" aria-hidden="true"></i> Anda melihat <strong>periode arsip</strong>. Jadwal arsip hanya dapat dilihat dan tidak dapat diubah.</div>
 @endif
 
 {{-- Filter --}}
@@ -43,7 +43,7 @@
         <div class="col-12 col-lg-3">
             <label class="form-label" for="search">Pencarian</label>
             <div class="input-group">
-                <span class="input-group-text bg-white" style="border-color:var(--border-color);"><i class="bi bi-search"></i></span>
+                <span class="input-group-text bg-white" style="border-color:var(--border);"><i class="bi bi-search" aria-hidden="true"></i></span>
                 <input type="text" id="search" name="search" value="{{ $search }}" maxlength="100" class="form-control"
                        placeholder="Mata kuliah, dosen, ruangan, kelas...">
             </div>
@@ -81,16 +81,17 @@
 <div class="card-modern overflow-hidden">
     <div class="table-responsive">
         <table class="table table-silab mb-0">
+<caption class="visually-hidden">{{ trim($__env->yieldContent('page-title')) }}</caption>
             <thead>
                 <tr>
-                    <th class="ps-4" style="width:52px;">No</th>
-                    <th>Hari &amp; Jam</th>
-                    <th>Mata Kuliah</th>
-                    <th>Kelas</th>
-                    <th>Dosen</th>
-                    <th>Ruangan</th>
-                    <th>Status</th>
-                    <th class="text-end pe-4">Aksi</th>
+                    <th scope="col" class="ps-4" style="width:52px;">No</th>
+                    <th scope="col">Hari &amp; Jam</th>
+                    <th scope="col">Mata Kuliah</th>
+                    <th scope="col">Kelas</th>
+                    <th scope="col">Dosen</th>
+                    <th scope="col">Ruangan</th>
+                    <th scope="col">Status</th>
+                    <th scope="col" class="text-end pe-4">Aksi</th>
                 </tr>
             </thead>
             <tbody>
@@ -100,18 +101,18 @@
                     <td class="ps-4 text-muted">{{ $data->firstItem() + $loop->index }}</td>
                     <td>
                         <div class="fw-semibold text-capitalize">{{ $j->hari }}</div>
-                        <div style="font-size:.8rem;color:var(--text-muted);">{{ $jamTeks($j->jam_mulai) }} - {{ $jamTeks($j->jam_selesai) }}</div>
-                        <div style="font-size:.8rem;color:var(--text-muted);">{{ $j->tahun_akademik }} · {{ ucfirst($j->semester) }}</div>
-                        @if($j->periode)<div style="font-size:.8rem;color:var(--text-muted);">{{ $j->periode->nama }}@if($j->terarsip()) <span class="badge-status" style="background:#f1f5f9;color:#475569;">Arsip</span>@endif</div>@endif
+                        <div style="font-size:.875rem;color:var(--text-muted);">{{ $jamTeks($j->jam_mulai) }} - {{ $jamTeks($j->jam_selesai) }}</div>
+                        <div style="font-size:.875rem;color:var(--text-muted);">{{ $j->tahun_akademik }} · {{ ucfirst($j->semester) }}</div>
+                        @if($j->periode)<div style="font-size:.875rem;color:var(--text-muted);">{{ $j->periode->nama }}@if($j->terarsip()) <span class="badge-status" style="background:#f1f5f9;color:#475569;">Arsip</span>@endif</div>@endif
                     </td>
                     <td>
                         <div class="fw-semibold">{{ $j->mataKuliah->nama_mk ?? '—' }}</div>
-                        <div style="font-size:.8rem;color:var(--text-muted);">{{ $j->mataKuliah->kode_mk ?? 'Tanpa mata kuliah' }}@if($j->mataKuliah) · {{ $j->mataKuliah->sks }} SKS @endif</div>
+                        <div style="font-size:.875rem;color:var(--text-muted);">{{ $j->mataKuliah->kode_mk ?? 'Tanpa mata kuliah' }}@if($j->mataKuliah) · {{ $j->mataKuliah->sks }} SKS @endif</div>
                     </td>
                     <td>{{ $j->kelas->nama_kelas ?? '—' }}</td>
                     <td>
                         <div>{{ $j->dosen->nama ?? '—' }}</div>
-                        <div style="font-size:.8rem;color:var(--text-muted);">{{ $j->nuptk_nidn }}</div>
+                        <div style="font-size:.875rem;color:var(--text-muted);">{{ $j->nuptk_nidn }}</div>
                     </td>
                     <td>{{ $j->ruangan->nama_ruangan ?? '—' }}</td>
                     <td>
@@ -122,16 +123,16 @@
                     <td class="text-end pe-4">
                         <div class="d-flex justify-content-end gap-2">
                             <a href="{{ route('jadwal.show', $j) }}" class="btn btn-edit d-flex align-items-center gap-1" title="Lihat detail" aria-label="Lihat detail jadwal">
-                                <i class="bi bi-eye"></i> Lihat
+                                <i class="bi bi-eye" aria-hidden="true"></i> Lihat
                             </a>
                             @unless($j->terarsip())
                             <a href="{{ route('jadwal.edit', $j) }}" class="btn btn-edit d-flex align-items-center gap-1" title="Ubah jadwal" aria-label="Ubah jadwal">
-                                <i class="bi bi-pencil"></i> Ubah
+                                <i class="bi bi-pencil" aria-hidden="true"></i> Ubah
                             </a>
                             <form action="{{ route('jadwal.destroy', $j) }}" method="POST"
                                   data-konfirmasi="Hapus jadwal {{ $j->mataKuliah->nama_mk ?? '' }} pada {{ $j->hari }} {{ $jamTeks($j->jam_mulai) }}?">
                                 @csrf @method('DELETE')
-                                <button type="submit" class="btn btn-del d-flex align-items-center gap-1"><i class="bi bi-trash"></i> Hapus</button>
+                                <button type="submit" class="btn btn-del d-flex align-items-center gap-1"><i class="bi bi-trash" aria-hidden="true"></i> Hapus</button>
                             </form>
                             @endunless
                         </div>
@@ -139,7 +140,7 @@
                 </tr>
             @empty
                 <tr><td colspan="8" class="text-center py-5" style="color:var(--text-muted);">
-                    <i class="bi bi-calendar-x fs-1 d-block mb-2" style="color:#c3cbdb;"></i>
+                    <i class="bi bi-calendar-x fs-1 d-block mb-2" aria-hidden="true" style="color:#c3cbdb;"></i>
                     {{ ($search !== '' || $hari !== '' || $status !== '') ? 'Tidak ada jadwal yang cocok dengan filter.' : 'Belum ada data jadwal perkuliahan.' }}
                 </td></tr>
             @endforelse

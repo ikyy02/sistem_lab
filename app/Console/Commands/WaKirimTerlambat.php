@@ -155,9 +155,10 @@ class WaKirimTerlambat extends Command
 
     private function tentukan_ke_ke(int $idPeminjaman, int $maksPengingat): ?int
     {
-        // Cari log terakhir
+        // Hanya pengiriman berhasil yang dihitung; yang gagal dicoba lagi dengan nomor yang sama.
         $terakhir = WaLog::where('id_peminjaman', $idPeminjaman)
             ->where('jenis', 'terlambat')
+            ->where('status', 'terkirim')
             ->orderBy('ke_ke', 'desc')
             ->first();
 

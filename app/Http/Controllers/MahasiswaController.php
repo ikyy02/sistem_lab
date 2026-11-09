@@ -54,6 +54,7 @@ class MahasiswaController extends Controller
 
         return redirect()
             ->route('kelola-user.index', ['kategori' => 'mahasiswa'])
-            ->with('success', "Import berhasil: {$result['inserted']} data mahasiswa ditambahkan.");
+            ->with('success', "Import berhasil: {$result['inserted']} data mahasiswa ditambahkan.")
+            ->with('import_report', $result);
     }
 }

@@ -11,13 +11,13 @@
 @section('content')
 
 <nav aria-label="breadcrumb" class="mb-4">
-    <ol class="breadcrumb mb-0" style="font-size:.8rem;color:var(--text-muted);">
+    <ol class="breadcrumb mb-0" style="font-size:.875rem;color:var(--text-muted);">
         <li class="breadcrumb-item">
             <a href="{{ route('jadwal.index') }}" style="color:var(--text-muted);text-decoration:none;">
-                <i class="bi bi-calendar-week me-1"></i>Jadwal Perkuliahan
+                <i class="bi bi-calendar-week me-1" aria-hidden="true"></i>Jadwal Perkuliahan
             </a>
         </li>
-        <li class="breadcrumb-item active" style="color:var(--text-dark);font-weight:600;">Detail Jadwal</li>
+        <li class="breadcrumb-item active" style="color:var(--text-primary);font-weight:600;">Detail Jadwal</li>
     </ol>
 </nav>
 
@@ -25,14 +25,14 @@
     <div class="col-12 col-lg-8 col-xl-7">
         <div class="card-modern overflow-hidden">
             <div class="px-4 py-3 d-flex flex-wrap align-items-center justify-content-between gap-2"
-                 style="border-bottom:1px solid var(--border-color);background:var(--body-bg);">
+                 style="border-bottom:1px solid var(--border);background:var(--bg-page);">
                 <div class="d-flex align-items-center gap-3">
-                    <div style="width:38px;height:38px;background:var(--gold-tint);border-radius:10px;display:flex;align-items:center;justify-content:center;color: var(--gold-text);flex-shrink:0;">
-                        <i class="bi bi-calendar2-check-fill"></i>
+                    <div style="width:38px;height:38px;background:var(--bg-subtle);border-radius:10px;display:flex;align-items:center;justify-content:center;color: var(--text-primary);flex-shrink:0;">
+                        <i class="bi bi-calendar2-check-fill" aria-hidden="true"></i>
                     </div>
                     <div>
                         <div class="fw-bold" style="font-size:.95rem;">{{ $jadwal->mataKuliah->nama_mk ?? 'Tanpa Mata Kuliah' }}</div>
-                        <div style="font-size:.8rem;color:var(--text-muted);">
+                        <div style="font-size:.875rem;color:var(--text-muted);">
                             {{ $jadwal->mataKuliah->kode_mk ?? '—' }} · {{ $jadwal->kelas->nama_kelas ?? '—' }}
                         </div>
                     </div>
@@ -59,9 +59,9 @@
                     @endphp
                     @foreach($baris as $b)
                     <div class="col-12 col-md-6">
-                        <div class="p-3 h-100" style="background:var(--body-bg);border:1px solid var(--border-color);border-radius:10px;">
-                            <div class="d-flex align-items-center gap-2 mb-1" style="font-size:.8rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;">
-                                <i class="bi {{ $b['icon'] }}"></i> {{ $b['label'] }}
+                        <div class="p-3 h-100" style="background:var(--bg-page);border:1px solid var(--border);border-radius:10px;">
+                            <div class="d-flex align-items-center gap-2 mb-1" style="font-size:.875rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;">
+                                <i class="bi {{ $b['icon'] }}" aria-hidden="true"></i> {{ $b['label'] }}
                             </div>
                             <div class="fw-semibold" style="font-size:.9rem;">{{ $b['nilai'] }}</div>
                         </div>
@@ -70,22 +70,22 @@
                 </div>
             </div>
 
-            <div class="px-4 py-3 d-flex flex-wrap gap-2" style="border-top:1px solid var(--border-color);background:#FAFBFD;">
+            <div class="px-4 py-3 d-flex flex-wrap gap-2" style="border-top:1px solid var(--border);background:#FAFBFD;">
                 @unless($jadwal->terarsip())
                 <a href="{{ route('jadwal.edit', $jadwal) }}" class="btn btn-primary d-flex align-items-center gap-2">
-                    <i class="bi bi-pencil"></i> Ubah Jadwal
+                    <i class="bi bi-pencil" aria-hidden="true"></i> Ubah Jadwal
                 </a>
                 @endunless
                 <a href="{{ route('jadwal.index') }}" class="btn btn-outline-silab d-flex align-items-center gap-2">
-                    <i class="bi bi-arrow-left"></i> Kembali
+                    <i class="bi bi-arrow-left" aria-hidden="true"></i> Kembali
                 </a>
                 @if($jadwal->terarsip())
-                    <span class="ms-auto align-self-center" style="font-size:.8rem;color:var(--text-muted);"><i class="bi bi-archive me-1"></i>Jadwal arsip hanya dapat dilihat.</span>
+                    <span class="ms-auto align-self-center" style="font-size:.875rem;color:var(--text-muted);"><i class="bi bi-archive me-1" aria-hidden="true"></i>Jadwal arsip hanya dapat dilihat.</span>
                 @else
                 <form action="{{ route('jadwal.destroy', $jadwal) }}" method="POST" class="ms-auto"
                       data-konfirmasi="Hapus jadwal ini?">
                     @csrf @method('DELETE')
-                    <button type="submit" class="btn btn-del d-flex align-items-center gap-2"><i class="bi bi-trash"></i> Hapus</button>
+                    <button type="submit" class="btn btn-del d-flex align-items-center gap-2"><i class="bi bi-trash" aria-hidden="true"></i> Hapus</button>
                 </form>
                 @endif
             </div>

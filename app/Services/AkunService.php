@@ -21,7 +21,7 @@ class AkunService
 
         // Akun dan profil dibuat dalam satu transaksi: gagal salah satu, keduanya dibatalkan.
         $record = DB::transaction(function () use ($model, $role, $email, $password, $profil) {
-            Akun::create(['email' => $email, 'password' => $password, 'role' => $role]);
+            Akun::create(['email' => $email, 'password' => $password, 'role' => $role, 'wajib_ganti_password' => true]);
 
             return $model::create($profil + ['email' => $email]);
         });

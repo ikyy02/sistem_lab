@@ -28,7 +28,7 @@
         <div class="col-12 col-lg-4">
             <label class="form-label" for="search">Pencarian</label>
             <div class="input-group">
-                <span class="input-group-text bg-white" style="border-color:var(--border-color);"><i class="bi bi-search"></i></span>
+                <span class="input-group-text bg-white" style="border-color:var(--border);"><i class="bi bi-search" aria-hidden="true"></i></span>
                 <input type="text" id="search" name="search" value="{{ $search }}" class="form-control" maxlength="100"
                        placeholder="Cari {{ strtolower($label) }}: {{ implode(', ', array_slice(array_map(fn($c) => strtolower($c[0]), $config['columns']), 0, 3)) }}...">
             </div>
@@ -58,7 +58,7 @@
         </div>
         <div class="col-6 col-lg-2 d-flex gap-2">
             <button type="submit" class="btn btn-outline-silab flex-grow-1">Terapkan</button>
-            <a href="{{ route('kelola-user.index', ['kategori' => $kategori]) }}" class="btn btn-outline-silab" title="Reset filter" aria-label="Reset filter"><i class="bi bi-arrow-counterclockwise"></i></a>
+            <a href="{{ route('kelola-user.index', ['kategori' => $kategori]) }}" class="btn btn-outline-silab" title="Reset filter" aria-label="Reset filter"><i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i></a>
         </div>
     </div>
 </form>
@@ -67,25 +67,26 @@
 <div class="card-modern overflow-hidden">
     <div class="table-responsive">
         <table class="table table-silab mb-0">
+<caption class="visually-hidden">{{ trim($__env->yieldContent('page-title')) }}</caption>
             <thead>
                 <tr>
-                    <th class="text-center" style="width:60px;">NO</th>
+                    <th scope="col" class="text-center" style="width:60px;">NO</th>
                     {{-- Header tabel dinamis dari konfigurasi kategori; kolom sortable memakai link urut. --}}
                     @foreach($config['columns'] as $col => [$text, $sortable])
-                        <th>
+                        <th scope="col">
                             @if($sortable)
                                 @php $next = ($sort === $col && $direction === 'asc') ? 'desc' : 'asc'; @endphp
                                 <a class="sort-link {{ $sort === $col ? 'active' : '' }}"
                                    href="{{ route('kelola-user.index', array_merge(request()->query(), ['kategori' => $kategori, 'sort' => $col, 'direction' => $next, 'page' => null])) }}">
                                     {{ strtoupper($text) }}
-                                    <i class="bi {{ $sort === $col ? ($direction === 'asc' ? 'bi-sort-up' : 'bi-sort-down') : 'bi-arrow-down-up' }}" style="font-size:.8rem;"></i>
+                                    <i class="bi {{ $sort === $col ? ($direction === 'asc' ? 'bi-sort-up' : 'bi-sort-down') : 'bi-arrow-down-up' }}" aria-hidden="true" style="font-size:.875rem;"></i>
                                 </a>
                             @else
                                 {{ strtoupper($text) }}
                             @endif
                         </th>
                     @endforeach
-                    <th class="text-end pe-4" style="width:160px;">AKSI</th>
+                    <th scope="col" class="text-end pe-4" style="width:160px;">AKSI</th>
                 </tr>
             </thead>
             <tbody>
@@ -112,11 +113,11 @@
                         <div class="d-flex justify-content-end gap-2">
                             <button type="button" class="btn btn-edit d-flex align-items-center gap-1"
                                     data-id="{{ $item->getKey() }}" data-item="{{ json_encode($payload) }}"
-                                    onclick="openUserModal('edit', this)"><i class="bi bi-pencil"></i> Edit</button>
+                                    onclick="openUserModal('edit', this)"><i class="bi bi-pencil" aria-hidden="true"></i> Edit</button>
                             <form action="{{ route('kelola-user.destroy', ['kategori' => $kategori, 'key' => $item->getKey()] + $listQuery) }}" method="POST"
                                   data-konfirmasi="Hapus data {{ $label }} &quot;{{ $item->nama }}&quot;? Tindakan ini tidak dapat dibatalkan.">
                                 @csrf @method('DELETE')
-                                <button type="submit" class="btn btn-del d-flex align-items-center gap-1"><i class="bi bi-trash"></i> Hapus</button>
+                                <button type="submit" class="btn btn-del d-flex align-items-center gap-1"><i class="bi bi-trash" aria-hidden="true"></i> Hapus</button>
                             </form>
                         </div>
                     </td>
@@ -124,7 +125,7 @@
             @empty
                 <tr>
                     <td colspan="{{ $colspan }}" class="text-center py-5" style="color:var(--text-muted);">
-                        <i class="bi bi-inbox fs-1 d-block mb-2" style="color:#c3cbdb;"></i>
+                        <i class="bi bi-inbox fs-1 d-block mb-2" aria-hidden="true" style="color:#c3cbdb;"></i>
                         <p class="mb-2">
                             @if($search !== '')
                                 Tidak ada data {{ $label }} yang cocok dengan “{{ $search }}”.
@@ -134,7 +135,7 @@
                         </p>
                         @if($search === '')
                             <button type="button" class="btn btn-primary btn-sm mt-1" onclick="openUserModal('create')">
-                                <i class="bi bi-plus-lg"></i> Tambah {{ $label }}
+                                <i class="bi bi-plus-lg" aria-hidden="true"></i> Tambah {{ $label }}
                             </button>
                         @endif
                     </td>
@@ -151,7 +152,7 @@
 </div>
 
 <!-- Modal Tambah/Edit -->
-<div class="modal fade" id="userModal" tabindex="-1" aria-hidden="true">
+<div class="modal fade" id="userModal" aria-labelledby="userModalTitle" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <form method="POST" id="userForm" class="modal-content" autocomplete="off"
               data-store="{{ route('kelola-user.store', $kategori) }}"

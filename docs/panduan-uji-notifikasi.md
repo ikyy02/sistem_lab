@@ -17,7 +17,7 @@ Uji dua tahap: **MAIL_MAILER=log** (tanpa internet, cek file log) lalu **SMTP Gm
    NOTIFIKASI_UJI_EMAIL_MHS=alamat-mhs@contoh.com
    NOTIFIKASI_UJI_EMAIL_DOSEN=alamat-dosen@contoh.com
    NOTIFIKASI_UJI_EMAIL_LABORAN=alamat-laboran@contoh.com
-   NOTIFIKASI_UJI_PASSWORD=ujinotif123
+   NOTIFIKASI_UJI_PASSWORD=isi-password-uji
    ```
 
    ```bash
@@ -27,7 +27,7 @@ Uji dua tahap: **MAIL_MAILER=log** (tanpa internet, cek file log) lalu **SMTP Gm
 
    Tanpa override, akun uji yang dibuat: mahasiswa uji (NIM 26990001), dosen uji (D9990001),
    laboran uji (L9990001) memakai alamat default di `config/notifikasi.php`, password
-   `ujinotif123`, plus katalog "Alat Uji Notifikasi" (stok 10). Seeder idempoten dan hanya
+   password dari `NOTIFIKASI_UJI_PASSWORD`, plus katalog "Alat Uji Notifikasi" (stok 10). Seeder idempoten dan hanya
    jalan di `local`/`testing`; ubah alamat lalu seed ulang untuk memperbarui email akun.
 
 3. Semua notifikasi berjalan lewat queue. Pastikan `.env` berisi `QUEUE_CONNECTION=database`

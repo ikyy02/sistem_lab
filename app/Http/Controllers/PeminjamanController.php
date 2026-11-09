@@ -13,7 +13,6 @@ use App\Services\PeminjamanService;
 use App\Support\Role;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
@@ -236,14 +235,7 @@ class PeminjamanController extends Controller
         $me = AuthService::user();
         abort_unless($p->bisaDilihatOleh($me['email'], $me['role']), 403);
 
-        // Jumlah yang sudah dikembalikan per detail peminjaman.
-        // Total jumlah yang sudah dikembalikan per detail barang.
-        $sudah = DB::table('pengembalian_details as pd')
-            ->join('pengembalians as pg', 'pg.id_pengembalian', '=', 'pd.id_pengembalian')
-            ->where('pg.id_peminjaman', $p->id_peminjaman)
-            ->groupBy('pd.id_detail_peminjaman')
-            ->selectRaw('pd.id_detail_peminjaman as id_detail, SUM(pd.jumlah_dikembalikan) as total')
-            ->pluck('total', 'id_detail');
+        $sudah = $service->jumlahDikembalikan($p->id_peminjaman);
 
         $dapatMemproses = $p->status === 'menunggu' && $p->bisaDiprosesOleh($me['email'], $me['role']);
 

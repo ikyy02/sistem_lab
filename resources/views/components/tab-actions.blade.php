@@ -18,12 +18,12 @@
     <div class="tab-action-bar__actions">
         @if($import)
         <button type="button" class="btn btn-outline-silab" data-bs-toggle="modal" data-bs-target="#importModal">
-            <i class="bi bi-file-earmark-excel"></i> Import Excel
+            <i class="bi bi-file-earmark-excel" aria-hidden="true"></i> Import Excel
         </button>
         @endif
         @if($addLabel)
         <button type="button" class="btn btn-primary" onclick="{{ $addOnclick }}">
-            <i class="bi bi-plus-lg"></i> {{ $addLabel }}
+            <i class="bi bi-plus-lg" aria-hidden="true"></i> {{ $addLabel }}
         </button>
         @endif
     </div>

@@ -1,5 +1,5 @@
 <!-- Modal Tambah/Edit -->
-<div class="modal fade" id="itemModal" tabindex="-1" aria-hidden="true">
+<div class="modal fade" id="itemModal" aria-labelledby="itemModalTitle" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <form
             method="POST"

@@ -26,7 +26,11 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const logger = pino({ level: process.env.LOG_LEVEL || 'info' });
 
 const PORT = process.env.WA_PORT || 3001;
-const WA_GATEWAY_TOKEN = process.env.WA_GATEWAY_TOKEN || 'default-token-change-me';
+const WA_GATEWAY_TOKEN = process.env.WA_GATEWAY_TOKEN;
+if (!WA_GATEWAY_TOKEN || WA_GATEWAY_TOKEN === 'default-token-change-me') {
+  logger.fatal('WA_GATEWAY_TOKEN kosong atau masih default. Isi token yang kuat di .env, lalu jalankan ulang.');
+  process.exit(1);
+}
 const WA_MAX_PER_HARI = parseInt(process.env.WA_MAX_PER_HARI || '40', 10);
 
 let sock = null;
@@ -39,17 +43,18 @@ let lastResetDate = new Date().toDateString();
 const app = express();
 app.use(express.json());
 
-// Middleware: autentikasi (endpoint publik: /, /qr, /pair, /status, /health)
+// Middleware: autentikasi (endpoint publik: /, /status, /health). /qr dan /pair memakai token lewat header Bearer atau ?token=.
 app.use((req, res, next) => {
-  const publicPaths = ['/', '/qr', '/pair', '/status', '/health'];
+  const publicPaths = ['/', '/status', '/health'];
   if (publicPaths.includes(req.path)) {
     return next();
   }
   const auth = req.headers.authorization;
-  if (!auth || !auth.startsWith('Bearer ')) {
+  const viaQuery = req.path === '/qr' || req.path === '/pair'; // dibuka dari browser, tidak bisa kirim header
+  if (!(auth && auth.startsWith('Bearer ')) && !viaQuery) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
-  const token = auth.slice(7);
+  const token = auth && auth.startsWith('Bearer ') ? auth.slice(7) : req.query.token;
   if (token !== WA_GATEWAY_TOKEN) {
     return res.status(401).json({ error: 'Invalid token' });
   }
@@ -58,7 +63,7 @@ app.use((req, res, next) => {
 
 // Root: otomatis arahkan ke /qr
 app.get('/', (req, res) => {
-  res.redirect('/qr');
+  res.redirect('/qr' + req.url.slice(1)); // pertahankan ?token=
 });
 
 // Utility: mask nomor (samarkan 4 digit tengah)
@@ -94,7 +99,11 @@ const resetDailyCounter = () => {
 };
 
 // Process queue pesan dengan jeda random
+let sedangJalan = false;
 const processMessageQueue = async () => {
+  if (sedangJalan) return; // tanpa ini setInterval menjalankan loop paralel dan jeda antar-pesan hilang
+  sedangJalan = true;
+  try {
   while (messageQueue.length > 0 && sock?.user) {
     resetDailyCounter();
     
@@ -128,6 +137,9 @@ const processMessageQueue = async () => {
     // Jeda acak 4-9 detik sebelum pesan berikutnya
     const delay = Math.random() * 5000 + 4000;
     await new Promise(resolve => setTimeout(resolve, delay));
+  }
+  } finally {
+    sedangJalan = false;
   }
 };
 
@@ -241,10 +253,12 @@ app.get('/health', (req, res) => {
 
 // Endpoint Pairing Code (tautkan dengan nomor telepon)
 app.get('/pair', async (req, res) => {
-  const phone = req.query.phone || '6285751401610';
-  const cleanPhone = phone.replace(/\D/g, '');
   if (sock?.user) {
     return res.json({ connected: true, nomor: sock.user.id.split(':')[0] });
+  }
+  const cleanPhone = String(req.query.phone || process.env.WA_PAIR_PHONE || '').replace(/\D/g, '');
+  if (!cleanPhone) {
+    return res.status(400).json({ error: 'Isi ?phone= atau WA_PAIR_PHONE' });
   }
   try {
     const code = await sock.requestPairingCode(cleanPhone);
@@ -301,13 +315,13 @@ app.get('/qr', async (req, res) => {
         <div style="background:white;padding:32px;border-radius:12px;box-shadow:0 4px 14px rgba(0,0,0,0.12);text-align:center;max-width:400px;">
           <h2 style="color:#075e54;margin:0 0 8px;">Scan QR WhatsApp</h2>
           <p style="color:#444;font-size:14px;margin-bottom:16px;">
-            1. Buka WhatsApp di HP (<b>085751401610</b>)<br>
+            1. Buka WhatsApp di HP pengirim<br>
             2. Menu (titik tiga) &rarr; <b>Perangkat Tertaut</b><br>
             3. Pilih <b>Tautkan Perangkat</b> dan scan kode ini
           </p>
           <img src="${dataUrl}" alt="QR Code WhatsApp" style="width:280px;height:280px;border-radius:8px;border:1px solid #ddd;" />
           <p style="margin-top:14px;margin-bottom:6px;">
-            <a href="/pair?phone=6285751401610" target="_blank" style="color:#075e54;font-size:13px;text-decoration:underline;font-weight:bold;">
+            <a href="/pair?token=${encodeURIComponent(String(req.query.token || ''))}" target="_blank" style="color:#075e54;font-size:13px;text-decoration:underline;font-weight:bold;">
               Atau klik di sini untuk pakai Kode Tautan (Pairing Code)
             </a>
           </p>
@@ -324,7 +338,7 @@ app.get('/qr', async (req, res) => {
 });
 
 // Start server
-app.listen(3001, '127.0.0.1', () => {
+app.listen(PORT, '127.0.0.1', () => {
   logger.info(`WA Gateway listening on 127.0.0.1:${PORT}`);
   initializeBaileys();
 });

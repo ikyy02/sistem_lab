@@ -75,6 +75,7 @@ class NotifikasiFiturTest extends TestCase
         $akunMhs = Akun::findOrFail('notif.alur@mhs.politala.ac.id');
         $mhs = Mahasiswa::findOrFail('26990001');
         Notification::assertSentTo($akunMhs, AkunTerverifikasiNotification::class);
+        $akunMhs->update(['wajib_ganti_password' => false]); // akun baru wajib ganti password; anggap sudah diganti
 
         // 2) Ajukan -> PengajuanDiterima ke peminjam + PengajuanBaru ke penyetuju (Laboran).
         $k = $this->katalog('alat', 10);

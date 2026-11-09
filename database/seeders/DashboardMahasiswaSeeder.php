@@ -48,7 +48,7 @@ class DashboardMahasiswaSeeder extends Seeder
     public function run(): void
     {
         // Pengaman: seeder data contoh tidak jalan di production.
-        if (! app()->environment('local', 'testing')) {
+        if (! app()->environment('local')) {
             return;
         }
 

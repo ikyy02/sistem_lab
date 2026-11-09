@@ -16,7 +16,7 @@ return [
 
     // Akun uji manual (NotifikasiUjiSeeder): arahkan email ke inbox yang benar-benar bisa menerima pesan.
     'uji' => [
-        'password' => env('NOTIFIKASI_UJI_PASSWORD', 'ujinotif123'),
+        'password' => env('NOTIFIKASI_UJI_PASSWORD'),
         'email_mahasiswa' => env('NOTIFIKASI_UJI_EMAIL_MHS', 'uji.mhs@mhs.politala.ac.id'),
         'email_dosen' => env('NOTIFIKASI_UJI_EMAIL_DOSEN', 'uji.dosen@politala.ac.id'),
         'email_laboran' => env('NOTIFIKASI_UJI_EMAIL_LABORAN', 'uji.laboran@politala.ac.id'),

@@ -12,6 +12,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 use App\Support\ExcelFile;
 use RuntimeException;
 
@@ -68,7 +69,7 @@ class MahasiswaImportService
     private const INSERT_CHUNK = 100;
 
     /**
-     * @return array{success: bool, total: int, inserted?: int, error_count?: int, errors?: array<int, array{row: int, nim: string, nama: string, messages: array<int, string>}>}
+     * @return array{success: bool, total: int, inserted?: int, credentials?: array<int, array{email: string, password: string}>, error_count?: int, errors?: array<int, array{row: int, nim: string, nama: string, messages: array<int, string>}>}
      *
      * @throws MahasiswaImportException untuk masalah level-file
      */
@@ -88,12 +89,13 @@ class MahasiswaImportService
             ];
         }
 
-        $this->insertRows($rows);
+        $credentials = $this->insertRows($rows);
 
         return [
             'success' => true,
             'total' => count($rows),
             'inserted' => count($rows),
+            'credentials' => $credentials, // hanya dikirim ke laporan sekali tampil (flash session)
         ];
     }
 
@@ -288,17 +290,20 @@ class MahasiswaImportService
      * Simpan seluruh baris dalam satu transaksi: semua masuk, atau tidak ada sama sekali.
      *
      * @param  array<int, array<string, string>>  $rows
+     * @return array<int, array{email: string, password: string}> password awal tiap akun
      */
-    private function insertRows(array $rows): void
+    private function insertRows(array $rows): array
     {
+        $credentials = [];
         $prodiMap = Prodi::pluck('id_prodi', 'nama_prodi')->mapWithKeys(fn ($id, $n) => [mb_strtolower($n) => $id])->all();
 
         try {
-            DB::transaction(function () use ($rows, $prodiMap) {
+            DB::transaction(function () use ($rows, $prodiMap, &$credentials) {
                 foreach ($rows as $data) {
-                    // Password awal = NIM (disimpan apa adanya). Akun dan profil dibuat bersamaan.
-                    // Password awal mahasiswa = NIM (disimpan apa adanya; hashing ditunda).
-                    Akun::create(['email' => $data['email'], 'password' => $data['nim'], 'role' => 'mahasiswa', 'wajib_ganti_password' => true]);
+                    // Password awal acak (disimpan apa adanya; hashing ditunda), wajib diganti saat login pertama.
+                    $password = Str::random(10);
+                    $credentials[] = ['email' => $data['email'], 'password' => $password];
+                    Akun::create(['email' => $data['email'], 'password' => $password, 'role' => 'mahasiswa', 'wajib_ganti_password' => true]);
                     Mahasiswa::create([
                         'nim' => $data['nim'],
                         'nama' => $data['nama'],
@@ -320,6 +325,8 @@ class MahasiswaImportService
                 $e
             );
         }
+
+        return $credentials;
     }
 
     /**

@@ -17,7 +17,7 @@
 @endphp
 
 <!-- Modal Import -->
-<div class="modal fade" id="importModal" tabindex="-1" aria-hidden="true">
+<div class="modal fade" id="importModal" aria-labelledby="importModal-judul" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
 
         <form
@@ -30,7 +30,7 @@
             @csrf
 
             <div class="modal-header">
-                <h5 class="modal-title fw-bold" style="font-size: 1rem;">
+                <h5 id="importModal-judul" class="modal-title fw-bold" style="font-size: 1rem;">
                     Import Excel {{ $label }}
                 </h5>
 

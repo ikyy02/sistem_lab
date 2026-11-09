@@ -107,14 +107,17 @@ class PengadaanTpkController extends Controller
                 'Status Prioritas',
             ]);
 
+            // Cegah CSV injection: sel teks berawalan = + - @ diberi awalan '.
+            $aman = fn ($v) => is_string($v) && preg_match('/^[=+\-@]/', $v) ? "'".$v : $v;
+
             foreach ($hasil['items'] as $it) {
                 fputcsv($handle, [
                     $it['ranking'],
                     $it['id_katalog'],
-                    $it['nama'],
+                    $aman($it['nama']),
                     ucfirst($it['jenis']),
-                    $it['nama_satuan'] ?? '-',
-                    $it['nama_ruangan'] ?? '-',
+                    $aman($it['nama_satuan']) ?? '-',
+                    $aman($it['nama_ruangan']) ?? '-',
                     $it['stok'],
                     $it['jumlah_peminjaman'],
                     $it['harga'],

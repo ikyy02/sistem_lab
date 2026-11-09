@@ -94,8 +94,8 @@
 
         .bg-alt-section {
             background-color: var(--bg-alt);
-            border-top: 1px solid var(--border-color);
-            border-bottom: 1px solid var(--border-color);
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
         }
 
         /* Judul & Subjudul Rata Kiri, subjudul max 60ch */
@@ -125,12 +125,12 @@
 
         /* Tautan & Tombol Global */
         a {
-            color: var(--brand-blue);
+            color: var(--primary);
             text-decoration: none;
             transition: color 150ms var(--ease-standard);
         }
         a:hover {
-            color: var(--brand-blue-hover);
+            color: var(--primary-hover);
         }
 
         button, .btn {
@@ -145,14 +145,14 @@
         /* Hover Kartu: naik 2px, border #1E4E8C, bayangan tipis (180ms) */
         .card-interactive {
             transition: transform 180ms var(--ease-standard), border-color 180ms var(--ease-standard), box-shadow 180ms var(--ease-standard);
-            border: 1px solid var(--border-color);
+            border: 1px solid var(--border);
             border-radius: var(--radius-main);
             background-color: var(--bg-white);
             box-shadow: var(--shadow-subtle);
         }
         .card-interactive:hover {
             transform: translateY(-2px);
-            border-color: var(--brand-blue);
+            border-color: var(--primary);
             box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
         }
 
@@ -169,7 +169,7 @@
             top: 0;
             z-index: 1000;
             background-color: #ffffff;
-            border-bottom: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--border);
             height: var(--navbar-height);
             transition: box-shadow 200ms var(--ease-standard);
         }
@@ -231,12 +231,12 @@
             white-space: nowrap;
         }
         .nav-desktop-item a:hover {
-            color: var(--brand-blue);
+            color: var(--primary);
             background-color: var(--bg-alt);
         }
         .nav-desktop-item a.is-active {
-            color: var(--brand-blue);
-            background-color: var(--brand-blue-light);
+            color: var(--primary);
+            background-color: var(--info-soft);
             font-weight: 600;
         }
 
@@ -267,7 +267,7 @@
         .nav-mobile-toggle {
             display: none;
             background: transparent;
-            border: 1px solid var(--border-color);
+            border: 1px solid var(--border);
             border-radius: var(--radius-main);
             padding: 8px 10px;
             color: var(--text-main);
@@ -284,7 +284,7 @@
             left: 0;
             right: 0;
             background-color: #ffffff;
-            border-bottom: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--border);
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
             padding: 16px 24px 24px;
             flex-direction: column;
@@ -302,8 +302,8 @@
             color: var(--text-secondary);
         }
         .nav-mobile-item:hover, .nav-mobile-item.is-active {
-            color: var(--brand-blue);
-            background-color: var(--brand-blue-light);
+            color: var(--primary);
+            background-color: var(--info-soft);
             font-weight: 600;
         }
 
@@ -421,7 +421,7 @@
             gap: 8px;
             padding: 12px 24px;
             background-color: #ffffff;
-            color: var(--brand-blue) !important;
+            color: var(--primary) !important;
             font-size: 0.92rem;
             font-weight: 600;
             border-radius: var(--radius-main);
@@ -546,20 +546,20 @@
             font-weight: 500;
             color: var(--text-secondary);
             background-color: var(--bg-white);
-            border: 1px solid var(--border-color);
+            border: 1px solid var(--border);
             border-radius: 999px;
             cursor: pointer;
             flex-shrink: 0;
             transition: all 150ms var(--ease-standard);
         }
         .filter-chip:hover {
-            color: var(--brand-blue);
+            color: var(--primary);
             border-color: #cbd5e1;
         }
         .filter-chip.is-active {
-            background-color: var(--brand-blue);
+            background-color: var(--primary);
             color: #ffffff;
-            border-color: var(--brand-blue);
+            border-color: var(--primary);
             font-weight: 600;
         }
 
@@ -584,7 +584,7 @@
         .search-box-input {
             width: 100%;
             padding: 10px 14px 10px 40px;
-            border: 1px solid var(--border-color);
+            border: 1px solid var(--border);
             border-radius: var(--radius-main);
             font-size: 0.88rem;
             font-family: var(--font-family);
@@ -594,7 +594,7 @@
             transition: border-color 150ms var(--ease-standard);
         }
         .search-box-input:focus {
-            border-color: var(--brand-blue);
+            border-color: var(--primary);
         }
         .btn-available-now {
             display: inline-flex;
@@ -602,7 +602,7 @@
             gap: 6px;
             padding: 10px 16px;
             background-color: var(--bg-white);
-            border: 1px solid var(--border-color);
+            border: 1px solid var(--border);
             border-radius: var(--radius-main);
             font-size: 0.84rem;
             font-weight: 600;
@@ -611,13 +611,13 @@
             flex-shrink: 0;
         }
         .btn-available-now:hover {
-            border-color: var(--brand-blue);
-            color: var(--brand-blue);
+            border-color: var(--primary);
+            color: var(--primary);
         }
         .btn-available-now.is-active {
-            background-color: var(--brand-blue-light);
-            border-color: var(--brand-blue);
-            color: var(--brand-blue);
+            background-color: var(--info-soft);
+            border-color: var(--primary);
+            color: var(--primary);
         }
 
         /* Grid Kartu Lab */
@@ -649,7 +649,7 @@
             display: flex;
             flex-direction: column;
             background-color: var(--bg-white);
-            border: 1px solid var(--border-color);
+            border: 1px solid var(--border);
             border-radius: var(--radius-main);
             box-shadow: var(--shadow-subtle);
             overflow: hidden;
@@ -657,7 +657,7 @@
         }
         .lab-card:hover {
             transform: translateY(-2px);
-            border-color: var(--brand-blue);
+            border-color: var(--primary);
             box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
         }
         .lab-card.is-hidden-filter {
@@ -759,7 +759,7 @@
             height: 38px;
             padding: 0 12px;
             background-color: var(--bg-white);
-            border: 1px solid var(--border-color);
+            border: 1px solid var(--border);
             border-radius: var(--radius-photo);
             font-size: 0.82rem;
             font-weight: 600;
@@ -797,14 +797,14 @@
             gap: 8px;
             padding: 10px 24px;
             background-color: var(--bg-white);
-            border: 1px solid var(--border-color);
+            border: 1px solid var(--border);
             border-radius: var(--radius-main);
-            color: var(--brand-blue);
+            color: var(--primary);
             font-size: 0.88rem;
             font-weight: 600;
         }
         .btn-load-more:hover {
-            border-color: var(--brand-blue);
+            border-color: var(--primary);
             background-color: var(--bg-alt);
         }
 
@@ -825,9 +825,9 @@
             flex-direction: column;
             padding: 24px;
             background-color: var(--bg-white);
-            border: 1px solid var(--border-color);
+            border: 1px solid var(--border);
             /* Garis aksen biru di atas kartu hanya pada SATU jenis kartu ini */
-            border-top: 3px solid var(--brand-blue);
+            border-top: 3px solid var(--primary);
             border-radius: var(--radius-main);
             box-shadow: var(--shadow-subtle);
         }
@@ -835,11 +835,11 @@
             width: 44px;
             height: 44px;
             border-radius: var(--radius-photo);
-            background-color: var(--brand-blue-light);
+            background-color: var(--info-soft);
             display: flex;
             align-items: center;
             justify-content: center;
-            color: var(--brand-blue);
+            color: var(--primary);
             margin-bottom: 16px;
         }
         .field-card-title {
@@ -864,7 +864,7 @@
             flex-direction: column;
             padding: 20px;
             background-color: var(--bg-white);
-            border: 1px solid var(--border-color);
+            border: 1px solid var(--border);
             border-radius: var(--radius-main);
             box-shadow: var(--shadow-subtle);
         }
@@ -876,7 +876,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            color: var(--brand-blue);
+            color: var(--primary);
             margin-bottom: 14px;
         }
         .service-card-title {
@@ -917,7 +917,7 @@
             gap: 24px;
             padding: 24px;
             background-color: var(--bg-white);
-            border: 1px solid var(--border-color);
+            border: 1px solid var(--border);
             border-radius: var(--radius-main);
             box-shadow: var(--shadow-subtle);
             margin-bottom: 24px;
@@ -934,7 +934,7 @@
             gap: 16px;
             padding: 20px;
             background-color: var(--bg-white);
-            border: 1px solid var(--border-color);
+            border: 1px solid var(--border);
             border-radius: var(--radius-main);
             box-shadow: var(--shadow-subtle);
             height: 100%;
@@ -945,21 +945,21 @@
             border-radius: 50%;
             object-fit: cover;
             flex-shrink: 0;
-            border: 2px solid var(--border-color);
+            border: 2px solid var(--border);
         }
         .avatar-fallback-64 {
             width: 64px;
             height: 64px;
             border-radius: 50%;
-            background-color: var(--brand-blue-light);
-            color: var(--brand-blue);
+            background-color: var(--info-soft);
+            color: var(--primary);
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 1.25rem;
             font-weight: 700;
             flex-shrink: 0;
-            border: 2px solid var(--border-color);
+            border: 2px solid var(--border);
         }
         .member-info {
             display: flex;
@@ -993,14 +993,14 @@
             gap: 8px;
             padding: 10px 20px;
             background-color: var(--bg-white);
-            border: 1px solid var(--border-color);
+            border: 1px solid var(--border);
             border-radius: var(--radius-main);
-            color: var(--brand-blue);
+            color: var(--primary);
             font-size: 0.88rem;
             font-weight: 600;
         }
         .btn-org-lightbox:hover {
-            border-color: var(--brand-blue);
+            border-color: var(--primary);
             background-color: var(--bg-alt);
         }
 
@@ -1021,7 +1021,7 @@
 
         /* Lightbox Bagan Modal */
         .lightbox-dialog {
-            border: 1px solid var(--border-color);
+            border: 1px solid var(--border);
             border-radius: var(--radius-main);
             padding: 0;
             max-width: 900px;
@@ -1039,7 +1039,7 @@
             align-items: center;
             justify-content: space-between;
             padding: 16px 20px;
-            border-bottom: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--border);
             background: var(--bg-alt);
         }
         .lightbox-title {
@@ -1089,7 +1089,7 @@
             flex-direction: column;
             padding: 24px;
             background-color: var(--bg-white);
-            border: 1px solid var(--border-color);
+            border: 1px solid var(--border);
             border-radius: var(--radius-main);
             box-shadow: var(--shadow-subtle);
             height: 100%;
@@ -1098,11 +1098,11 @@
             width: 40px;
             height: 40px;
             border-radius: var(--radius-photo);
-            background-color: var(--brand-blue-light);
+            background-color: var(--info-soft);
             display: flex;
             align-items: center;
             justify-content: center;
-            color: var(--brand-blue);
+            color: var(--primary);
             margin-bottom: 16px;
         }
         .sop-number {
@@ -1133,12 +1133,12 @@
             gap: 6px;
             font-size: 0.84rem;
             font-weight: 600;
-            color: var(--brand-blue);
+            color: var(--primary);
             padding-top: 8px;
-            border-top: 1px solid var(--border-color);
+            border-top: 1px solid var(--border);
         }
         .sop-card-link:hover {
-            color: var(--brand-blue-hover);
+            color: var(--primary-hover);
             text-decoration: underline;
         }
 
@@ -1171,13 +1171,13 @@
             left: calc(12.5% + 12px);
             right: calc(12.5% + 12px);
             height: 2px;
-            background-color: var(--border-color);
+            background-color: var(--border);
             z-index: 1;
         }
         .stepper-track-fill {
             height: 100%;
             width: 0%;
-            background-color: var(--brand-blue);
+            background-color: var(--primary);
             transition: width 800ms var(--ease-standard);
         }
         .stepper-step {
@@ -1193,7 +1193,7 @@
             height: 48px;
             border-radius: 50%;
             background-color: var(--bg-white);
-            border: 2px solid var(--border-color);
+            border: 2px solid var(--border);
             color: var(--text-secondary);
             font-size: 1.1rem;
             font-weight: 700;
@@ -1206,8 +1206,8 @@
             opacity: 0.7;
         }
         .stepper-step.is-active .stepper-circle {
-            background-color: var(--brand-blue);
-            border-color: var(--brand-blue);
+            background-color: var(--primary);
+            border-color: var(--primary);
             color: #ffffff;
             transform: scale(1);
             opacity: 1;
@@ -1265,7 +1265,7 @@
             flex-direction: column;
             padding: 28px;
             background-color: var(--bg-white);
-            border: 1px solid var(--border-color);
+            border: 1px solid var(--border);
             border-radius: var(--radius-main);
             box-shadow: var(--shadow-subtle);
             height: 100%;
@@ -1274,11 +1274,11 @@
             width: 44px;
             height: 44px;
             border-radius: var(--radius-photo);
-            background-color: var(--brand-blue-light);
+            background-color: var(--info-soft);
             display: flex;
             align-items: center;
             justify-content: center;
-            color: var(--brand-blue);
+            color: var(--primary);
             margin-bottom: 16px;
         }
         .jadwal-card-title {
@@ -1308,7 +1308,7 @@
             color: var(--text-main);
         }
         .jadwal-list-item svg {
-            color: var(--brand-blue);
+            color: var(--primary);
             flex-shrink: 0;
             margin-top: 2px;
         }
@@ -1335,7 +1335,7 @@
         }
         .faq-item {
             background-color: var(--bg-white);
-            border: 1px solid var(--border-color);
+            border: 1px solid var(--border);
             border-radius: var(--radius-main);
             overflow: hidden;
             box-shadow: var(--shadow-subtle);
@@ -1366,7 +1366,7 @@
         }
         .faq-item.is-open .faq-chevron {
             transform: rotate(180deg);
-            color: var(--brand-blue);
+            color: var(--primary);
         }
         .faq-answer-collapse {
             display: grid;

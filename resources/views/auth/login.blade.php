@@ -62,12 +62,12 @@
         }
 
         a {
-            color: var(--brand-blue);
+            color: var(--primary);
             text-decoration: none;
             transition: color 150ms var(--ease-standard);
         }
         a:hover {
-            color: var(--brand-blue-hover);
+            color: var(--primary-hover);
         }
 
         /* Tata Letak Dua Kolom */
@@ -164,7 +164,7 @@
             color: #ffffff;
         }
         .side-brand-subtitle {
-            font-size: 0.74rem;
+            font-size: .75rem;
             color: #E2E8F0;
             font-weight: 500;
         }
@@ -185,7 +185,7 @@
             backdrop-filter: blur(8px);
             -webkit-backdrop-filter: blur(8px);
             border-radius: 999px;
-            font-size: 0.78rem;
+            font-size: .75rem;
             font-weight: 600;
             color: #ffffff;
             margin-bottom: 20px;
@@ -252,14 +252,14 @@
             line-height: 1.3;
         }
         .side-highlight-desc {
-            font-size: 0.78rem;
+            font-size: .75rem;
             color: #E2E8F0;
             line-height: 1.45;
             margin-top: 2px;
         }
 
         .side-footer-meta {
-            font-size: 0.8rem;
+            font-size: .875rem;
             color: rgba(226, 232, 240, 0.8);
             padding-top: 20px;
         }
@@ -296,14 +296,14 @@
             width: fit-content;
         }
         .back-nav-link:hover {
-            color: var(--brand-blue);
+            color: var(--primary);
             background-color: #ffffff;
         }
 
         /* Kartu Form Login */
         .login-card {
             background-color: var(--bg-white);
-            border: 1px solid var(--border-color);
+            border: 1px solid var(--border);
             border-radius: var(--radius-main);
             padding: 36px 32px;
             box-shadow: var(--shadow-card);
@@ -316,7 +316,7 @@
             gap: 10px;
             margin-bottom: 24px;
             padding-bottom: 18px;
-            border-bottom: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--border);
         }
         .mobile-brand-box img {
             width: 32px;
@@ -330,7 +330,7 @@
             line-height: 1.2;
         }
         .mobile-brand-subtitle {
-            font-size: 0.72rem;
+            font-size: .75rem;
             color: var(--text-secondary);
             display: block;
             font-weight: 500;
@@ -365,7 +365,7 @@
             border: 1px solid #FECACA;
             border-radius: var(--radius-input);
             color: #B91C1C;
-            font-size: 0.85rem;
+            font-size: .875rem;
             line-height: 1.45;
             margin-bottom: 20px;
         }
@@ -395,7 +395,7 @@
             font-size: 0.92rem;
             color: var(--text-main);
             background-color: var(--bg-white);
-            border: 1px solid var(--border-color);
+            border: 1px solid var(--border);
             border-radius: var(--radius-input);
             outline: none;
             transition: border-color 150ms var(--ease-standard), box-shadow 150ms var(--ease-standard);
@@ -406,7 +406,7 @@
         }
 
         .form-input:focus {
-            border-color: var(--brand-blue);
+            border-color: var(--primary);
             box-shadow: 0 0 0 3px rgba(30, 78, 140, 0.12);
         }
 
@@ -439,13 +439,13 @@
             color: var(--text-main);
         }
         .btn-toggle-eye:focus-visible {
-            outline: 2px solid var(--brand-blue);
+            outline: 2px solid var(--primary);
             outline-offset: -2px;
         }
 
         .input-error-msg {
             color: #B91C1C;
-            font-size: 0.78rem;
+            font-size: .75rem;
             font-weight: 500;
             margin-top: 5px;
         }
@@ -490,7 +490,7 @@
         .login-info-card {
             margin-top: 22px;
             padding: 12px 14px;
-            background-color: var(--brand-blue-light);
+            background-color: var(--info-soft);
             border: 1px solid #DBEAFE;
             border-radius: var(--radius-input);
             display: flex;
@@ -498,12 +498,12 @@
             gap: 10px;
         }
         .login-info-card svg {
-            color: var(--brand-blue);
+            color: var(--primary);
             flex-shrink: 0;
             margin-top: 2px;
         }
         .login-info-text {
-            font-size: 0.78rem;
+            font-size: .75rem;
             color: var(--text-secondary);
             line-height: 1.5;
         }
