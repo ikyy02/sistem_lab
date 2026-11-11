@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 /**
- * TPK/SAW (hanya Laboran/Admin). AHP dihitung manual di luar sistem; sistem hanya menerima bobot final.
+ * SAW (hanya Laboran/Admin). Bobot kriteria berasal dari AhpService (AHP), bukan input manual.
  * C1 Stok (cost), C2 Jumlah peminjaman per bulan (benefit), C3 Harga (cost).
  * Ranking dihitung dinamis dan tidak disimpan.
  */

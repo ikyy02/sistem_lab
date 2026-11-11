@@ -2,38 +2,23 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\AhpService;
 use App\Services\AuthService;
 use App\Services\TpkService;
 use Carbon\Carbon;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
- * Pengadaan TPK (Sistem Pendukung Keputusan SAW) untuk prioritas pengadaan alat dan bahan laboratorium.
- * Khusus role Laboran/Admin.
+ * SPK Pengadaan (AHP -> SAW) untuk prioritas pengadaan alat dan bahan laboratorium.
+ * AHP menghasilkan bobot kriteria; SAW memakai bobot itu untuk meranking. Khusus role Laboran/Admin.
  */
 class PengadaanTpkController extends Controller
 {
-    public const PRESETS = [
-        'standar' => [
-            'nama' => 'Standar Seimbang',
-            'deskripsi' => 'Stok 40%, Peminjaman 30%, Harga 30%',
-            'bobot' => [0.40, 0.30, 0.30],
-        ],
-        'peminjaman_tinggi' => [
-            'nama' => 'Prioritas Kebutuhan Praktikum',
-            'deskripsi' => 'Peminjaman dominan (50%), Stok 30%, Harga 20%',
-            'bobot' => [0.30, 0.50, 0.20],
-        ],
-        'stok_kritis' => [
-            'nama' => 'Prioritas Kelangkaan / Stok Habis',
-            'deskripsi' => 'Stok kritis dominan (60%), Peminjaman 25%, Harga 15%',
-            'bobot' => [0.60, 0.25, 0.15],
-        ],
-    ];
-
     public function __construct(
-        protected TpkService $tpkService
+        protected TpkService $tpkService,
+        protected AhpService $ahpService
     ) {}
 
     public function index(Request $request)
@@ -42,7 +27,7 @@ class PengadaanTpkController extends Controller
         $hasil = $this->hitung($params);
 
         return view('pengadaan-tpk.index', array_merge($params, $hasil, [
-            'presets' => self::PRESETS,
+            'kriteria' => AhpService::KRITERIA,
             'daftarBulan' => $this->daftarBulanPilihan(),
         ]));
     }
@@ -51,6 +36,9 @@ class PengadaanTpkController extends Controller
     {
         $params = $this->resolveParams($request);
         $hasil = $this->hitung($params);
+        if ($tolak = $this->tolakBilaTidakKonsisten($hasil, $params)) {
+            return $tolak;
+        }
         $user = AuthService::user();
 
         return view('pengadaan-tpk.cetak', array_merge($params, $hasil, [
@@ -59,10 +47,13 @@ class PengadaanTpkController extends Controller
         ]));
     }
 
-    public function exportCsv(Request $request): StreamedResponse
+    public function exportCsv(Request $request): StreamedResponse|RedirectResponse
     {
         $params = $this->resolveParams($request);
         $hasil = $this->hitung($params);
+        if ($tolak = $this->tolakBilaTidakKonsisten($hasil, $params)) {
+            return $tolak;
+        }
 
         $filename = 'Rekomendasi_Pengadaan_TPK_' . $params['bulan'] . '.csv';
 
@@ -81,12 +72,18 @@ class PengadaanTpkController extends Controller
 
             // Judul dan metadata
             fputcsv($handle, ['REKOMENDASI PRIORITAS PENGADAAN ALAT DAN BAHAN LABORATORIUM']);
-            fputcsv($handle, ['Sistem Informasi SIARKA - Metode Simple Additive Weighting (SAW)']);
+            fputcsv($handle, ['Sistem Informasi SIARKA - SPK AHP (bobot kriteria) dan SAW (peringkat)']);
             fputcsv($handle, ['Bulan Periode', $params['bulan']]);
             fputcsv($handle, ['Filter Kategori', ucfirst($params['jenis'])]);
-            fputcsv($handle, ['Bobot W1 (Stok)', $params['w1']]);
-            fputcsv($handle, ['Bobot W2 (Peminjaman)', $params['w2']]);
-            fputcsv($handle, ['Bobot W3 (Harga)', $params['w3']]);
+            $ahp = $hasil['ahp'];
+            fputcsv($handle, ['Perbandingan AHP C1:C2 / C1:C3 / C2:C3',
+                AhpService::formatNilai($ahp['pair']['a12']).' / '.AhpService::formatNilai($ahp['pair']['a13']).' / '.AhpService::formatNilai($ahp['pair']['a23'])]);
+            fputcsv($handle, ['Bobot AHP W1 (Stok)', round($ahp['bobot'][0], 6)]);
+            fputcsv($handle, ['Bobot AHP W2 (Peminjaman)', round($ahp['bobot'][1], 6)]);
+            fputcsv($handle, ['Bobot AHP W3 (Harga)', round($ahp['bobot'][2], 6)]);
+            fputcsv($handle, ['Lambda max', round($ahp['lambda_max'], 6)]);
+            fputcsv($handle, ['CI', round($ahp['ci'], 6)]);
+            fputcsv($handle, ['CR (RI 0,58)', round($ahp['cr'], 6)]);
             fputcsv($handle, []);
 
             // Header kolom
@@ -97,9 +94,9 @@ class PengadaanTpkController extends Controller
                 'Jenis',
                 'Satuan',
                 'Ruangan',
-                'Stok Saat Ini (C1)',
+                'Stok Saat Ini (C1, satuan standar)',
                 'Jumlah Peminjaman/Bulan (C2)',
-                'Harga per Satuan (Rp) (C3)',
+                'Harga per Unit (Rp) (C3)',
                 'Normalisasi R1 (Stok)',
                 'Normalisasi R2 (Peminjaman)',
                 'Normalisasi R3 (Harga)',
@@ -146,24 +143,17 @@ class PengadaanTpkController extends Controller
             $jenis = 'semua';
         }
 
-        $preset = (string) $request->query('preset', '');
-        if (isset(self::PRESETS[$preset])) {
-            [$w1, $w2, $w3] = self::PRESETS[$preset]['bobot'];
-        } else {
-            $w1 = $request->has('w1') ? (float) $request->query('w1') : 0.40;
-            $w2 = $request->has('w2') ? (float) $request->query('w2') : 0.30;
-            $w3 = $request->has('w3') ? (float) $request->query('w3') : 0.30;
-        }
-
-        // Validasi bobot harus positif dan jumlah = 1.0 (toleransi 0.005)
-        $totalW = $w1 + $w2 + $w3;
-        $bobotValid = $w1 >= 0 && $w2 >= 0 && $w3 >= 0 && abs($totalW - 1.0) <= 0.005;
-
-        if (! $bobotValid) {
-            // Fallback ke default 0.40, 0.30, 0.30 jika bobot tidak seimbang
-            $w1 = 0.40;
-            $w2 = 0.30;
-            $w3 = 0.30;
+        // Perbandingan berpasangan AHP (skala Saaty). Nilai awal 1 = semua kriteria setara (netral):
+        // bukan bobot permanen, Laboran mengisi sendiri penilaiannya.
+        $pair = [];
+        $pairValid = true;
+        foreach (array_keys(AhpService::PASANGAN) as $k) {
+            $teks = (string) $request->query($k, '1');
+            if (AhpService::parseNilai($teks) === null) {
+                $teks = '1';
+                $pairValid = false;
+            }
+            $pair[$k] = $teks;
         }
 
         $search = mb_substr(trim((string) $request->query('search', '')), 0, 100);
@@ -171,21 +161,27 @@ class PengadaanTpkController extends Controller
         return [
             'bulan' => $bulan,
             'jenis' => $jenis,
-            'w1' => $w1,
-            'w2' => $w2,
-            'w3' => $w3,
-            'preset' => $preset,
+            'pair' => $pair,
+            'pairValid' => $pairValid,
             'search' => $search,
-            'bobotValid' => $bobotValid,
         ];
     }
 
     private function hitung(array $params): array
     {
-        $bobot = [$params['w1'], $params['w2'], $params['w3']];
+        $ahp = $this->ahpService->hitung($params['pair']);
         $jenisFilter = $params['jenis'] === 'semua' ? null : $params['jenis'];
 
-        $analisis = $this->tpkService->analisis($bobot, $params['bulan'], $jenisFilter);
+        // Ranking resmi hanya bila AHP konsisten (CR <= 0,10); bobot SAW selalu dari AHP.
+        if (! $ahp['konsisten']) {
+            return [
+                'ahp' => $ahp, 'resmi' => false, 'items' => [], 'filteredItems' => [],
+                'stats' => ['min_stok' => 0.0, 'max_pinjam' => 0, 'min_harga' => 0.0, 'total_item' => 0],
+                'totalItem' => 0, 'topItem' => null, 'avgNilai' => 0,
+            ];
+        }
+
+        $analisis = $this->tpkService->analisis($ahp['bobot'], $params['bulan'], $jenisFilter);
         $items = $analisis['items'];
         $total = count($items);
 
@@ -220,6 +216,8 @@ class PengadaanTpkController extends Controller
         }
 
         return [
+            'ahp' => $ahp,
+            'resmi' => true,
             'items' => $items,
             'filteredItems' => $filteredItems,
             'stats' => $analisis['stats'],
@@ -227,6 +225,16 @@ class PengadaanTpkController extends Controller
             'topItem' => $items[0] ?? null,
             'avgNilai' => $total > 0 ? array_sum(array_column($items, 'nilai')) / $total : 0,
         ];
+    }
+
+    private function tolakBilaTidakKonsisten(array $hasil, array $params): ?RedirectResponse
+    {
+        if ($hasil['resmi']) {
+            return null;
+        }
+
+        return redirect()->route('pengadaan-tpk.index', request()->query())
+            ->with('error', 'Ranking resmi belum tersedia: perbandingan AHP belum konsisten (CR > 0,10). Sesuaikan perbandingan lebih dulu.');
     }
 
     private function daftarBulanPilihan(): array

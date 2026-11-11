@@ -86,25 +86,82 @@ class PengadaanTpkTest extends TestCase
         $this->assertCount(2, $res->viewData('items'));
     }
 
-    public function test_pengadaan_tpk_dengan_parameter_custom_bobot_dan_filter_kategori(): void
+    public function test_bobot_saw_berasal_dari_ahp_dan_ranking_sesuai_acuan(): void
     {
         $lab = $this->laboran();
         $this->katalog('alat', 10, ['nama' => 'Oscilloscope', 'harga' => 3000000]);
         $this->katalog('bahan', 50, ['nama' => 'Kabel UTP', 'harga' => 8000]);
 
-        // Filter khusus bahan dengan preset
+        // Acuan independen (numpy): W = [0.647947, 0.229871, 0.122182], CR = 0.003187
         $res = $this->sebagai(Role::LABORAN, $lab)
-            ->get(route('pengadaan-tpk.index', [
-                'jenis' => 'bahan',
-                'w1' => 0.60,
-                'w2' => 0.25,
-                'w3' => 0.15,
-            ]))
-            ->assertOk();
+            ->get(route('pengadaan-tpk.index', ['a12' => '3', 'a13' => '5', 'a23' => '2']))
+            ->assertOk()
+            ->assertSee('Konsisten')
+            ->assertSee('0,0032');
+
+        $this->assertTrue($res->viewData('resmi'));
+        $this->assertEqualsWithDelta([0.647947, 0.229871, 0.122182], $res->viewData('ahp')['bobot'], 1e-6);
 
         $items = $res->viewData('items');
+        $this->assertSame('Oscilloscope', $items[0]['nama']);
+        $this->assertEqualsWithDelta(0.648273, $items[0]['nilai'], 1e-6);
+        $this->assertSame('Kabel UTP', $items[1]['nama']);
+        $this->assertEqualsWithDelta(0.251771, $items[1]['nilai'], 1e-6);
+    }
+
+    public function test_bobot_manual_dan_preset_lama_diabaikan(): void
+    {
+        $lab = $this->laboran();
+        $this->katalog('alat', 10);
+
+        $res = $this->sebagai(Role::LABORAN, $lab)
+            ->get(route('pengadaan-tpk.index', ['w1' => 0.9, 'w2' => 0.05, 'w3' => 0.05, 'preset' => 'stok_kritis']))
+            ->assertOk();
+
+        $this->assertEqualsWithDelta(1 / 3, $res->viewData('ahp')['bobot'][0], 1e-9);
+    }
+
+    public function test_filter_kategori_tetap_berfungsi(): void
+    {
+        $lab = $this->laboran();
+        $this->katalog('alat', 10, ['nama' => 'Oscilloscope']);
+        $this->katalog('bahan', 50, ['nama' => 'Kabel UTP']);
+
+        $items = $this->sebagai(Role::LABORAN, $lab)
+            ->get(route('pengadaan-tpk.index', ['jenis' => 'bahan']))
+            ->assertOk()->viewData('items');
+
         $this->assertCount(1, $items);
         $this->assertSame('Kabel UTP', $items[0]['nama']);
+    }
+
+    public function test_cr_di_atas_batas_tidak_menghasilkan_ranking_cetak_atau_csv(): void
+    {
+        $lab = $this->laboran();
+        $this->katalog('alat', 10, ['nama' => 'Oscilloscope']);
+        $q = ['a12' => '9', 'a13' => '1/9', 'a23' => '9'];
+
+        $res = $this->sebagai(Role::LABORAN, $lab)->get(route('pengadaan-tpk.index', $q))
+            ->assertOk()
+            ->assertSee('Tidak konsisten')
+            ->assertDontSee('Skor Preferensi (V)');
+        $this->assertFalse($res->viewData('resmi'));
+        $this->assertSame([], $res->viewData('items'));
+
+        $this->sebagai(Role::LABORAN, $lab)->get(route('pengadaan-tpk.cetak', $q))
+            ->assertRedirect(route('pengadaan-tpk.index', $q));
+        $this->sebagai(Role::LABORAN, $lab)->get(route('pengadaan-tpk.export-csv', $q))
+            ->assertRedirect(route('pengadaan-tpk.index', $q));
+    }
+
+    public function test_nilai_di_luar_skala_saaty_dikembalikan_ke_satu(): void
+    {
+        $lab = $this->laboran();
+        $res = $this->sebagai(Role::LABORAN, $lab)
+            ->get(route('pengadaan-tpk.index', ['a12' => '99', 'a13' => 'abc', 'a23' => '2']))
+            ->assertOk();
+
+        $this->assertSame(['a12' => '1', 'a13' => '1', 'a23' => '2'], $res->viewData('pair'));
     }
 
     public function test_cetak_laporan_pengadaan_tpk(): void

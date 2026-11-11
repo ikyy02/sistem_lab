@@ -16,22 +16,38 @@
     .tpk-label { display: block; font-size: var(--fs-sm); font-weight: 500; color: var(--text-secondary); margin-bottom: 6px; }
     .tpk-sub { font-size: var(--fs-xs); color: var(--text-muted); }
 
-    .tpk-presets { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
-    .tpk-preset {
-        text-align: left; padding: 8px 12px; background: var(--bg-surface); color: var(--text-primary);
-        border: 1px solid var(--border-input); border-radius: var(--radius-md); cursor: pointer; line-height: 1.3;
-        transition: background-color 150ms var(--ease-standard), border-color 150ms var(--ease-standard);
-    }
-    .tpk-preset:hover { background: var(--bg-subtle); }
-    .tpk-preset[aria-pressed="true"] { background: var(--brand-soft); border-color: var(--brand); box-shadow: inset 0 0 0 1px var(--brand); }
-    .tpk-preset b { display: block; font-size: var(--fs-sm); font-weight: 600; }
-    .tpk-preset span { font-size: var(--fs-xs); color: var(--text-secondary); font-variant-numeric: tabular-nums; }
-
-    .tpk-manual { margin-top: 12px; padding: 12px 16px; background: var(--bg-subtle); border-radius: var(--radius-md); }
-    .tpk-manual-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) auto; gap: 12px; align-items: end; }
-    .tpk-total { font-size: var(--fs-sm); font-weight: 600; padding: 6px 10px; border-radius: var(--radius-md); white-space: nowrap; }
-    .tpk-total.ok { background: var(--success-soft); color: var(--success-text); }
-    .tpk-total.bad { background: var(--danger-soft); color: var(--danger-text); }
+    .tpk-langkah { margin-bottom: 16px; }
+    .tpk-langkah-head { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-bottom: 1px solid var(--border); }
+    .tpk-no { flex: none; width: 28px; height: 28px; border-radius: 999px; background: var(--brand); color: #fff; font-weight: 600; font-size: var(--fs-sm); display: inline-flex; align-items: center; justify-content: center; }
+    .tpk-langkah-head h2 { margin: 0; font-size: var(--fs-md); font-weight: 600; }
+    .tpk-langkah-head p { margin: 0; font-size: var(--fs-sm); color: var(--text-secondary); }
+    .tpk-ahp-input { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 24px; align-items: start; }
+    .tpk-pair-row { border: 0; margin: 0; padding: 16px 0; min-width: 0; }
+    .tpk-pair-row + .tpk-pair-row { border-top: 1px solid var(--border); }
+    .tpk-pair-row:first-child { padding-top: 0; }
+    .tpk-pair-q { display: block; margin-bottom: 6px; font-size: var(--fs-base); color: var(--text-secondary); }
+    .tpk-pair-q b { color: var(--text-primary); font-weight: 600; }
+    .tpk-pair-q .vs { margin: 0 6px; font-size: var(--fs-xs); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--text-muted); }
+    .tpk-baca { margin: 8px 0 0; font-size: var(--fs-sm); color: var(--text-secondary); }
+    .tpk-baca strong { color: var(--text-primary); font-weight: 600; }
+    .tpk-hasil { position: sticky; top: 16px; padding: 16px; background: var(--bg-subtle); border-radius: var(--radius-md); }
+    .tpk-hasil h3 { font-size: var(--fs-md); font-weight: 600; margin: 0 0 12px; }
+    .tpk-w + .tpk-w { margin-top: 10px; }
+    .tpk-w-row { display: flex; justify-content: space-between; gap: 8px; font-size: var(--fs-sm); }
+    .tpk-w-row b { font-variant-numeric: tabular-nums; }
+    .tpk-w-track { height: 8px; margin-top: 4px; background: var(--border); border-radius: 999px; overflow: hidden; }
+    .tpk-w-fill { height: 100%; background: var(--brand); border-radius: 999px; transition: width 250ms var(--ease-standard); }
+    .tpk-hasil .tpk-status { margin-top: 16px; padding: 10px 12px; font-size: var(--fs-sm); }
+    .tpk-hasil .tpk-sub { margin: 8px 0 0; font-variant-numeric: tabular-nums; }
+    .tpk-dirty { margin: 8px 0 0; font-size: var(--fs-sm); color: var(--warning-text); }
+    .tpk-ahp-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+    .tpk-status { display: flex; flex-wrap: wrap; gap: 8px 24px; align-items: center; padding: 12px 16px; border-radius: var(--radius-md); font-size: var(--fs-base); }
+    .tpk-status.ok { background: var(--success-soft); color: var(--success-text); }
+    .tpk-status.bad { background: var(--danger-soft); color: var(--danger-text); }
+    .tpk-num th, .tpk-num td { text-align: right; }
+    .tpk-num th:first-child, .tpk-num td:first-child { text-align: left; }
+    .tpk-detail summary { cursor: pointer; font-weight: 600; font-size: var(--fs-base); padding: 12px 16px; }
+    .tpk-detail[open] summary { border-bottom: 1px solid var(--border); }
 
     .tpk-ringkas { display: grid; grid-template-columns: 2fr 1fr 1fr; margin-bottom: 16px; }
     .tpk-ringkas > div { padding: 14px 16px; min-width: 0; }
@@ -84,9 +100,8 @@
     .tpk-matriks th:nth-child(-n+2), .tpk-matriks td:nth-child(-n+2) { text-align: left; }
 
     @media (max-width: 991.98px) {
-        .tpk-presets { grid-template-columns: 1fr; }
-        .tpk-manual-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-        .tpk-manual-grid .tpk-total { grid-column: 1 / -1; }
+        .tpk-ahp-grid, .tpk-ahp-input { grid-template-columns: 1fr; }
+        .tpk-hasil { position: static; }
         .tpk-ringkas { grid-template-columns: 1fr 1fr; }
         .tpk-ringkas > div:first-child { grid-column: 1 / -1; border-bottom: 1px solid var(--border); }
         .tpk-ringkas > div:nth-child(2) { border-left: 0; }
@@ -94,6 +109,7 @@
     }
     /* Ponsel: baris tabel menjadi kartu bertumpuk agar tidak perlu geser horizontal. */
     @media (max-width: 767.98px) {
+
         .tpk-rank-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
         .tpk-rank-table, .tpk-rank-table tbody, .tpk-rank-table tr, .tpk-rank-table td { display: block; width: 100%; }
         .tpk-rank-table tr { padding: 12px 0; border-bottom: 1px solid var(--border); }
@@ -102,7 +118,6 @@
         .tpk-rank-table td.judul { justify-content: flex-start; text-align: left; }
         .tpk-rank-table td.judul::before { content: none; }
         .tpk-rank-table tbody tr:hover td { background: none; }
-        .tpk-manual-grid { grid-template-columns: 1fr; }
         .tpk-bantuan { display: none; }
         .tpk-usulan { justify-content: flex-end; padding: 8px 16px; }
         .tpk-ringkas { grid-template-columns: 1fr; }
@@ -114,22 +129,20 @@
 @section('content')
 @php
     $persen = fn ($x) => (int) round($x * 100);
-    $presetAktif = '';
-    foreach ($presets as $kunci => $pr) {
-        if (abs($pr['bobot'][0] - $w1) < 0.0001 && abs($pr['bobot'][1] - $w2) < 0.0001 && abs($pr['bobot'][2] - $w3) < 0.0001) { $presetAktif = $kunci; break; }
-    }
+    $f = fn ($x, $d = 4) => number_format($x, $d, ',', '.');
     $bulanLabel = \Carbon\Carbon::parse($bulan.'-01')->translatedFormat('F Y');
     $jenisLabel = ['semua' => 'Alat dan bahan', 'alat' => 'Alat', 'bahan' => 'Bahan'][$jenis] ?? 'Alat dan bahan';
     $jumlahPrio = array_count_values(array_column($items, 'prioritas_label'));
     $kelasPrio = ['Sangat Tinggi' => 'tpk-prio-1', 'Tinggi' => 'tpk-prio-2', 'Sedang' => 'tpk-prio-3', 'Rendah' => 'tpk-prio-4'];
-    $manualTerbuka = ! $bobotValid || $presetAktif === '';
+    $pairLabel = ['a12' => [0, 1], 'a13' => [0, 2], 'a23' => [1, 2]];
+    $netral = $pair['a12'] === '1' && $pair['a13'] === '1' && $pair['a23'] === '1';
 @endphp
 
 <div class="tpk-bar">
     <p class="tpk-konteks">
-        Periode <strong>{{ $bulanLabel }}</strong> &middot; {{ $jenisLabel }} &middot;
-        Bobot Stok <strong>{{ $persen($w1) }}</strong> / Peminjaman <strong>{{ $persen($w2) }}</strong> / Harga <strong>{{ $persen($w3) }}</strong>
+        SPK Pengadaan <strong>AHP &rarr; SAW</strong> &middot; Periode <strong>{{ $bulanLabel }}</strong> &middot; {{ $jenisLabel }}
     </p>
+    @if($resmi)
     <div class="d-flex flex-wrap gap-2">
         <a href="{{ route('pengadaan-tpk.cetak', request()->query()) }}" target="_blank" rel="noopener" class="btn btn-outline-silab btn-sm">
             <i class="bi bi-printer" aria-hidden="true"></i> Cetak rekomendasi
@@ -138,81 +151,153 @@
             <i class="bi bi-download" aria-hidden="true"></i> Unduh CSV
         </a>
     </div>
+    @endif
 </div>
 
-@if(! $bobotValid)
+@if(! $pairValid)
     <div class="alert alert-warning d-flex align-items-start gap-2 mb-3" role="alert">
         <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
-        <div>Jumlah bobot harus tepat 100%. Sistem memakai bobot standar (40 / 30 / 30) sampai bobot diperbaiki.</div>
+        <div>Ada nilai perbandingan di luar skala Saaty (1/9 sampai 9). Nilai tersebut dikembalikan ke 1.</div>
     </div>
 @endif
 
-{{-- 1. Atur parameter --}}
-<form action="{{ route('pengadaan-tpk.index') }}" method="GET" id="form-tpk" class="tpk-panel tpk-param">
-    <div class="row g-3 align-items-end">
-        <div class="col-6 col-lg-3">
-            <label class="tpk-label" for="f-bulan">Bulan peminjaman</label>
-            <select name="bulan" id="f-bulan" class="form-select form-select-sm" onchange="this.form.submit()">
-                @foreach($daftarBulan as $val => $lbl)
-                    <option value="{{ $val }}" {{ $bulan === $val ? 'selected' : '' }}>{{ $lbl }}</option>
-                @endforeach
-            </select>
-        </div>
-        <div class="col-6 col-lg-2">
-            <label class="tpk-label" for="f-jenis">Kategori</label>
-            <select name="jenis" id="f-jenis" class="form-select form-select-sm" onchange="this.form.submit()">
-                <option value="semua" {{ $jenis === 'semua' ? 'selected' : '' }}>Semua</option>
-                <option value="alat" {{ $jenis === 'alat' ? 'selected' : '' }}>Alat</option>
-                <option value="bahan" {{ $jenis === 'bahan' ? 'selected' : '' }}>Bahan</option>
-            </select>
-        </div>
-        <div class="col-12 col-lg-7">
-            <label class="tpk-label" for="f-cari">Cari barang</label>
-            <div class="input-group input-group-sm">
-                <input type="search" name="search" id="f-cari" class="form-control" placeholder="Nama, jenis, atau satuan" value="{{ $search }}">
-                @if($search !== '')
-                    <a href="{{ route('pengadaan-tpk.index', request()->except('search')) }}" class="btn btn-outline-silab btn-sm">Hapus</a>
-                @endif
-                <button type="submit" class="btn btn-primary btn-sm js-submit-bobot">Terapkan</button>
+<form action="{{ route('pengadaan-tpk.index') }}" method="GET" id="form-tpk">
+    {{-- Data yang dianalisis --}}
+    <div class="tpk-panel tpk-param">
+        <div class="row g-3 align-items-end">
+            <div class="col-6 col-lg-3">
+                <label class="tpk-label" for="f-bulan">Bulan peminjaman</label>
+                <select name="bulan" id="f-bulan" class="form-select form-select-sm">
+                    @foreach($daftarBulan as $val => $lbl)
+                        <option value="{{ $val }}" {{ $bulan === $val ? 'selected' : '' }}>{{ $lbl }}</option>
+                    @endforeach
+                </select>
             </div>
-        </div>
-
-        <div class="col-12">
-            <span class="tpk-label" id="lbl-preset">Bobot kriteria <span class="tpk-sub">(Stok &middot; Peminjaman &middot; Harga)</span></span>
-            <div class="tpk-presets" role="group" aria-labelledby="lbl-preset">
-                @foreach($presets as $kunci => $pr)
-                    <button type="submit" name="preset" value="{{ $kunci }}" class="tpk-preset" aria-pressed="{{ $presetAktif === $kunci ? 'true' : 'false' }}">
-                        <b>{{ $pr['nama'] }}</b>
-                        <span>{{ $persen($pr['bobot'][0]) }} &middot; {{ $persen($pr['bobot'][1]) }} &middot; {{ $persen($pr['bobot'][2]) }}</span>
-                    </button>
-                @endforeach
+            <div class="col-6 col-lg-2">
+                <label class="tpk-label" for="f-jenis">Kategori</label>
+                <select name="jenis" id="f-jenis" class="form-select form-select-sm">
+                    <option value="semua" {{ $jenis === 'semua' ? 'selected' : '' }}>Semua</option>
+                    <option value="alat" {{ $jenis === 'alat' ? 'selected' : '' }}>Alat</option>
+                    <option value="bahan" {{ $jenis === 'bahan' ? 'selected' : '' }}>Bahan</option>
+                </select>
             </div>
-            <button type="button" class="btn btn-link btn-sm px-0 mt-2" data-bs-toggle="collapse" data-bs-target="#bobot-manual" aria-expanded="{{ $manualTerbuka ? 'true' : 'false' }}" aria-controls="bobot-manual">
-                Atur bobot sendiri
-            </button>
-            <div class="collapse {{ $manualTerbuka ? 'show' : '' }}" id="bobot-manual">
-                <div class="tpk-manual">
-                    <div class="tpk-manual-grid">
-                        <div>
-                            <label class="tpk-label" for="w1">Stok (W1)</label>
-                            <input type="number" step="0.05" min="0" max="1" name="w1" id="w1" class="form-control form-control-sm" value="{{ $w1 }}" oninput="updateTotalBobot()">
-                        </div>
-                        <div>
-                            <label class="tpk-label" for="w2">Peminjaman (W2)</label>
-                            <input type="number" step="0.05" min="0" max="1" name="w2" id="w2" class="form-control form-control-sm" value="{{ $w2 }}" oninput="updateTotalBobot()">
-                        </div>
-                        <div>
-                            <label class="tpk-label" for="w3">Harga (W3)</label>
-                            <input type="number" step="0.05" min="0" max="1" name="w3" id="w3" class="form-control form-control-sm" value="{{ $w3 }}" oninput="updateTotalBobot()">
-                        </div>
-                        <div class="tpk-total ok" id="total-bobot-badge" role="status">Total 100%</div>
-                    </div>
-                    <div class="tpk-sub mt-2">Jumlah tiga bobot harus 1,0 (100%). Klik Terapkan untuk menghitung ulang.</div>
-                </div>
+            <div class="col-12 col-lg-7">
+                <label class="tpk-label" for="f-cari">Cari barang <span class="tpk-sub">(hanya menyaring tampilan, tidak mengubah ranking)</span></label>
+                <input type="search" name="search" id="f-cari" class="form-control form-control-sm" placeholder="Nama, jenis, atau satuan" value="{{ $search }}">
             </div>
         </div>
     </div>
+
+    {{-- LANGKAH 1: AHP --}}
+    <section class="tpk-panel tpk-langkah" aria-labelledby="h-ahp">
+        <div class="tpk-langkah-head">
+            <span class="tpk-no" aria-hidden="true">1</span>
+            <div>
+                <h2 id="h-ahp">Bobot kriteria dengan AHP</h2>
+                <p>Bandingkan tingkat kepentingan kriteria berpasangan. Sistem menghitung bobot dan memeriksa konsistensinya.</p>
+            </div>
+        </div>
+        @php
+            $istilah = [2 => 'sedikit lebih penting', 3 => 'agak lebih penting', 4 => 'cukup lebih penting', 5 => 'lebih penting', 6 => 'jauh lebih penting', 7 => 'sangat lebih penting', 8 => 'sangat jauh lebih penting', 9 => 'mutlak lebih penting'];
+            $kalimat = function ($teks, $i, $j) use ($istilah, $kriteria) {
+                $v = \App\Services\AhpService::parseNilai($teks);
+                [$a, $b] = [$kriteria[$i]['nama'], $kriteria[$j]['nama']];
+                if ($v == 1.0) { return "$a dan $b sama penting."; }
+                $n = $v > 1 ? (int) round($v) : (int) round(1 / $v);
+                [$menang, $kalah] = $v > 1 ? [$a, $b] : [$b, $a];
+                return "$menang {$istilah[$n]} dari $kalah.";
+            };
+        @endphp
+        <div class="tpk-pane">
+            @if($netral)
+                <div class="alert alert-info py-2 mb-3" role="note">Pilih kriteria mana yang lebih penting di tiap pasangan beserta tingkatnya (1 = sama penting, 9 = mutlak lebih penting). Nilai awal ini netral, bukan penilaian Laboran.</div>
+            @endif
+            <div class="tpk-ahp-input">
+                <div>
+                    @foreach($pairLabel as $key => [$i, $j])
+                        <fieldset class="tpk-pair-row" data-key="{{ $key }}" data-i="{{ $i }}" data-j="{{ $j }}">
+                            <legend class="tpk-pair-q">
+                                <b>{{ $kriteria[$i]['kode'] }} {{ $kriteria[$i]['nama'] }}</b><span class="vs">dibanding</span><b>{{ $kriteria[$j]['kode'] }} {{ $kriteria[$j]['nama'] }}</b>
+                            </legend>
+                            <select name="{{ $key }}" id="p-{{ $key }}" class="form-select" aria-describedby="baca-{{ $key }}">
+                                @for($n = 9; $n >= 2; $n--)
+                                    <option value="{{ $n }}" {{ $pair[$key] === (string) $n ? 'selected' : '' }}>{{ $n }} &ndash; {{ $kriteria[$i]['nama'] }} {{ $istilah[$n] }} dari {{ $kriteria[$j]['nama'] }}</option>
+                                @endfor
+                                <option value="1" {{ $pair[$key] === '1' ? 'selected' : '' }}>1 &ndash; Sama penting</option>
+                                @for($n = 2; $n <= 9; $n++)
+                                    <option value="1/{{ $n }}" {{ $pair[$key] === '1/'.$n ? 'selected' : '' }}>1/{{ $n }} &ndash; {{ $kriteria[$j]['nama'] }} {{ $istilah[$n] }} dari {{ $kriteria[$i]['nama'] }}</option>
+                                @endfor
+                            </select>
+                            <p class="tpk-baca" id="baca-{{ $key }}" aria-live="polite">{{ $kalimat($pair[$key], $i, $j) }}</p>
+                        </fieldset>
+                    @endforeach
+                </div>
+
+                <aside class="tpk-hasil" aria-labelledby="h-bobot">
+                    <h3 id="h-bobot">Bobot kriteria</h3>
+                    @foreach($kriteria as $i => $kr)
+                        <div class="tpk-w">
+                            <div class="tpk-w-row"><span>{{ $kr['kode'] }} {{ $kr['nama'] }} <span class="tpk-sub">{{ $kr['tipe'] }}</span></span><b data-w="{{ $i }}">{{ $f($ahp['bobot'][$i] * 100, 2) }}%</b></div>
+                            <div class="tpk-w-track" aria-hidden="true"><div class="tpk-w-fill" data-fill="{{ $i }}" style="width: {{ $f($ahp['bobot'][$i] * 100, 2) }}%;"></div></div>
+                        </div>
+                    @endforeach
+                    <div class="tpk-status {{ $ahp['konsisten'] ? 'ok' : 'bad' }}" id="ahp-status" role="status">
+                        <strong id="ahp-label">{{ $ahp['konsisten'] ? 'Konsisten' : 'Tidak konsisten' }}</strong>
+                        <span>CR <b id="ahp-cr">{{ $f($ahp['cr']) }}</b> (batas 0,1000)</span>
+                    </div>
+                    <p class="tpk-sub" id="ahp-hint" style="color:var(--danger-text);" {{ $ahp['konsisten'] ? 'hidden' : '' }}>CR di atas 0,10, jadi ranking resmi tidak ditampilkan. Selaraskan pilihan: bila C1 lebih penting dari C2 dan C2 dari C3, maka C1 harus lebih penting dari C3.</p>
+                    <button type="submit" class="btn btn-primary btn-sm w-100 mt-3">Hitung ranking</button>
+                    <p class="tpk-dirty" id="ahp-dirty" role="status" hidden>Pilihan berubah. Ranking di bawah belum diperbarui.</p>
+                    <button type="button" class="btn btn-link btn-sm px-0 mt-1" id="ahp-reset">Setel ulang ke sama penting</button>
+                </aside>
+            </div>
+
+            <details class="tpk-detail tpk-panel mt-4">
+                <summary>Lihat proses perhitungan AHP</summary>
+                <div class="tpk-pane">
+                    <div class="tpk-ahp-grid">
+                        <div>
+                            <h3 class="h-card mb-2">Matriks perbandingan berpasangan</h3>
+                            <div class="table-responsive"><table class="tpk-table tpk-num">
+                                <caption class="visually-hidden">Matriks perbandingan berpasangan</caption>
+                                <thead><tr><th scope="col">Kriteria</th>@foreach($kriteria as $kr)<th scope="col">{{ $kr['kode'] }}</th>@endforeach</tr></thead>
+                                <tbody>
+                                    @foreach($kriteria as $i => $kr)<tr><th scope="row">{{ $kr['kode'] }}</th>@foreach($kriteria as $j => $_)<td>{{ $f($ahp['matriks'][$i][$j]) }}</td>@endforeach</tr>@endforeach
+                                    <tr><th scope="row">Jumlah</th>@foreach($ahp['jumlah_kolom'] as $v)<td><strong>{{ $f($v) }}</strong></td>@endforeach</tr>
+                                </tbody>
+                            </table></div>
+                        </div>
+                        <div>
+                            <h3 class="h-card mb-2">Normalisasi dan bobot prioritas</h3>
+                            <div class="table-responsive"><table class="tpk-table tpk-num">
+                                <caption class="visually-hidden">Matriks ternormalisasi, bobot, dan perkalian matriks dengan bobot</caption>
+                                <thead><tr><th scope="col">Kriteria</th>@foreach($kriteria as $kr)<th scope="col">{{ $kr['kode'] }}</th>@endforeach<th scope="col">Bobot (rata-rata baris)</th><th scope="col">A&middot;w</th><th scope="col">(A&middot;w)/w</th></tr></thead>
+                                <tbody>
+                                    @foreach($kriteria as $i => $kr)<tr><th scope="row">{{ $kr['kode'] }}</th>@foreach($kriteria as $j => $_)<td>{{ $f($ahp['normal'][$i][$j]) }}</td>@endforeach<td><strong>{{ $f($ahp['bobot'][$i]) }}</strong></td><td>{{ $f($ahp['aw'][$i]) }}</td><td>{{ $f($ahp['aw'][$i] / $ahp['bobot'][$i]) }}</td></tr>@endforeach
+                                </tbody>
+                            </table></div>
+                        </div>
+                    </div>
+                    <div class="tpk-rumus mt-3">&lambda;max = rata-rata (A&middot;w)/w = {{ $f($ahp['lambda_max']) }}<br>CI = (&lambda;max &minus; n) / (n &minus; 1) = ({{ $f($ahp['lambda_max']) }} &minus; 3) / 2 = {{ $f($ahp['ci']) }}<br>CR = CI / RI = {{ $f($ahp['ci']) }} / 0,58 = {{ $f($ahp['cr']) }}</div>
+                </div>
+            </details>
+        </div>
+    </section>
 </form>
+
+@if(! $resmi)
+    <div class="tpk-panel tpk-pane" role="status">
+        <h2 class="h-card mb-1"><span class="tpk-no me-2" aria-hidden="true">2</span>Peringkat SAW belum tersedia</h2>
+        <p class="mb-0" style="color:var(--text-secondary);">Langkah 2 berjalan otomatis setelah bobot AHP konsisten (CR &le; 0,10). Tidak ada ranking sementara atau bobot cadangan yang dipakai.</p>
+    </div>
+@else
+<div class="tpk-langkah-head tpk-panel mb-3" style="border-bottom:1px solid var(--border);">
+    <span class="tpk-no" aria-hidden="true">2</span>
+    <div>
+        <h2>Peringkat prioritas dengan SAW</h2>
+        <p>Memakai bobot AHP: Stok {{ $f($ahp['bobot'][0]) }} &middot; Peminjaman {{ $f($ahp['bobot'][1]) }} &middot; Harga {{ $f($ahp['bobot'][2]) }}. Data stok dan harga memakai satuan standar katalog (harga per 1 unit).</p>
+    </div>
+</div>
 
 {{-- 2. Ringkasan hasil --}}
 <div class="tpk-panel tpk-ringkas">
@@ -335,6 +420,9 @@
                             <th scope="col">R1</th>
                             <th scope="col">R2</th>
                             <th scope="col">R3</th>
+                            <th scope="col">W1&middot;R1</th>
+                            <th scope="col">W2&middot;R2</th>
+                            <th scope="col">W3&middot;R3</th>
                             <th scope="col">Nilai V</th>
                             <th scope="col">Rank</th>
                         </tr>
@@ -350,6 +438,9 @@
                                 <td>{{ number_format($it['r'][0], 4) }}</td>
                                 <td>{{ number_format($it['r'][1], 4) }}</td>
                                 <td>{{ number_format($it['r'][2], 4) }}</td>
+                                <td>{{ number_format($ahp['bobot'][0] * $it['r'][0], 4) }}</td>
+                                <td>{{ number_format($ahp['bobot'][1] * $it['r'][1], 4) }}</td>
+                                <td>{{ number_format($ahp['bobot'][2] * $it['r'][2], 4) }}</td>
                                 <td><strong>{{ number_format($it['nilai'], 4) }}</strong></td>
                                 <td>{{ $it['ranking'] }}</td>
                             </tr>
@@ -364,11 +455,11 @@
             <div class="row g-4">
                 <div class="col-12 col-lg-6">
                     <h2 class="h-card mb-2">Cara kerja</h2>
-                    <p style="color:var(--text-secondary);">Peringkat dihitung dengan metode <strong>Simple Additive Weighting (SAW)</strong>. Bobot tiap kriteria ditetapkan lebih dulu lewat pertimbangan AHP di luar sistem; SIARKA hanya menerima bobot akhir dan menghitung peringkat dari data stok, peminjaman, dan harga.</p>
+                    <p style="color:var(--text-secondary);">Bobot tiap kriteria dihitung dengan <strong>AHP</strong> dari perbandingan berpasangan (skala Saaty) dan hanya dipakai bila CR &le; 0,10. Bobot itu lalu dipakai <strong>Simple Additive Weighting (SAW)</strong> untuk meranking alat dan bahan dari data stok, peminjaman, dan harga per unit.</p>
                     <ul class="ps-3 mb-0" style="color:var(--text-secondary);">
-                        <li><strong>C1 Stok</strong> (cost): makin sedikit, makin prioritas.</li>
+                        <li><strong>C1 Stok</strong> (cost, satuan standar katalog): makin sedikit, makin prioritas.</li>
                         <li><strong>C2 Peminjaman</strong> (benefit): jumlah transaksi disetujui atau selesai pada bulan terpilih.</li>
-                        <li><strong>C3 Harga</strong> (cost): makin murah, makin mudah diusulkan.</li>
+                        <li><strong>C3 Harga per unit</strong> (cost): makin murah, makin mudah diusulkan.</li>
                     </ul>
                 </div>
                 <div class="col-12 col-lg-6">
@@ -383,19 +474,11 @@
     </div>
 </div>
 
+@endif
+
 @push('scripts')
 <script>
     var formatRp = function (n) { return 'Rp ' + n.toLocaleString('id-ID'); };
-
-    function updateTotalBobot() {
-        var w = ['w1', 'w2', 'w3'].map(function (id) { return parseFloat(document.getElementById(id).value) || 0; });
-        var total = Math.round((w[0] + w[1] + w[2]) * 100);
-        var ok = total === 100;
-        var badge = document.getElementById('total-bobot-badge');
-        badge.className = 'tpk-total ' + (ok ? 'ok' : 'bad');
-        badge.textContent = ok ? 'Total 100%' : 'Total ' + total + '% (harus 100%)';
-        document.querySelectorAll('.js-submit-bobot').forEach(function (b) { b.disabled = !ok; });
-    }
 
     function hitungSimulasi(input) {
         var harga = parseFloat(input.dataset.harga) || 0;
@@ -411,7 +494,59 @@
         document.getElementById('jumlah-usulan').textContent = jumlah + ' item diusulkan';
     }
 
-    updateTotalBobot();
+</script>
+@endpush
+@push('scripts')
+<script>
+(function () {
+    var D = { istilah: @json($istilah), nama: @json(array_column($kriteria, 'nama')), awal: @json($pair) };
+    var form = document.getElementById('form-tpk');
+    if (!form) return;
+    var fmt = function (x, d) { return x.toLocaleString('id-ID', { minimumFractionDigits: d, maximumFractionDigits: d }); };
+    var nilai = function (t) { return t.indexOf('/') > -1 ? 1 / parseInt(t.split('/')[1], 10) : parseFloat(t); };
+    var baca = function (k) { return form.querySelector('select[name="' + k + '"]').value; };
+
+    function kalimat(t, i, j) {
+        var v = nilai(t), a = D.nama[i], b = D.nama[j];
+        if (v === 1) return a + ' dan ' + b + ' sama penting.';
+        var n = Math.round(v > 1 ? v : 1 / v);
+        return (v > 1 ? a : b) + ' ' + D.istilah[n] + ' dari ' + (v > 1 ? b : a) + '.';
+    }
+
+    function hitung() {
+        var p = { a12: nilai(baca('a12')), a13: nilai(baca('a13')), a23: nilai(baca('a23')) };
+        var A = [[1, p.a12, p.a13], [1 / p.a12, 1, p.a23], [1 / p.a13, 1 / p.a23, 1]];
+        var cs = [0, 1, 2].map(function (j) { return A[0][j] + A[1][j] + A[2][j]; });
+        var w = A.map(function (r) { return (r[0] / cs[0] + r[1] / cs[1] + r[2] / cs[2]) / 3; });
+        var lam = A.reduce(function (s, r, i) { return s + (r[0] * w[0] + r[1] * w[1] + r[2] * w[2]) / w[i]; }, 0) / 3;
+        var ci = (lam - 3) / 2, cr = Math.max(0, ci) / 0.58;
+        return { w: w, lam: lam, ci: ci, cr: cr, ok: cr <= 0.1 + 1e-9 };
+    }
+
+    function perbarui() {
+        var h = hitung(), berubah = false;
+        h.w.forEach(function (x, i) {
+            form.querySelector('[data-w="' + i + '"]').textContent = fmt(x * 100, 2) + '%';
+            form.querySelector('[data-fill="' + i + '"]').style.width = (x * 100) + '%';
+        });
+        document.getElementById('ahp-cr').textContent = fmt(h.cr, 4);
+        document.getElementById('ahp-label').textContent = h.ok ? 'Konsisten' : 'Tidak konsisten';
+        document.getElementById('ahp-status').className = 'tpk-status ' + (h.ok ? 'ok' : 'bad');
+        document.getElementById('ahp-hint').hidden = h.ok;
+        form.querySelectorAll('.tpk-pair-row').forEach(function (row) {
+            var k = row.dataset.key, i = +row.dataset.i, j = +row.dataset.j, t = baca(k), v = nilai(t);
+            row.querySelector('.tpk-baca').textContent = kalimat(t, i, j);
+            if (t !== D.awal[k]) berubah = true;
+        });
+        document.getElementById('ahp-dirty').hidden = !berubah;
+    }
+
+    form.addEventListener('change', function (e) { if (e.target.matches('.tpk-pair-row select')) perbarui(); });
+    document.getElementById('ahp-reset').addEventListener('click', function () {
+        form.querySelectorAll('.tpk-pair-row select').forEach(function (el) { el.value = '1'; });
+        perbarui();
+    });
+})();
 </script>
 @endpush
 @endsection
