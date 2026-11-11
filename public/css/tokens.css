@@ -1,0 +1,54 @@
+    :root {
+        /* Layout */
+        --sidebar-width: 260px;
+        --header-height: 64px;
+
+        /* Spasi Kelipatan 8px */
+        --space-1: 8px;
+        --space-2: 16px;
+        --space-3: 24px;
+        --space-4: 32px;
+
+        /* Radius Standar */
+        --radius-sm: 6px;
+        --radius-md: 8px;   /* input, tombol, badge */
+        --radius-lg: 12px;  /* card, modal */
+
+        /* Tinggi Kontrol */
+        --control-h: 40px;
+        --control-h-sm: 32px;
+
+        /* Warna Desain Sistem SIARKA */
+        --primary:        #0F172A; /* Navy solid */
+        --primary-hover:  #1E293B;
+        --primary-focus:  rgba(15, 23, 42, 0.15);
+
+        --border:         #E2E8F0;
+        --text-primary:   #0F172A;
+        --text-secondary: #475569;
+        --text-muted:     #5E6E84;
+        --bg-page:        #F8FAFC;
+        --bg-surface:     #FFFFFF;
+        --bg-subtle:      #F1F5F9;
+
+        --danger:         #DC2626;
+        --danger-soft:    #FEE2E2;
+        --danger-hover:   #B91C1C;
+        --info-soft:      #E0F2FE;
+        --info:           #0284C7;
+        --warning:        #D97706;
+        --warning-soft:   #FEF3C7;
+        --success:        #16A34A;
+        --success-soft:   #DCFCE7;
+        /* Pasangan teks gelap untuk latar *-soft (kontras >= 4,5:1) */
+        --info-text:      #0369A1;
+        --warning-text:   #B45309;
+        --success-text:   #15803D;
+
+        --bs-primary: var(--primary);
+        --bs-link-color: var(--primary);
+        --bs-body-color: var(--text-primary);
+        --bs-body-bg: var(--bg-page);
+        --bs-border-color: var(--border);
+        --ease-standard: cubic-bezier(.22, .61, .36, 1);
+    }

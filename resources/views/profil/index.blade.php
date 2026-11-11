@@ -19,7 +19,7 @@
                 </div>
                 <div class="min-w-0">
                     <h2 class="h5 fw-bold mb-1 text-truncate" style="color:var(--text-primary);font-size:1.05rem;">{{ $profil->nama }}</h2>
-                    <span class="badge" style="background:var(--bg-subtle);color:var(--text-secondary);border:1px solid var(--border);font-size:12px;font-weight:500;">
+                    <span class="badge" style="background:var(--bg-subtle);color:var(--text-secondary);border:1px solid var(--border);font-size:var(--fs-xs);font-weight:500;">
                         {{ $roleLabel }}
                     </span>
                 </div>
@@ -73,7 +73,7 @@
 
             <div class="pb-3 mb-3 border-bottom">
                 <h2 class="h5 fw-bold mb-1" style="font-size:1.05rem;color:var(--text-primary);">Ubah Password</h2>
-                <p class="mb-0 text-muted" style="font-size:.875rem;">Pastikan menggunakan password yang aman dan unik.</p>
+                <p class="mb-0 text-muted" style="font-size:var(--fs-base);">Pastikan menggunakan password yang aman dan unik.</p>
             </div>
 
             <div class="row g-3 flex-grow-1">
@@ -87,7 +87,7 @@
                         </button>
                     </div>
                     @if($name === 'password_baru')
-                        <div class="form-text mt-1" style="font-size:12px;color:var(--text-muted);">Minimal 8 karakter.</div>
+                        <div class="form-text mt-1" style="font-size:var(--fs-xs);color:var(--text-muted);">Minimal 8 karakter.</div>
                     @endif
                     @error($name)<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                 </div>

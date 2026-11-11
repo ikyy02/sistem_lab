@@ -8,7 +8,8 @@
     <meta name="description" content="SIARKA — Sistem Informasi Administrasi, Reservasi, Katalog, dan Aktivitas Laboratorium">
     <link rel="icon" type="image/svg+xml" href="{{ asset('images/siarka-ikon.svg') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
     <link href="{{ asset('css/siarka.css') }}?v={{ filemtime(public_path('css/siarka.css')) }}" rel="stylesheet">
@@ -39,15 +40,15 @@
 <!-- ========== MAIN ========== -->
 <div id="main-wrapper">
     <header id="topbar">
-        <button class="topbar-toggle" data-sidebar="toggle" aria-label="Toggle sidebar"><i class="bi bi-list" aria-hidden="true"></i></button>
+        <button class="topbar-toggle" id="sidebar-toggle" data-sidebar="toggle" aria-label="Buka menu navigasi" aria-controls="sidebar" aria-expanded="false"><i class="bi bi-list" aria-hidden="true"></i></button>
 
         <div class="topbar-title">
             <h1 class="font-display">@yield('page-title', 'SIARKA')</h1>
-            <p>@yield('page-subtitle', 'Sistem Informasi Administrasi, Reservasi, Katalog, dan Aktivitas Laboratorium')</p>
+            @hasSection('page-subtitle')<p>@yield('page-subtitle')</p>@endif
         </div>
 
         <div class="dropdown">
-            <button class="topbar-bell" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Notifikasi">
+            <button class="topbar-bell" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Notifikasi{{ $notifJumlah > 0 ? ', '.$notifJumlah.' belum dibaca' : '' }}">
                 <i class="bi bi-bell" aria-hidden="true"></i>
                 @if($notifJumlah > 0)
                     <span class="notif-badge">{{ $notifJumlah > 99 ? '99+' : $notifJumlah }}</span>
@@ -55,7 +56,7 @@
             </button>
             <div class="dropdown-menu dropdown-menu-end shadow-sm notif-menu">
                 <div class="notif-head">
-                    <span class="fw-semibold" style="font-size:.875rem;">Notifikasi</span>
+                    <span class="fw-semibold" style="font-size:var(--fs-base);">Notifikasi</span>
                     @if($notifJumlah > 0)
                     <form action="{{ route('notifikasi.baca-semua') }}" method="POST" data-no-lock>
                         @csrf
@@ -81,21 +82,21 @@
                     @endforelse
                 </div>
                 <div class="notif-foot">
-                    <a class="dropdown-item text-center fw-semibold py-2" href="{{ route('notifikasi.index') }}" style="font-size:.875rem;"><i class="bi bi-inbox me-1" aria-hidden="true"></i>Lihat semua notifikasi</a>
+                    <a class="dropdown-item text-center fw-semibold py-2" href="{{ route('notifikasi.index') }}" style="font-size:var(--fs-base);"><i class="bi bi-inbox me-1" aria-hidden="true"></i>Lihat semua notifikasi</a>
                 </div>
             </div>
         </div>
 
         <div class="topbar-right dropdown">
-            <button class="topbar-user dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+            <button class="topbar-user dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Menu akun {{ $me['nama'] ?? '' }}">
                 <span class="topbar-avatar">{{ $initial }}</span>
                 <span class="d-none d-sm-block text-start lh-sm">
-                    <span class="d-block fw-semibold" style="font-size:.875rem">{{ $me['nama'] ?? '' }}</span>
-                    <span class="d-block" style="font-size:.75rem;color:var(--text-muted)">{{ $roleLabel }}</span>
+                    <span class="d-block fw-semibold" style="font-size:var(--fs-base)">{{ $me['nama'] ?? '' }}</span>
+                    <span class="d-block" style="font-size:var(--fs-xs);color:var(--text-muted)">{{ $roleLabel }}</span>
                 </span>
             </button>
             <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
-                <li class="px-3 py-2"><div style="font-size:.75rem;color:var(--text-muted)">{{ $me['email'] ?? '' }}</div></li>
+                <li class="px-3 py-2"><div style="font-size:var(--fs-xs);color:var(--text-muted)">{{ $me['email'] ?? '' }}</div></li>
                 <li><hr class="dropdown-divider"></li>
                 <li><a class="dropdown-item" href="{{ route('profil.index') }}"><i class="bi bi-person me-2" aria-hidden="true"></i>Profil Saya</a></li>
                 <li><hr class="dropdown-divider"></li>
@@ -116,35 +117,62 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
 <script>
-    function toggleSidebar() {
-        document.getElementById('sidebar').classList.toggle('show');
-        document.getElementById('sidebar-overlay').classList.toggle('show');
+    var mqMobile = window.matchMedia('(max-width: 991.98px)');
+    var sidebarEl = document.getElementById('sidebar');
+    var toggleBtn = document.getElementById('sidebar-toggle');
+    function setSidebarOpen(buka) {
+        sidebarEl.classList.toggle('show', buka);
+        document.getElementById('sidebar-overlay').classList.toggle('show', buka);
+        toggleBtn.setAttribute('aria-expanded', buka ? 'true' : 'false');
+        toggleBtn.setAttribute('aria-label', buka ? 'Tutup menu navigasi' : 'Buka menu navigasi');
+        if (buka) { var l = sidebarEl.querySelector('.sidebar-link'); if (l) l.focus(); }
     }
-    function closeSidebar() {
-        document.getElementById('sidebar').classList.remove('show');
-        document.getElementById('sidebar-overlay').classList.remove('show');
+    function closeSidebar(kembaliFokus) {
+        if (!sidebarEl.classList.contains('show')) return;
+        setSidebarOpen(false);
+        if (kembaliFokus) toggleBtn.focus();
+    }
+    // Collapsed hanya berlaku di desktop; nilainya disimpan agar kembali saat layar melebar.
+    function collapsedTersimpan() { try { return localStorage.getItem('siarka_sidebar_collapsed') === '1'; } catch (e) { return false; } }
+    function terapkanCollapse() {
+        var c = collapsedTersimpan() && !mqMobile.matches;
+        document.body.classList.toggle('sidebar-collapsed', c);
+        var t = document.querySelector('[data-sidebar="collapse"]');
+        if (t) { t.setAttribute('aria-expanded', c ? 'false' : 'true'); t.setAttribute('aria-label', c ? 'Perluas sidebar' : 'Perkecil sidebar'); }
     }
     function toggleSidebarCollapse() {
-        document.body.classList.toggle('sidebar-collapsed');
-        try {
-            localStorage.setItem('siarka_sidebar_collapsed', document.body.classList.contains('sidebar-collapsed') ? '1' : '0');
-        } catch(e) {}
+        try { localStorage.setItem('siarka_sidebar_collapsed', collapsedTersimpan() ? '0' : '1'); } catch (e) {}
+        terapkanCollapse();
     }
-    (function() {
-        try {
-            if (localStorage.getItem('siarka_sidebar_collapsed') === '1' && window.innerWidth >= 992) {
-                document.body.classList.add('sidebar-collapsed');
-            }
-        } catch(e) {}
-    })();
+    terapkanCollapse();
+    mqMobile.addEventListener('change', function () { terapkanCollapse(); closeSidebar(false); });
 
     document.addEventListener('click', function (e) {
         const el = e.target.closest('[data-sidebar]');
         if (!el) return;
-        if (el.dataset.sidebar === 'toggle') toggleSidebar();
+        if (el.dataset.sidebar === 'toggle') setSidebarOpen(!sidebarEl.classList.contains('show'));
         else if (el.dataset.sidebar === 'collapse') toggleSidebarCollapse();
-        else closeSidebar();
+        else closeSidebar(true);
     });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeSidebar(true); });
+
+    // Tooltip label untuk sidebar collapsed (mouse dan keyboard)
+    (function () {
+        var tip = document.createElement('div'); tip.className = 'sidebar-tip'; tip.setAttribute('aria-hidden', 'true');
+        document.body.appendChild(tip);
+        function tampil(e) {
+            var a = e.target.closest('.sidebar-link, .sidebar-collapse-toggle');
+            if (!a || !document.body.classList.contains('sidebar-collapsed')) return;
+            var r = a.getBoundingClientRect();
+            tip.textContent = a.dataset.label || a.getAttribute('aria-label') || '';
+            tip.style.left = (r.right + 8) + 'px';
+            tip.style.top = (r.top + r.height / 2 - tip.offsetHeight / 2) + 'px';
+            tip.classList.add('show');
+        }
+        function sembunyi() { tip.classList.remove('show'); }
+        sidebarEl.addEventListener('mouseover', tampil); sidebarEl.addEventListener('focusin', tampil);
+        sidebarEl.addEventListener('mouseout', sembunyi); sidebarEl.addEventListener('focusout', sembunyi);
+    })();
 
     // Satu mekanisme untuk semua form POST: cegah kirim ganda dan beri umpan balik "memproses"
     // tanpa mengubah ukuran tombol (lebar dikunci). Form dapat memilih keluar dengan atribut data-no-lock.

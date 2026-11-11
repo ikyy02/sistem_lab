@@ -12,9 +12,43 @@
 
 <div class="mb-4">
     <h2 class="greet mb-1">{{ $sapaan }}, <em>{{ explode(' ', $me['nama'])[0] }}</em>.</h2>
-    <p class="mb-0" style="color:var(--text-secondary);font-size:var(--fs-base)">Ringkasan pengajuan peminjaman Anda dan pengajuan yang perlu Anda proses.</p>
+    <p class="mb-0" style="color:var(--text-secondary);font-size:var(--fs-base)">{{ $isAdmin ? 'Ringkasan pengajuan dan peminjaman yang perlu ditangani.' : 'Ringkasan pengajuan peminjaman Anda dan pengajuan yang perlu Anda proses.' }}</p>
 </div>
 
+@if($isAdmin)
+    <div class="row g-3">
+        <div class="col-12 col-md-6">
+            <a href="{{ route('pengajuan.index') }}" class="card-modern p-4 h-100 text-decoration-none d-block">
+                <div class="d-flex align-items-center gap-3">
+                    <div style="width:42px;height:42px;border-radius:6px;background:var(--bg-subtle);color:var(--primary);border:1px solid rgba(47,93,138,.18);display:flex;align-items:center;justify-content:center"><i class="bi bi-hourglass-split fs-5" aria-hidden="true"></i></div>
+                    <div>
+                        <div class="stat-num">{{ $menunggu }}</div>
+                        <div style="font-size:var(--fs-base);color:var(--text-secondary)">Pengajuan menunggu persetujuan</div>
+                    </div>
+                    <i class="bi bi-chevron-right ms-auto" aria-hidden="true" style="color:var(--text-muted)"></i>
+                </div>
+            </a>
+        </div>
+        <div class="col-12 col-md-6">
+            <a href="{{ route('pengembalian.index') }}" class="card-modern p-4 h-100 text-decoration-none d-block">
+                <div class="d-flex align-items-center gap-3">
+                    <div style="width:42px;height:42px;border-radius:6px;background:var(--bg-subtle);color:var(--text-secondary);border:1px solid var(--border);display:flex;align-items:center;justify-content:center"><i class="bi bi-arrow-left-right fs-5" aria-hidden="true"></i></div>
+                    <div>
+                        <div class="stat-num">{{ $berlangsung }}</div>
+                        <div style="font-size:var(--fs-base);color:var(--text-secondary)">Peminjaman sedang berlangsung</div>
+                    </div>
+                    <i class="bi bi-chevron-right ms-auto" aria-hidden="true" style="color:var(--text-muted)"></i>
+                </div>
+            </a>
+        </div>
+    </div>
+    <div class="card-modern p-3 mt-3 d-flex align-items-center gap-2" style="background:var(--bg-subtle)">
+        <i class="bi bi-info-circle" aria-hidden="true" style="color:var(--primary)"></i>
+        <div style="font-size:var(--fs-base);color:var(--text-secondary)">
+            Setujui atau tolak pengajuan dari menu <strong>Pengajuan Peminjaman</strong>; catat pengembalian barang dari menu <strong>Pengembalian</strong>.
+        </div>
+    </div>
+@else
     @if(($menunggu ?? 0) > 0)
     <div class="card-modern p-3 mb-3 d-flex flex-wrap align-items-center justify-content-between gap-2" style="background:var(--warning-soft);border:1px solid rgba(168,116,26,.2)">
         <div style="font-size:var(--fs-base);color:var(--warning)">
@@ -104,4 +138,5 @@
             </div>
         </div>
     </div>
+@endif
 @endsection

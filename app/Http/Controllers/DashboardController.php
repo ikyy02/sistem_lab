@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\AlatBahan;
 use App\Models\Peminjaman;
 use App\Services\AuthService;
 use App\Services\DashboardMahasiswaService;
@@ -23,19 +22,11 @@ class DashboardController extends Controller
         $isAdmin = $me['role'] === Role::LABORAN;
 
         if ($isAdmin) {
-            $terlambat = fn () => Peminjaman::where('status', 'disetujui')->where('tanggal_rencana_kembali', '<', now());
-
-            return view('dashboard.laboran', [
+            return view('dashboard.index', [
                 'me' => $me,
+                'isAdmin' => true,
                 'menunggu' => Peminjaman::menungguTindakan($me['email'], $me['role'])->count(),
                 'berlangsung' => Peminjaman::where('status', 'disetujui')->count(),
-                'jumlahTerlambat' => $terlambat()->count(),
-                // Ambang sama dengan penanda stok kritis di Pengadaan TPK.
-                'stokMenipis' => AlatBahan::where('stok', '<=', 2)->count(),
-                'antrean' => Peminjaman::menungguTindakan($me['email'], $me['role'])->with(Peminjaman::withProfil())
-                    ->orderBy('tanggal_pengajuan')->limit(5)->get(),
-                'daftarTerlambat' => $terlambat()->with(Peminjaman::withProfil())
-                    ->orderBy('tanggal_rencana_kembali')->limit(5)->get(),
             ]);
         }
 

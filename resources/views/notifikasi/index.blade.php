@@ -9,7 +9,7 @@
 <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
     <div>
         <h2 class="font-display fw-semibold mb-1" style="font-size:1.5rem;">Notifikasi</h2>
-        <p class="mb-0" style="font-size:.875rem;color:var(--text-muted);">
+        <p class="mb-0" style="font-size:var(--fs-base);color:var(--text-muted);">
             {{ $unread }} notifikasi belum dibaca dari total {{ $data->total() }} notifikasi.
         </p>
     </div>
@@ -30,12 +30,12 @@
             <span class="notif-dot mt-1 {{ $baru ? '' : 'notif-dot-read' }}"></span>
             <div class="flex-grow-1 min-w-0">
                 <div class="d-flex flex-wrap align-items-center gap-2">
-                    <span class="notif-judul" style="font-size:.95rem;">{{ $notif->data['judul'] ?? 'Notifikasi' }}</span>
+                    <span class="notif-judul" style="font-size:var(--fs-base);">{{ $notif->data['judul'] ?? 'Notifikasi' }}</span>
                     @if($baru)
                         <span class="badge-status" style="background:var(--bg-subtle);color:var(--primary);border:1px solid rgba(47,93,138,.18);">Baru</span>
                     @endif
                 </div>
-                <div class="notif-pesan" style="font-size:.875rem;margin-top:3px;">{{ $notif->data['pesan'] ?? '' }}</div>
+                <div class="notif-pesan" style="font-size:var(--fs-base);margin-top:3px;">{{ $notif->data['pesan'] ?? '' }}</div>
                 <div class="notif-waktu mt-1">{{ $notif->created_at?->format('d/m/Y H:i') }}</div>
             </div>
             @if($baru)
@@ -50,8 +50,8 @@
     @empty
         <div class="text-center py-5" style="color:var(--text-muted);">
             <i class="bi bi-bell-slash fs-1 d-block mb-2" aria-hidden="true" style="color:#c9bdb4;"></i>
-            <div class="fw-semibold mb-1" style="font-size:.95rem;color:var(--text-primary);">Belum ada notifikasi</div>
-            <div style="font-size:.875rem;">Notifikasi aktivitas peminjaman dan akun Anda akan muncul di sini.</div>
+            <div class="fw-semibold mb-1" style="font-size:var(--fs-base);color:var(--text-primary);">Belum ada notifikasi</div>
+            <div style="font-size:var(--fs-base);">Notifikasi aktivitas peminjaman dan akun Anda akan muncul di sini.</div>
         </div>
     @endforelse
 </div>

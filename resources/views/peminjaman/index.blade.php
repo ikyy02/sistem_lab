@@ -28,19 +28,19 @@
 @push('styles')
 <style>
     .pj-wrap { max-width: 1100px; margin-inline: auto; }
-    .pj-card .pj-judul { font-size: 1.05rem; font-weight: 600; margin: 0 0 .25rem; font-family: var(--font-sans); }
-    .pj-card .pj-ket { font-size: .875rem; color: var(--text-muted); margin: 0 0 1rem; }
+    .pj-card .pj-judul { font-size: 1.05rem; font-weight: 600; margin: 0 0 .25rem; font-family: inherit; }
+    .pj-card .pj-ket { font-size: var(--fs-base); color: var(--text-muted); margin: 0 0 1rem; }
     .pj-kategori + .pj-kategori { margin-top: 1.25rem; padding-top: 1.25rem; border-top: 1px solid var(--border); }
     .pj-kategori-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem; margin-bottom: .6rem; }
-    .pj-kategori-head h4 { font-size: .95rem; font-weight: 600; margin: 0; }
+    .pj-kategori-head h4 { font-size: var(--fs-base); font-weight: 600; margin: 0; }
     .pj-tabel { border: 1px solid var(--border); border-radius: 10px; }
     .pj-tabel .table { --bs-table-bg: transparent; }
     .pj-tabel td { vertical-align: top; }
     .pj-aksi { width: 72px; }
     .pj-jumlah { width: 150px; }
-    .pj-kosong { text-align: center; padding: .9rem; font-size: .875rem; color: var(--text-muted); }
+    .pj-kosong { text-align: center; padding: .9rem; font-size: var(--fs-base); color: var(--text-muted); }
     .pj-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem; margin-top: 1rem; }
-    .pj-hint { font-size: .875rem; color: var(--text-muted); flex: 1 1 260px; }
+    .pj-hint { font-size: var(--fs-base); color: var(--text-muted); flex: 1 1 260px; }
     .pj-hint.siap { color: #15803d; }
     #btnAjukan:disabled { cursor: not-allowed; opacity: .55; filter: grayscale(.25); }
     @media (max-width: 575.98px) {
@@ -61,7 +61,7 @@
 @endif
 
 <div class="mb-3">
-    <p class="mb-0" style="font-size:.875rem;color:var(--text-muted);">
+    <p class="mb-0" style="font-size:var(--fs-base);color:var(--text-muted);">
         @if($roleDosen)
             Peminjaman pembelajaran berlaku 1 hari dan hanya pada jam operasional laboratorium ({{ $jamBuka }} – {{ $jamTutup }}). Pengajuan akan berstatus <strong>Menunggu Persetujuan</strong>.
         @else

@@ -60,7 +60,7 @@ window.SiarkaNotif = (function () {
         let utama;
         if (konfirm) {
             const batal = tombol('Batal', 'btn-outline-silab', function () { modal.hide(); });
-            utama = tombol(n.ok, n.bahaya ? 'btn-danger-silab' : 'btn-primary', function () { aktif.dikonfirmasi = true; modal.hide(); });
+            utama = tombol(n.ok, n.bahaya ? 'btn-danger' : 'btn-primary', function () { aktif.dikonfirmasi = true; modal.hide(); });
             aksi.append(batal, utama);
             aktif.fokus = batal; // fokus awal pada pilihan aman
         } else {

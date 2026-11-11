@@ -26,6 +26,11 @@
         :root {
             --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             --brand: #1E4E8C;
+            /* Alias token: dipakai di CSS halaman ini tetapi sebelumnya tidak terdefinisi */
+            --primary: var(--brand);
+            --primary-hover: #17406F;
+            --border: var(--border-color);
+            --info-soft: var(--brand-blue-light);
             --brand-dark: #163A69;
             --brand-blue: #1E4E8C;
             --brand-blue-hover: #163A69;

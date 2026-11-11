@@ -7,7 +7,7 @@
 @section('content')
 
 <nav aria-label="breadcrumb" class="mb-4">
-    <ol class="breadcrumb mb-0" style="font-size:.875rem;color:var(--text-muted);">
+    <ol class="breadcrumb mb-0" style="font-size:var(--fs-base);color:var(--text-muted);">
         <li class="breadcrumb-item">
             <a href="{{ route('jadwal.index') }}" style="color:var(--text-muted);text-decoration:none;">
                 <i class="bi bi-calendar-week me-1" aria-hidden="true"></i>Jadwal Perkuliahan
@@ -25,8 +25,8 @@
                     <i class="bi bi-plus-circle-fill" aria-hidden="true"></i>
                 </div>
                 <div>
-                    <div class="fw-bold" style="font-size:.95rem;">Tambah Jadwal Perkuliahan</div>
-                    <div style="font-size:.875rem;color:var(--text-muted);">Kolom bertanda <span class="text-danger">*</span> wajib diisi</div>
+                    <div class="fw-bold" style="font-size:var(--fs-base);">Tambah Jadwal Perkuliahan</div>
+                    <div style="font-size:var(--fs-base);color:var(--text-muted);">Kolom bertanda <span class="text-danger">*</span> wajib diisi</div>
                 </div>
             </div>
 
