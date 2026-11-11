@@ -18,7 +18,7 @@
     $colspan = count($config['columns']) + 3;
 @endphp
 
-<p class="mb-3" style="font-size:.875rem;color:var(--text-muted);">
+<p class="mb-3" style="font-size:var(--fs-base);color:var(--text-muted);">
     {{ $isRoom
         ? 'Ruangan dipakai sebagai lokasi penyimpanan alat/bahan dan untuk peminjaman ruangan.'
         : 'Harga adalah harga untuk 1 satuan. Lokasi penyimpanan dipilih pada form dan ditampilkan di kolom Keterangan.' }}
@@ -34,17 +34,17 @@
             style="background:#fff1f2;border-bottom:1px solid #fecdd3;">
             <i
                 class="bi bi-exclamation-triangle-fill"
-                style="color:#be123c;font-size:1.2rem;">
+                style="color:var(--danger-text);font-size:1.2rem;">
             </i>
 
             <div class="flex-grow-1">
                 <div
                     class="fw-bold"
-                    style="font-size:.92rem;color:#9f1239;">
+                    style="font-size:var(--fs-base);color:#9f1239;">
                     Import dibatalkan: {{ $report['error_count'] }} dari {{ $report['total'] }} baris bermasalah
                 </div>
 
-                <div style="font-size:.875rem;color:#be123c;">
+                <div style="font-size:var(--fs-base);color:var(--danger-text);">
                     Tidak ada data yang disimpan. Perbaiki baris berikut lalu unggah ulang.
                 </div>
             </div>
@@ -58,7 +58,7 @@
         </div>
 
         <div class="table-responsive" style="max-height:320px;overflow-y:auto;">
-            <table class="table table-sm mb-0" style="font-size:.875rem;">
+            <table class="table table-sm mb-0" style="font-size:var(--fs-base);">
 <caption class="visually-hidden">{{ trim($__env->yieldContent('page-title')) }}</caption>
                 <thead>
                     <tr>
@@ -71,7 +71,7 @@
                 <tbody>
                     @foreach($report['errors'] as $e)
                         <tr>
-                            <td class="ps-4 fw-semibold" style="color:#be123c;">
+                            <td class="ps-4 fw-semibold" style="color:var(--danger-text);">
                                 {{ $e['row'] }}
                             </td>
 
@@ -217,7 +217,7 @@
                                                 ? 'bi-sort-up'
                                                 : 'bi-sort-down')
                                             : 'bi-arrow-down-up' }}"
-                                        style="font-size:.875rem;">
+                                        style="font-size:var(--fs-base);">
                                     </i>
                                 </a>
                             @else

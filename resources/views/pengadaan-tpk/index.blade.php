@@ -31,7 +31,7 @@
     /* Penataan Tipografi Dasar */
     .tpk-container {
         color: var(--text-primary);
-        font-size: 14px;
+        font-size: var(--fs-base);
         line-height: 1.5;
     }
     .tpk-page-title {
@@ -41,7 +41,7 @@
         margin: 0 0 2px;
     }
     .tpk-page-desc {
-        font-size: 13px;
+        font-size: var(--fs-sm);
         color: var(--text-secondary);
         margin: 0;
     }
@@ -50,17 +50,16 @@
     .summary-card {
         background: var(--bg-surface);
         border: 1px solid var(--border);
-        border-top: 2px solid var(--border);
         border-radius: 8px;
         padding: 14px 16px;
         box-shadow: 0 1px 2px rgba(16,24,40,.05);
         height: 100%;
     }
     .summary-card.active-top {
-        border-top-color: var(--primary);
+        background: var(--brand-soft);
     }
     .summary-label {
-        font-size: 12px;
+        font-size: var(--fs-xs);
         font-weight: 600;
         text-transform: uppercase;
         letter-spacing: 0.05em;
@@ -72,7 +71,7 @@
     }
     .summary-icon {
         color: var(--text-secondary);
-        font-size: 14px;
+        font-size: var(--fs-base);
     }
     .summary-val {
         font-size: 17px;
@@ -81,7 +80,7 @@
         line-height: 1.3;
     }
     .summary-sub {
-        font-size: 12px;
+        font-size: var(--fs-xs);
         color: var(--text-muted);
         margin-top: 2px;
     }
@@ -103,7 +102,7 @@
         gap: 12px;
     }
     .admin-card-title {
-        font-size: 14px;
+        font-size: var(--fs-base);
         font-weight: 600;
         color: var(--text-primary);
         margin: 0;
@@ -113,68 +112,6 @@
     }
 
     /* Tombol Aksi */
-    .btn-admin-primary {
-        background: var(--primary);
-        border: 1px solid var(--primary);
-        color: #ffffff;
-        font-size: 13px;
-        font-weight: 500;
-        padding: 6px 14px;
-        border-radius: 6px;
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        text-decoration: none;
-        transition: background-color 0.15s ease, border-color 0.15s ease;
-    }
-    .btn-admin-primary:hover, .btn-admin-primary:focus {
-        background: #254b70;
-        border-color: #254b70;
-        color: #ffffff;
-    }
-    .btn-admin-secondary {
-        background: var(--bg-surface);
-        border: 1px solid var(--border);
-        color: var(--text-secondary);
-        font-size: 13px;
-        font-weight: 500;
-        padding: 6px 14px;
-        border-radius: 6px;
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        text-decoration: none;
-        transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
-    }
-    .btn-admin-secondary:hover {
-        background: var(--bg-subtle);
-        border-color: #CBD5E1;
-        color: var(--text-primary);
-    }
-
-    /* Preset Bobot Cepat */
-    .btn-preset-quiet {
-        font-size: 12px;
-        font-weight: 500;
-        padding: 5px 10px;
-        border-radius: 6px;
-        border: 1px solid var(--border);
-        background: var(--bg-surface);
-        color: var(--text-secondary);
-        transition: all 0.15s ease;
-    }
-    .btn-preset-quiet:hover {
-        background: var(--bg-subtle);
-        color: var(--primary);
-        border-color: var(--primary);
-    }
-    .btn-preset-quiet.active {
-        background: var(--bg-subtle);
-        border-color: var(--primary);
-        color: var(--primary);
-        font-weight: 600;
-    }
-
     /* Tabs Datar & Tenang */
     .admin-tabs {
         display: flex;
@@ -185,10 +122,9 @@
     }
     .admin-tab-btn {
         border: 0;
-        border-bottom: 2px solid transparent;
         background: transparent;
         color: var(--text-secondary);
-        font-size: 13px;
+        font-size: var(--fs-sm);
         font-weight: 500;
         padding: 12px 14px;
         display: inline-flex;
@@ -202,8 +138,8 @@
         color: var(--text-primary);
     }
     .admin-tab-btn.active {
-        color: var(--primary);
-        border-bottom-color: var(--primary);
+        color: var(--brand);
+        background: var(--brand-soft);
         font-weight: 600;
     }
 
@@ -216,7 +152,7 @@
     .table-admin th {
         background: var(--bg-subtle);
         color: var(--text-secondary);
-        font-size: 12px;
+        font-size: var(--fs-xs);
         font-weight: 600;
         text-transform: uppercase;
         letter-spacing: 0.04em;
@@ -227,7 +163,7 @@
     .table-admin td {
         padding: 10px 12px;
         border-bottom: 1px solid var(--border);
-        font-size: 13px;
+        font-size: var(--fs-sm);
         color: var(--text-primary);
         vertical-align: middle;
     }
@@ -243,7 +179,7 @@
         width: 22px;
         height: 22px;
         border-radius: 50%;
-        font-size: 12px;
+        font-size: var(--fs-xs);
         font-weight: 500;
         color: var(--text-secondary);
         background: var(--bg-subtle);
@@ -260,7 +196,7 @@
     .badge-kategori-netral {
         background: var(--bg-subtle);
         color: var(--text-secondary);
-        font-size: 12px;
+        font-size: var(--fs-xs);
         font-weight: 500;
         padding: 2px 7px;
         border-radius: 4px;
@@ -271,7 +207,7 @@
     .badge-prio-sangat-tinggi {
         background: var(--danger-soft);
         color: var(--danger);
-        font-size: 12px;
+        font-size: var(--fs-xs);
         font-weight: 600;
         padding: 3px 8px;
         border-radius: 4px;
@@ -280,7 +216,7 @@
     .badge-prio-tinggi {
         background: var(--warning-soft);
         color: var(--warning);
-        font-size: 12px;
+        font-size: var(--fs-xs);
         font-weight: 600;
         padding: 3px 8px;
         border-radius: 4px;
@@ -289,7 +225,7 @@
     .badge-prio-sedang {
         background: var(--info-soft);
         color: var(--info);
-        font-size: 12px;
+        font-size: var(--fs-xs);
         font-weight: 600;
         padding: 3px 8px;
         border-radius: 4px;
@@ -298,7 +234,7 @@
     .badge-prio-rendah {
         background: var(--bg-subtle);
         color: var(--text-secondary);
-        font-size: 12px;
+        font-size: var(--fs-xs);
         font-weight: 500;
         padding: 3px 8px;
         border-radius: 4px;
@@ -336,7 +272,7 @@
     .form-control, .form-select {
         border-color: var(--border);
         border-radius: 6px;
-        font-size: 13px;
+        font-size: var(--fs-sm);
         color: var(--text-primary);
     }
     .form-control:focus, .form-select:focus {
@@ -344,7 +280,7 @@
         box-shadow: 0 0 0 2px rgba(47,93,138,0.15);
     }
     .form-label {
-        font-size: 12px;
+        font-size: var(--fs-xs);
         font-weight: 600;
         color: var(--text-secondary);
         margin-bottom: 4px;
@@ -364,11 +300,11 @@
             </p>
         </div>
         <div class="d-flex flex-wrap gap-2">
-            <a href="{{ route('pengadaan-tpk.cetak', request()->query()) }}" target="_blank" class="btn-admin-secondary">
+            <a href="{{ route('pengadaan-tpk.cetak', request()->query()) }}" target="_blank" class="btn btn-outline-silab btn-sm">
                 <i class="bi bi-printer" aria-hidden="true"></i>
                 <span>Cetak Rekomendasi</span>
             </a>
-            <a href="{{ route('pengadaan-tpk.export-csv', request()->query()) }}" class="btn-admin-secondary">
+            <a href="{{ route('pengadaan-tpk.export-csv', request()->query()) }}" class="btn btn-outline-silab btn-sm">
                 <i class="bi bi-download" aria-hidden="true"></i>
                 <span>Unduh CSV</span>
             </a>
@@ -377,12 +313,12 @@
 
     {{-- Alert Validasi Bobot --}}
     @if(isset($bobotValid) && !$bobotValid)
-        <div class="alert mb-3 d-flex align-items-center gap-2" style="background:var(--warning-soft); color:var(--warning); border:1px solid #EAD8B5; border-radius:6px; font-size:13px;" role="alert">
+        <div class="alert mb-3 d-flex align-items-center gap-2" style="background:var(--warning-soft); color:var(--warning); border:1px solid #EAD8B5; border-radius:6px; font-size:var(--fs-sm);" role="alert">
             <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
             <div>
                 Jumlah bobot W1 + W2 + W3 harus tepat 1.0 (100%). Sistem secara otomatis menerapkan bobot acuan standar (0.40, 0.30, 0.30).
             </div>
-            <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close" style="font-size:12px;"></button>
+            <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close" style="font-size:var(--fs-xs);"></button>
         </div>
     @endif
 
@@ -449,7 +385,7 @@
                 <span>Parameter & Pembobotan Kriteria</span>
             </h6>
             <div>
-                <span id="total-bobot-badge" style="background:var(--success-soft); color:var(--success); font-size:12px; font-weight:600; padding:2px 8px; border-radius:4px;">
+                <span id="total-bobot-badge" style="background:var(--success-soft); color:var(--success); font-size:var(--fs-xs); font-weight:600; padding:2px 8px; border-radius:4px;">
                     Total Bobot: 100% (Valid)
                 </span>
             </div>
@@ -484,13 +420,13 @@
                     <div class="col-12 col-md-6">
                         <label class="form-label">Preset Pembobotan Cepat</label>
                         <div class="d-flex flex-wrap gap-2">
-                            <button type="button" class="btn-preset-quiet {{ $preset === 'standar' || (!$preset && $w1==0.4 && $w2==0.3 && $w3==0.3) ? 'active' : '' }}" onclick="terapkanPreset(0.40, 0.30, 0.30, 'standar')">
+                            <button type="button" class="btn btn-outline-silab btn-sm {{ $preset === 'standar' || (!$preset && $w1==0.4 && $w2==0.3 && $w3==0.3) ? 'active' : '' }}" onclick="terapkanPreset(0.40, 0.30, 0.30, 'standar')">
                                 Standar (40-30-30)
                             </button>
-                            <button type="button" class="btn-preset-quiet {{ $preset === 'peminjaman_tinggi' ? 'active' : '' }}" onclick="terapkanPreset(0.30, 0.50, 0.20, 'peminjaman_tinggi')">
+                            <button type="button" class="btn btn-outline-silab btn-sm {{ $preset === 'peminjaman_tinggi' ? 'active' : '' }}" onclick="terapkanPreset(0.30, 0.50, 0.20, 'peminjaman_tinggi')">
                                 Kebutuhan Praktikum (30-50-20)
                             </button>
-                            <button type="button" class="btn-preset-quiet {{ $preset === 'stok_kritis' ? 'active' : '' }}" onclick="terapkanPreset(0.60, 0.25, 0.15, 'stok_kritis')">
+                            <button type="button" class="btn btn-outline-silab btn-sm {{ $preset === 'stok_kritis' ? 'active' : '' }}" onclick="terapkanPreset(0.60, 0.25, 0.15, 'stok_kritis')">
                                 Kelangkaan Stok (60-25-15)
                             </button>
                         </div>
@@ -501,28 +437,28 @@
                         <div class="p-3 rounded-2" style="background:var(--bg-subtle); border:1px solid var(--border);">
                             <div class="row g-2 align-items-center">
                                 <div class="col-12 col-md-3">
-                                    <span style="font-size:12px; font-weight:600; color:var(--text-primary);">Nilai Bobot (W):</span>
-                                    <div style="font-size:12px; color:var(--text-muted);">Jumlah harus tepat 1.0 (100%)</div>
+                                    <span style="font-size:var(--fs-xs); font-weight:600; color:var(--text-primary);">Nilai Bobot (W):</span>
+                                    <div style="font-size:var(--fs-xs); color:var(--text-muted);">Jumlah harus tepat 1.0 (100%)</div>
                                 </div>
                                 <div class="col-12 col-md-3">
                                     <div class="input-group input-group-sm">
-                                        <span class="input-group-text" style="font-size:12px; background:var(--bg-surface); color:var(--text-secondary); width:85px;">W1: Stok</span>
+                                        <span class="input-group-text" style="font-size:var(--fs-xs); background:var(--bg-surface); color:var(--text-secondary); width:85px;">W1: Stok</span>
                                         <input type="number" step="0.05" min="0" max="1" name="w1" id="w1" class="form-control" value="{{ $w1 }}" oninput="updateTotalBobot()">
-                                        <span class="input-group-text" style="font-size:12px; background:var(--bg-surface); color:var(--text-muted);">{{ round($w1 * 100) }}%</span>
+                                        <span class="input-group-text" style="font-size:var(--fs-xs); background:var(--bg-surface); color:var(--text-muted);">{{ round($w1 * 100) }}%</span>
                                     </div>
                                 </div>
                                 <div class="col-12 col-md-3">
                                     <div class="input-group input-group-sm">
-                                        <span class="input-group-text" style="font-size:12px; background:var(--bg-surface); color:var(--text-secondary); width:85px;">W2: Pinjam</span>
+                                        <span class="input-group-text" style="font-size:var(--fs-xs); background:var(--bg-surface); color:var(--text-secondary); width:85px;">W2: Pinjam</span>
                                         <input type="number" step="0.05" min="0" max="1" name="w2" id="w2" class="form-control" value="{{ $w2 }}" oninput="updateTotalBobot()">
-                                        <span class="input-group-text" style="font-size:12px; background:var(--bg-surface); color:var(--text-muted);">{{ round($w2 * 100) }}%</span>
+                                        <span class="input-group-text" style="font-size:var(--fs-xs); background:var(--bg-surface); color:var(--text-muted);">{{ round($w2 * 100) }}%</span>
                                     </div>
                                 </div>
                                 <div class="col-12 col-md-3">
                                     <div class="input-group input-group-sm">
-                                        <span class="input-group-text" style="font-size:12px; background:var(--bg-surface); color:var(--text-secondary); width:85px;">W3: Harga</span>
+                                        <span class="input-group-text" style="font-size:var(--fs-xs); background:var(--bg-surface); color:var(--text-secondary); width:85px;">W3: Harga</span>
                                         <input type="number" step="0.05" min="0" max="1" name="w3" id="w3" class="form-control" value="{{ $w3 }}" oninput="updateTotalBobot()">
-                                        <span class="input-group-text" style="font-size:12px; background:var(--bg-surface); color:var(--text-muted);">{{ round($w3 * 100) }}%</span>
+                                        <span class="input-group-text" style="font-size:var(--fs-xs); background:var(--bg-surface); color:var(--text-muted);">{{ round($w3 * 100) }}%</span>
                                     </div>
                                 </div>
                             </div>
@@ -535,15 +471,15 @@
                         <div class="input-group input-group-sm">
                             <input type="text" name="search" class="form-control" placeholder="Cari nama barang, jenis, atau lokasi..." value="{{ $search }}">
                             @if($search)
-                                <a href="{{ route('pengadaan-tpk.index', request()->except('search')) }}" class="btn-admin-secondary" style="border-radius:0;">Reset</a>
+                                <a href="{{ route('pengadaan-tpk.index', request()->except('search')) }}" class="btn btn-outline-silab btn-sm" style="border-radius:0;">Reset</a>
                             @endif
-                            <button type="submit" class="btn-admin-primary">
+                            <button type="submit" class="btn btn-primary btn-sm">
                                 <span>Terapkan</span>
                             </button>
                         </div>
                     </div>
                     <div class="col-12 col-md-4 text-md-end">
-                        <a href="{{ route('pengadaan-tpk.index') }}" style="font-size:12px; color:var(--text-secondary); text-decoration:none;">
+                        <a href="{{ route('pengadaan-tpk.index') }}" style="font-size:var(--fs-xs); color:var(--text-secondary); text-decoration:none;">
                             Kembalikan ke Standar
                         </a>
                     </div>
@@ -558,7 +494,7 @@
         <div class="admin-tabs" id="tpkTabs" role="tablist">
             <button class="admin-tab-btn active" id="tab-rekomendasi" data-bs-toggle="tab" data-bs-target="#content-rekomendasi" type="button" role="tab">
                 <span>Rekomendasi Prioritas</span>
-                <span style="font-size:12px; padding:1px 6px; border-radius:4px; background:var(--bg-subtle); color:var(--text-secondary);">
+                <span style="font-size:var(--fs-xs); padding:1px 6px; border-radius:4px; background:var(--bg-subtle); color:var(--text-secondary);">
                     {{ count($filteredItems) }}
                 </span>
             </button>
@@ -576,16 +512,16 @@
                 {{-- Banner Simulasi Anggaran --}}
                 <div class="simulasi-banner d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
                     <div>
-                        <div style="font-size:13px; font-weight:600; color:var(--text-primary);">
+                        <div style="font-size:var(--fs-sm); font-weight:600; color:var(--text-primary);">
                             Simulasi Estimasi Usulan Anggaran
                         </div>
-                        <div style="font-size:12px; color:var(--text-secondary);">
+                        <div style="font-size:var(--fs-xs); color:var(--text-secondary);">
                             Ketik jumlah kebutuhan pada kolom <strong>Usulan Qty</strong> untuk menghitung estimasi biaya otomatis.
                         </div>
                     </div>
                     <div class="text-md-end">
-                        <span style="font-size:12px; text-transform:uppercase; color:var(--text-muted); display:block;">Total Estimasi Usulan</span>
-                        <span style="font-size:16px; font-weight:600; color:var(--text-primary);" id="total-anggaran-badge">Rp 0</span>
+                        <span style="font-size:var(--fs-xs); text-transform:uppercase; color:var(--text-muted); display:block;">Total Estimasi Usulan</span>
+                        <span style="font-size:var(--fs-md); font-weight:600; color:var(--text-primary);" id="total-anggaran-badge">Rp 0</span>
                     </div>
                 </div>
 
@@ -630,7 +566,7 @@
                                     {{-- Nama & Lokasi --}}
                                     <td>
                                         <div style="font-weight:500; color:var(--text-primary);">{{ $item['nama'] }}</div>
-                                        <div style="font-size:12px; color:var(--text-muted);">
+                                        <div style="font-size:var(--fs-xs); color:var(--text-muted);">
                                             {{ $item['nama_ruangan'] ?? 'Laboratorium' }} &bull; Satuan: {{ $item['nama_satuan'] ?? 'Unit' }}
                                         </div>
                                     </td>
@@ -647,24 +583,24 @@
                                         <span class="{{ $item['stok'] <= 2 ? 'text-stok-kritis' : '' }}">
                                             {{ $item['stok'] }}
                                         </span>
-                                        <span style="font-size:12px; color:var(--text-muted);">{{ $item['nama_satuan'] ?? '' }}</span>
+                                        <span style="font-size:var(--fs-xs); color:var(--text-muted);">{{ $item['nama_satuan'] ?? '' }}</span>
                                     </td>
 
                                     {{-- Peminjaman --}}
                                     <td class="text-center">
-                                        <span style="font-size:12px; color:var(--text-secondary);">
+                                        <span style="font-size:var(--fs-xs); color:var(--text-secondary);">
                                             {{ $item['jumlah_peminjaman'] }}x
                                         </span>
                                     </td>
 
                                     {{-- Harga Satuan --}}
-                                    <td class="text-end" style="font-size:12px; color:var(--text-secondary);">
+                                    <td class="text-end" style="font-size:var(--fs-xs); color:var(--text-secondary);">
                                         Rp {{ number_format($item['harga'], 0, ',', '.') }}
                                     </td>
 
                                     {{-- Skor V & Progress Bar (Satu warna --accent seragam) --}}
                                     <td>
-                                        <div class="d-flex align-items-center justify-content-between mb-1" style="font-size:12px;">
+                                        <div class="d-flex align-items-center justify-content-between mb-1" style="font-size:var(--fs-xs);">
                                             <span style="font-weight:600; color:var(--text-primary); font-family:monospace;">
                                                 {{ number_format($item['nilai'], 4) }}
                                             </span>
@@ -684,17 +620,17 @@
 
                                     {{-- Usulan Qty --}}
                                     <td class="text-center">
-                                        <input type="number" min="0" step="1" class="form-control form-control-sm text-center usulan-qty" data-harga="{{ $item['harga'] }}" placeholder="0" style="width:68px; margin:auto; font-size:12px; padding:3px 6px;" oninput="hitungSimulasi(this)">
+                                        <input type="number" min="0" step="1" class="form-control form-control-sm text-center usulan-qty" data-harga="{{ $item['harga'] }}" placeholder="0" style="width:68px; margin:auto; font-size:var(--fs-xs); padding:3px 6px;" oninput="hitungSimulasi(this)">
                                     </td>
 
                                     {{-- Estimasi Biaya --}}
-                                    <td class="text-end estimasi-baris" style="font-size:12px; font-weight:500; color:var(--text-primary);">
+                                    <td class="text-end estimasi-baris" style="font-size:var(--fs-xs); font-weight:500; color:var(--text-primary);">
                                         Rp 0
                                     </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="10" class="text-center py-4" style="color:var(--text-muted); font-size:13px;">
+                                    <td colspan="10" class="text-center py-4" style="color:var(--text-muted); font-size:var(--fs-sm);">
                                         Tidak ada data alat/bahan yang sesuai dengan parameter pencarian.
                                     </td>
                                 </tr>
@@ -703,7 +639,7 @@
                     </table>
                 </div>
 
-                <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 p-2 mt-2" style="font-size:12px; color:var(--text-muted);">
+                <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 p-2 mt-2" style="font-size:var(--fs-xs); color:var(--text-muted);">
                     <div>
                         Menampilkan <strong>{{ count($filteredItems) }}</strong> dari <strong>{{ $totalItem }}</strong> katalog.
                     </div>
@@ -717,39 +653,39 @@
             <div class="tab-pane fade p-3" id="content-matriks" role="tabpanel">
                 {{-- Nilai Acuan Ekstrem Kriteria --}}
                 <div class="mb-3">
-                    <div style="font-size:13px; font-weight:600; color:var(--text-primary); margin-bottom:2px;">
+                    <div style="font-size:var(--fs-sm); font-weight:600; color:var(--text-primary); margin-bottom:2px;">
                         Titik Acuan Ekstrem Kriteria
                     </div>
-                    <p style="font-size:12px; color:var(--text-secondary); margin-bottom:12px;">
+                    <p style="font-size:var(--fs-xs); color:var(--text-secondary); margin-bottom:12px;">
                         Kriteria <strong>Cost</strong> dinormalisasi dengan formula Min(X<sub>j</sub>) / X<sub>ij</sub>, sedangkan kriteria <strong>Benefit</strong> dinormalisasi dengan formula X<sub>ij</sub> / Max(X<sub>j</sub>).
                     </p>
                     <div class="row g-2">
                         <div class="col-12 col-md-4">
                             <div class="p-2 rounded-2" style="background:var(--bg-subtle); border:1px solid var(--border);">
-                                <span style="font-size:12px; text-transform:uppercase; color:var(--text-secondary); display:block;">C1: Stok Minimum (Cost)</span>
+                                <span style="font-size:var(--fs-xs); text-transform:uppercase; color:var(--text-secondary); display:block;">C1: Stok Minimum (Cost)</span>
                                 <span style="font-size:15px; font-weight:600; color:var(--text-primary);">{{ $stats['min_stok'] ?? 0 }}</span>
                             </div>
                         </div>
                         <div class="col-12 col-md-4">
                             <div class="p-2 rounded-2" style="background:var(--bg-subtle); border:1px solid var(--border);">
-                                <span style="font-size:12px; text-transform:uppercase; color:var(--text-secondary); display:block;">C2: Peminjaman Maksimum (Benefit)</span>
+                                <span style="font-size:var(--fs-xs); text-transform:uppercase; color:var(--text-secondary); display:block;">C2: Peminjaman Maksimum (Benefit)</span>
                                 <span style="font-size:15px; font-weight:600; color:var(--text-primary);">{{ $stats['max_pinjam'] ?? 0 }} transaksi</span>
                             </div>
                         </div>
                         <div class="col-12 col-md-4">
                             <div class="p-2 rounded-2" style="background:var(--bg-subtle); border:1px solid var(--border);">
-                                <span style="font-size:12px; text-transform:uppercase; color:var(--text-secondary); display:block;">C3: Harga Minimum (Cost)</span>
+                                <span style="font-size:var(--fs-xs); text-transform:uppercase; color:var(--text-secondary); display:block;">C3: Harga Minimum (Cost)</span>
                                 <span style="font-size:15px; font-weight:600; color:var(--text-primary);">Rp {{ number_format($stats['min_harga'] ?? 0, 0, ',', '.') }}</span>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div style="font-size:13px; font-weight:600; color:var(--text-primary); margin-bottom:6px;">
+                <div style="font-size:var(--fs-sm); font-weight:600; color:var(--text-primary); margin-bottom:6px;">
                     Matriks Keputusan Awal (X) dan Matriks Normalisasi (R)
                 </div>
                 <div class="table-responsive">
-                    <table class="table-admin" style="font-size:12px;">
+                    <table class="table-admin" style="font-size:var(--fs-xs);">
 <caption class="visually-hidden">{{ trim($__env->yieldContent('page-title')) }}</caption>
                         <thead>
                             <tr class="text-center">
@@ -794,21 +730,21 @@
                 <div class="row g-3">
                     <div class="col-12 col-lg-6">
                         <div class="p-3 rounded-2" style="background:var(--bg-subtle); border:1px solid var(--border); height:100%;">
-                            <div style="font-size:13px; font-weight:600; color:var(--text-primary); margin-bottom:8px;">
+                            <div style="font-size:var(--fs-sm); font-weight:600; color:var(--text-primary); margin-bottom:8px;">
                                 Konsep Integrasi AHP dan SAW
                             </div>
-                            <p style="font-size:12px; color:var(--text-secondary); text-align:justify; margin-bottom:8px;">
+                            <p style="font-size:var(--fs-xs); color:var(--text-secondary); text-align:justify; margin-bottom:8px;">
                                 Sistem Pendukung Keputusan (SPK) di laboratorium SIARKA menggabungkan keunggulan dua metode pengambilan keputusan multikriteria (*Multi-Criteria Decision Making*):
                             </p>
                             <div class="mb-2 p-2 rounded-1" style="background:var(--bg-surface); border:1px solid var(--border);">
-                                <strong style="font-size:12px; color:var(--text-primary); display:block; margin-bottom:2px;">1. Analytical Hierarchy Process (AHP)</strong>
-                                <span style="font-size:12px; color:var(--text-secondary);">
+                                <strong style="font-size:var(--fs-xs); color:var(--text-primary); display:block; margin-bottom:2px;">1. Analytical Hierarchy Process (AHP)</strong>
+                                <span style="font-size:var(--fs-xs); color:var(--text-secondary);">
                                     Digunakan untuk menguji konsistensi dan menetapkan bobot kepentingan kriteria berdasarkan pertimbangan kepentingan institusi.
                                 </span>
                             </div>
                             <div class="p-2 rounded-1" style="background:var(--bg-surface); border:1px solid var(--border);">
-                                <strong style="font-size:12px; color:var(--text-primary); display:block; margin-bottom:2px;">2. Simple Additive Weighting (SAW)</strong>
-                                <span style="font-size:12px; color:var(--text-secondary);">
+                                <strong style="font-size:var(--fs-xs); color:var(--text-primary); display:block; margin-bottom:2px;">2. Simple Additive Weighting (SAW)</strong>
+                                <span style="font-size:var(--fs-xs); color:var(--text-secondary);">
                                     Dikenal sebagai metode penjumlahan terbobot. Mencari penjumlahan terbobot dari rating kinerja pada setiap alternatif di semua atribut.
                                 </span>
                             </div>
@@ -817,22 +753,22 @@
 
                     <div class="col-12 col-lg-6">
                         <div class="p-3 rounded-2" style="background:var(--bg-subtle); border:1px solid var(--border); height:100%;">
-                            <div style="font-size:13px; font-weight:600; color:var(--text-primary); margin-bottom:8px;">
+                            <div style="font-size:var(--fs-sm); font-weight:600; color:var(--text-primary); margin-bottom:8px;">
                                 Persamaan Matematis SAW
                             </div>
-                            <div class="p-2 mb-2 rounded-1" style="background:var(--bg-surface); border:1px solid var(--border); font-size:12px;">
+                            <div class="p-2 mb-2 rounded-1" style="background:var(--bg-surface); border:1px solid var(--border); font-size:var(--fs-xs);">
                                 <strong style="color:var(--text-primary); display:block; margin-bottom:2px;">Normalisasi Matriks (R<sub>ij</sub>):</strong>
-                                <div style="color:var(--text-secondary); font-size:12px;">
+                                <div style="color:var(--text-secondary); font-size:var(--fs-xs);">
                                     &bull; <strong>Benefit</strong> (C2 Pinjam): R<sub>ij</sub> = X<sub>ij</sub> / Max(X<sub>j</sub>)<br>
                                     &bull; <strong>Cost</strong> (C1 Stok & C3 Harga): R<sub>ij</sub> = Min(X<sub>j</sub>) / X<sub>ij</sub>
                                 </div>
                             </div>
-                            <div class="p-2 rounded-1" style="background:var(--bg-surface); border:1px solid var(--border); font-size:12px;">
+                            <div class="p-2 rounded-1" style="background:var(--bg-surface); border:1px solid var(--border); font-size:var(--fs-xs);">
                                 <strong style="color:var(--text-primary); display:block; margin-bottom:2px;">Nilai Preferensi (V<sub>i</sub>):</strong>
-                                <div style="font-family:monospace; color:var(--primary); font-weight:600; font-size:12px; margin-bottom:2px;">
+                                <div style="font-family:monospace; color:var(--primary); font-weight:600; font-size:var(--fs-xs); margin-bottom:2px;">
                                     V<sub>i</sub> = (W<sub>1</sub> &times; R<sub>i1</sub>) + (W<sub>2</sub> &times; R<sub>i2</sub>) + (W<sub>3</sub> &times; R<sub>i3</sub>)
                                 </div>
-                                <span style="font-size:12px; color:var(--text-secondary);">
+                                <span style="font-size:var(--fs-xs); color:var(--text-secondary);">
                                     Alternatif dengan nilai preferensi tertinggi menempati peringkat teratas sebagai rekomendasi prioritas pengadaan.
                                 </span>
                             </div>

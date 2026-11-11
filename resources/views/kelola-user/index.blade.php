@@ -79,7 +79,7 @@
                                 <a class="sort-link {{ $sort === $col ? 'active' : '' }}"
                                    href="{{ route('kelola-user.index', array_merge(request()->query(), ['kategori' => $kategori, 'sort' => $col, 'direction' => $next, 'page' => null])) }}">
                                     {{ strtoupper($text) }}
-                                    <i class="bi {{ $sort === $col ? ($direction === 'asc' ? 'bi-sort-up' : 'bi-sort-down') : 'bi-arrow-down-up' }}" aria-hidden="true" style="font-size:.875rem;"></i>
+                                    <i class="bi {{ $sort === $col ? ($direction === 'asc' ? 'bi-sort-up' : 'bi-sort-down') : 'bi-arrow-down-up' }}" aria-hidden="true" style="font-size:var(--fs-base);"></i>
                                 </a>
                             @else
                                 {{ strtoupper($text) }}
@@ -161,7 +161,7 @@
             @csrf
             <input type="hidden" name="_method" id="userMethod" value="POST" disabled>
             <div class="modal-header">
-                <h5 class="modal-title fw-bold" id="userModalTitle" style="font-size:1rem;">Tambah {{ $label }}</h5>
+                <h5 class="modal-title fw-bold" id="userModalTitle" style="font-size:var(--fs-md);">Tambah {{ $label }}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
             </div>
             <div class="modal-body p-4">

@@ -11,7 +11,7 @@
 @section('content')
 
 <nav aria-label="breadcrumb" class="mb-4">
-    <ol class="breadcrumb mb-0" style="font-size:.875rem;color:var(--text-muted);">
+    <ol class="breadcrumb mb-0" style="font-size:var(--fs-base);color:var(--text-muted);">
         <li class="breadcrumb-item">
             <a href="{{ route('jadwal.index') }}" style="color:var(--text-muted);text-decoration:none;">
                 <i class="bi bi-calendar-week me-1" aria-hidden="true"></i>Jadwal Perkuliahan
@@ -31,8 +31,8 @@
                         <i class="bi bi-calendar2-check-fill" aria-hidden="true"></i>
                     </div>
                     <div>
-                        <div class="fw-bold" style="font-size:.95rem;">{{ $jadwal->mataKuliah->nama_mk ?? 'Tanpa Mata Kuliah' }}</div>
-                        <div style="font-size:.875rem;color:var(--text-muted);">
+                        <div class="fw-bold" style="font-size:var(--fs-base);">{{ $jadwal->mataKuliah->nama_mk ?? 'Tanpa Mata Kuliah' }}</div>
+                        <div style="font-size:var(--fs-base);color:var(--text-muted);">
                             {{ $jadwal->mataKuliah->kode_mk ?? '—' }} · {{ $jadwal->kelas->nama_kelas ?? '—' }}
                         </div>
                     </div>
@@ -60,10 +60,10 @@
                     @foreach($baris as $b)
                     <div class="col-12 col-md-6">
                         <div class="p-3 h-100" style="background:var(--bg-page);border:1px solid var(--border);border-radius:10px;">
-                            <div class="d-flex align-items-center gap-2 mb-1" style="font-size:.875rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;">
+                            <div class="d-flex align-items-center gap-2 mb-1" style="font-size:var(--fs-base);color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;">
                                 <i class="bi {{ $b['icon'] }}" aria-hidden="true"></i> {{ $b['label'] }}
                             </div>
-                            <div class="fw-semibold" style="font-size:.9rem;">{{ $b['nilai'] }}</div>
+                            <div class="fw-semibold" style="font-size:var(--fs-base);">{{ $b['nilai'] }}</div>
                         </div>
                     </div>
                     @endforeach
@@ -80,7 +80,7 @@
                     <i class="bi bi-arrow-left" aria-hidden="true"></i> Kembali
                 </a>
                 @if($jadwal->terarsip())
-                    <span class="ms-auto align-self-center" style="font-size:.875rem;color:var(--text-muted);"><i class="bi bi-archive me-1" aria-hidden="true"></i>Jadwal arsip hanya dapat dilihat.</span>
+                    <span class="ms-auto align-self-center" style="font-size:var(--fs-base);color:var(--text-muted);"><i class="bi bi-archive me-1" aria-hidden="true"></i>Jadwal arsip hanya dapat dilihat.</span>
                 @else
                 <form action="{{ route('jadwal.destroy', $jadwal) }}" method="POST" class="ms-auto"
                       data-konfirmasi="Hapus jadwal ini?">

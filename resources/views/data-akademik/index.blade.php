@@ -37,16 +37,16 @@
                     </div>
                     <div>
                         <div class="fw-bold" style="font-size:1.1rem;">Semester {{ $s['label'] }}</div>
-                        <div style="font-size:.875rem;color:var(--text-muted);">Nilai tetap sistem</div>
+                        <div style="font-size:var(--fs-base);color:var(--text-muted);">Nilai tetap sistem</div>
                     </div>
                 </div>
                 <div class="d-flex align-items-center justify-content-between py-2" style="border-top:1px solid var(--border);">
-                    <span style="font-size:.875rem;">Jadwal perkuliahan</span>
-                    <span class="badge-status badge-tab" style="font-size:.875rem;">{{ $s['jadwal'] }}</span>
+                    <span style="font-size:var(--fs-base);">Jadwal perkuliahan</span>
+                    <span class="badge-status badge-tab" style="font-size:var(--fs-base);">{{ $s['jadwal'] }}</span>
                 </div>
                 <div class="d-flex align-items-center justify-content-between py-2" style="border-top:1px solid var(--border);">
-                    <span style="font-size:.875rem;">Mata kuliah</span>
-                    <span class="badge-status badge-tab" style="font-size:.875rem;">{{ $s['mata_kuliah'] }}</span>
+                    <span style="font-size:var(--fs-base);">Mata kuliah</span>
+                    <span class="badge-status badge-tab" style="font-size:var(--fs-base);">{{ $s['mata_kuliah'] }}</span>
                 </div>
             </div>
         </div>
@@ -56,7 +56,7 @@
     <div class="card-modern p-4">
         <div class="d-flex gap-3">
             <i class="bi bi-info-circle-fill fs-5" aria-hidden="true" style="color:var(--primary);"></i>
-            <div style="font-size:.875rem;color:var(--text-muted);">
+            <div style="font-size:var(--fs-base);color:var(--text-muted);">
                 Semester hanya bernilai <strong>Ganjil</strong> atau <strong>Genap</strong> dan ditetapkan oleh sistem,
                 sehingga tidak dapat ditambah atau diubah. Nilai ini dipakai pada setiap data Jadwal Perkuliahan
                 bersama tahun akademik (contoh: 2026/2027).
@@ -129,7 +129,7 @@
                 <tr>
                     <td class="ps-4 text-muted">{{ $data->firstItem() + $loop->index }}</td>
                     @if($tab === 'mata-kuliah')
-                        <td><span class="badge-status badge-tab" style="font-size:.875rem;">{{ $item->kode_mk }}</span></td>
+                        <td><span class="badge-status badge-tab" style="font-size:var(--fs-base);">{{ $item->kode_mk }}</span></td>
                         <td>
                             <span class="fw-semibold">{{ $item->nama_mk }}</span>
                         </td>
@@ -140,7 +140,7 @@
                         <td><span class="fw-semibold">{{ $item->nama_kelas }}</span></td>
                         <td>{{ $item->nama_prodi ?? '—' }}</td>
                     @else
-                        <td><span class="badge-status badge-tab" style="font-size:.875rem;">{{ $item->nuptk_nidn }}</span></td>
+                        <td><span class="badge-status badge-tab" style="font-size:var(--fs-base);">{{ $item->nuptk_nidn }}</span></td>
                         <td>
                             <span class="fw-semibold">{{ $item->nama }}</span>
                         </td>
@@ -148,9 +148,9 @@
                         <td>{{ $item->no_whatsapp ?? '—' }}</td>
                         <td>
                             @if(($item->status ?? 'aktif') === 'nonaktif')
-                                <span class="badge-status badge-status-bad" style="font-size:.875rem;">Nonaktif</span>
+                                <span class="badge-status badge-status-bad" style="font-size:var(--fs-base);">Nonaktif</span>
                             @else
-                                <span class="badge-status badge-tab" style="font-size:.875rem;">Aktif</span>
+                                <span class="badge-status badge-tab" style="font-size:var(--fs-base);">Aktif</span>
                             @endif
                         </td>
                     @endif
@@ -195,7 +195,7 @@
             @csrf
             <input type="hidden" name="_method" id="mkMethod" value="PUT" disabled>
             <div class="modal-header">
-                <h5 class="modal-title fw-bold" id="mkModalTitle" style="font-size:1rem;">Tambah Mata Kuliah</h5>
+                <h5 class="modal-title fw-bold" id="mkModalTitle" style="font-size:var(--fs-md);">Tambah Mata Kuliah</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
             </div>
             <div class="modal-body p-4">
@@ -258,7 +258,7 @@
             @csrf
             <input type="hidden" name="_method" id="kelasMethod" value="PUT" disabled>
             <div class="modal-header">
-                <h5 class="modal-title fw-bold" id="kelasModalTitle" style="font-size:1rem;">Tambah Kelas</h5>
+                <h5 class="modal-title fw-bold" id="kelasModalTitle" style="font-size:var(--fs-md);">Tambah Kelas</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
             </div>
             <div class="modal-body p-4">

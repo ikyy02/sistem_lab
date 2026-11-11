@@ -12,7 +12,7 @@
     $sebagaiDosen = $me['role'] === \App\Support\Role::DOSEN;
 @endphp
 
-<p class="mb-3" style="font-size:.875rem;color:var(--text-muted);">
+<p class="mb-3" style="font-size:var(--fs-base);color:var(--text-muted);">
     @if($sebagaiDosen)
         {{ $jumlahMenunggu }} pengajuan menunggu keputusan Anda. Yang Anda setujui diteruskan ke Laboran untuk keputusan akhir.
     @else
@@ -75,29 +75,29 @@
             @forelse($data as $i => $p)
                 <tr>
                     <td class="ps-4 text-muted">{{ $data->firstItem() + $i }}</td>
-                    <td style="font-size:.875rem;">{{ $p->tanggal_pengajuan?->format('d/m/Y H:i') }}</td>
+                    <td style="font-size:var(--fs-base);">{{ $p->tanggal_pengajuan?->format('d/m/Y H:i') }}</td>
                     <td>
                         <div class="fw-semibold">{{ $p->nama_peminjam }}</div>
-                        <div style="font-size:.875rem;color:var(--text-muted);">{{ $p->identitas_peminjam }} · {{ $p->label_jenis }}</div>
+                        <div style="font-size:var(--fs-base);color:var(--text-muted);">{{ $p->identitas_peminjam }} · {{ $p->label_jenis }}</div>
                     </td>
                     <td>
                         <span class="d-inline-block text-truncate align-middle" style="max-width:300px;" title="{{ $p->ringkasan }}">{{ $p->ringkasan }}</span>
-                        @if($p->keterangan)<div style="font-size:.875rem;color:var(--text-muted);text-truncate;" title="{{ $p->keterangan }}">{{ $p->keterangan }}</div>@endif
+                        @if($p->keterangan)<div style="font-size:var(--fs-base);color:var(--text-muted);text-truncate;" title="{{ $p->keterangan }}">{{ $p->keterangan }}</div>@endif
                     </td>
                     <td>{{ $p->jumlah_barang }}</td>
-                    <td style="font-size:.875rem;">
+                    <td style="font-size:var(--fs-base);">
                         {{ $p->tanggal_peminjaman?->format('d/m/Y') }}<br>
                         s/d {{ $p->tanggal_rencana_kembali?->format('d/m/Y H:i') }}
                     </td>
                     <td>
                         @include('peminjaman._status', ['status' => $p->status, 'terlambat' => $p->terlambat])
                         @if($p->menungguDosen())
-                            <div style="font-size:.875rem;color:var(--text-muted);">Menunggu keputusan Dosen</div>
+                            <div style="font-size:var(--fs-base);color:var(--text-muted);">Menunggu keputusan Dosen</div>
                         @elseif($p->diteruskanKeLaboran())
-                            <div style="font-size:.875rem;color:var(--text-muted);">Disetujui Dosen, menunggu Laboran</div>
+                            <div style="font-size:var(--fs-base);color:var(--text-muted);">Disetujui Dosen, menunggu Laboran</div>
                         @endif
                         @if($p->status === 'ditolak' && $p->alasan_ditolak)
-                            <div style="font-size:.875rem;color:var(--text-muted);" title="{{ $p->alasan_ditolak }}">Alasan: {{ \Illuminate\Support\Str::limit($p->alasan_ditolak, 40) }}</div>
+                            <div style="font-size:var(--fs-base);color:var(--text-muted);" title="{{ $p->alasan_ditolak }}">Alasan: {{ \Illuminate\Support\Str::limit($p->alasan_ditolak, 40) }}</div>
                         @endif
                     </td>
                     <td class="text-end pe-4">
@@ -106,18 +106,18 @@
                                 <form action="{{ route('pengajuan.setujui', $p->id_peminjaman) }}" method="POST" class="d-inline"
                                       data-konfirmasi="Setujui pengajuan peminjaman #{{ $p->id_peminjaman }} oleh {{ $p->nama_peminjam }}? {{ $sebagaiDosen ? 'Pengajuan akan diteruskan ke Laboran untuk keputusan akhir.' : 'Stok barang akan dipotong sesuai jumlah yang diajukan.' }}">
                                     @csrf
-                                    <button type="submit" class="btn btn-edit d-flex align-items-center gap-1" style="padding:.3rem .65rem;font-size:.875rem;">
+                                    <button type="submit" class="btn btn-edit d-flex align-items-center gap-1" style="padding:.3rem .65rem;font-size:var(--fs-base);">
                                         <i class="bi bi-check-lg" aria-hidden="true"></i> Setujui
                                     </button>
                                 </form>
-                                <button type="button" class="btn btn-del d-flex align-items-center gap-1" style="padding:.3rem .65rem;font-size:.875rem;"
+                                <button type="button" class="btn btn-del d-flex align-items-center gap-1" style="padding:.3rem .65rem;font-size:var(--fs-base);"
                                         data-bs-toggle="modal" data-bs-target="#tolakModal"
                                         data-url="{{ route('pengajuan.tolak', $p->id_peminjaman) }}"
                                         data-info="#{{ $p->id_peminjaman }} — {{ $p->nama_peminjam }}">
                                     <i class="bi bi-x-lg" aria-hidden="true"></i> Tolak
                                 </button>
                             @endif
-                            <a href="{{ route('peminjaman.show', $p->id_peminjaman) }}" class="btn btn-outline-silab d-flex align-items-center gap-1" style="padding:.3rem .65rem;font-size:.875rem;">
+                            <a href="{{ route('peminjaman.show', $p->id_peminjaman) }}" class="btn btn-outline-silab d-flex align-items-center gap-1" style="padding:.3rem .65rem;font-size:var(--fs-base);">
                                 <i class="bi bi-eye" aria-hidden="true"></i> Detail
                             </a>
                         </div>
@@ -128,8 +128,8 @@
                     <td colspan="8">
                         <div class="text-center py-5" style="color:var(--text-muted);">
                             <i class="bi bi-inbox fs-1 d-block mb-2" aria-hidden="true" style="color:#c9bdb4;"></i>
-                            <div class="fw-semibold mb-1" style="font-size:.95rem;color:var(--text-primary);">Tidak ada pengajuan</div>
-                            <div style="font-size:.875rem;">Belum ada pengajuan peminjaman dengan status "{{ $labels[$status] ?? $status }}".</div>
+                            <div class="fw-semibold mb-1" style="font-size:var(--fs-base);color:var(--text-primary);">Tidak ada pengajuan</div>
+                            <div style="font-size:var(--fs-base);">Belum ada pengajuan peminjaman dengan status "{{ $labels[$status] ?? $status }}".</div>
                         </div>
                     </td>
                 </tr>
@@ -153,11 +153,11 @@
               >
             @csrf
             <div class="modal-header">
-                <h5 id="tolakModal-judul" class="modal-title fw-semibold" style="font-size:1rem;">Tolak Pengajuan Peminjaman</h5>
+                <h5 id="tolakModal-judul" class="modal-title fw-semibold" style="font-size:var(--fs-md);">Tolak Pengajuan Peminjaman</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
             </div>
             <div class="modal-body">
-                <p class="mb-3" style="font-size:.875rem;color:var(--text-muted);">
+                <p class="mb-3" style="font-size:var(--fs-base);color:var(--text-muted);">
                     Pengajuan <strong id="tolakInfo"></strong> akan berstatus <strong>Ditolak</strong>. Stok barang tidak berubah.
                 </p>
                 <label class="form-label" for="alasan">Alasan Penolakan</label>

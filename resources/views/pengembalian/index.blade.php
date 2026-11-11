@@ -6,7 +6,7 @@
 
 @section('content')
 
-<p class="mb-3" style="font-size:.875rem;color:var(--text-muted);">Peminjaman berstatus <strong>Disetujui</strong> dapat dicatat pengembaliannya. Pengembalian sebagian diperbolehkan.</p>
+<p class="mb-3" style="font-size:var(--fs-base);color:var(--text-muted);">Peminjaman berstatus <strong>Disetujui</strong> dapat dicatat pengembaliannya. Pengembalian sebagian diperbolehkan.</p>
 
 @if($errors->any())
     <div class="alert alert-danger mb-3" role="alert">
@@ -57,12 +57,12 @@
                     <span class="fw-semibold" style="font-size:1.02rem;">Peminjaman #{{ $p->id_peminjaman }}</span>
                     @include('peminjaman._status', ['status' => $p->status, 'terlambat' => $p->terlambat])
                 </div>
-                <div style="font-size:.875rem;color:var(--text-muted);">
+                <div style="font-size:var(--fs-base);color:var(--text-muted);">
                     {{ $p->nama_peminjam }} · {{ $p->identitas_peminjam }} ·
                     Batas kembali <strong>{{ $p->tanggal_rencana_kembali?->format('d/m/Y H:i') }}</strong>
                 </div>
                 @if($p->ruangans->isNotEmpty())
-                    <div style="font-size:.875rem;color:var(--text-muted);">
+                    <div style="font-size:var(--fs-base);color:var(--text-muted);">
                         Ruangan: {{ $p->ruangans->map(fn ($r) => $r->ruangan?->nama_ruangan ?? '—')->implode(', ') }}
                     </div>
                 @endif
@@ -109,7 +109,7 @@
                                 <td>{{ $kembaliD }}</td>
                                 <td>
                                     @if($sisaD === 0)
-                                        <span class="badge-status" style="background:#ecfdf3;color:#146c43;">Lengkap</span>
+                                        <span class="badge-status" style="background:#ecfdf3;color:var(--success-text);">Lengkap</span>
                                     @else
                                         {{ $sisaD }}
                                     @endif
@@ -136,7 +136,7 @@
                                             </select>
                                             @error('kondisi.'.$d->id_detail)<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                                         @elseif($bisaInput)
-                                            <span style="color:var(--text-muted);font-size:.875rem;">Tanpa kondisi</span>
+                                            <span style="color:var(--text-muted);font-size:var(--fs-base);">Tanpa kondisi</span>
                                         @else
                                             <span style="color:var(--text-muted);">—</span>
                                         @endif
@@ -156,12 +156,12 @@
                                    value="{{ old('keterangan') }}" class="form-control" placeholder="Contoh: kondisi lensa berdebu, dst.">
                         </div>
                         <div class="col-12 col-lg-4 d-flex justify-content-lg-end">
-                            <button type="submit" class="btn btn-gold d-flex align-items-center gap-2">
+                            <button type="submit" class="btn btn-primary d-flex align-items-center gap-2">
                                 <i class="bi bi-box-arrow-in-down" aria-hidden="true"></i> Catat Pengembalian
                             </button>
                         </div>
                     </div>
-                    <p class="mb-0 mt-2" style="font-size:.875rem;color:var(--text-muted);">
+                    <p class="mb-0 mt-2" style="font-size:var(--fs-base);color:var(--text-muted);">
                         Kosongkan kolom jumlah agar barang tidak dikembalikan. Stok hanya bertambah untuk barang <strong>baik</strong> dan bahan.
                     </p>
                 @endif
@@ -172,9 +172,9 @@
 
         @if($riwayatP && $riwayatP->isNotEmpty())
             <div class="px-4 pb-4 pt-3" style="border-top:1px solid var(--border);margin-top:1rem;">
-                <div class="fw-semibold mb-2" style="font-size:.875rem;"><i class="bi bi-clock-history me-1" aria-hidden="true"></i> Riwayat Pengembalian</div>
+                <div class="fw-semibold mb-2" style="font-size:var(--fs-base);"><i class="bi bi-clock-history me-1" aria-hidden="true"></i> Riwayat Pengembalian</div>
                 <div class="table-responsive">
-                    <table class="table table-sm mb-0" style="font-size:.875rem;">
+                    <table class="table table-sm mb-0" style="font-size:var(--fs-base);">
 <caption class="visually-hidden">{{ trim($__env->yieldContent('page-title')) }}</caption>
                         <thead>
                             <tr>
@@ -195,7 +195,7 @@
                                             {{ $det->detailPeminjaman?->katalog?->nama ?? 'Barang' }}
                                             <strong>{{ $det->jumlah_dikembalikan }}</strong>
                                             @if($det->kondisi)
-                                                <span style="color:{{ $det->kondisi === 'baik' ? '#146c43' : '#b42318' }};">({{ $det->kondisi === 'baik' ? 'baik' : 'rusak' }})</span>
+                                                <span style="color:{{ $det->kondisi === 'baik' ? 'var(--success-text)' : 'var(--danger-text)' }};">({{ $det->kondisi === 'baik' ? 'baik' : 'rusak' }})</span>
                                             @endif
                                         </div>
                                     @endforeach
@@ -213,8 +213,8 @@
     <div class="card-modern">
         <div class="text-center py-5" style="color:var(--text-muted);">
             <i class="bi bi-inbox fs-1 d-block mb-2" aria-hidden="true" style="color:#c9bdb4;"></i>
-            <div class="fw-semibold mb-1" style="font-size:.95rem;color:var(--text-primary);">Tidak ada peminjaman</div>
-            <div style="font-size:.875rem;">Belum ada peminjaman berstatus "{{ $status }}".</div>
+            <div class="fw-semibold mb-1" style="font-size:var(--fs-base);color:var(--text-primary);">Tidak ada peminjaman</div>
+            <div style="font-size:var(--fs-base);">Belum ada peminjaman berstatus "{{ $status }}".</div>
         </div>
     </div>
 @endforelse

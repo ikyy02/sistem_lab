@@ -47,7 +47,7 @@
     @endif
 
     @if (count($rusak) > 0)
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;margin:0 0 16px;background-color:#fef2f2;border-left:3px solid #b91c1c;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;margin:0 0 16px;background-color:#fef2f2;">
             <tr>
                 <td style="padding:12px 14px;font-size:14px;color:#7f1d1d;">
                     <strong>Perhatian: ada alat yang dikembalikan dalam kondisi rusak.</strong><br>

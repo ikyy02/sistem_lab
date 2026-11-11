@@ -7,7 +7,7 @@
 @section('content')
 
 <nav aria-label="breadcrumb" class="mb-4">
-    <ol class="breadcrumb mb-0" style="font-size:.875rem;color:var(--text-muted);">
+    <ol class="breadcrumb mb-0" style="font-size:var(--fs-base);color:var(--text-muted);">
         <li class="breadcrumb-item">
             <a href="{{ route('jadwal.index') }}" style="color:var(--text-muted);text-decoration:none;">
                 <i class="bi bi-calendar-week me-1" aria-hidden="true"></i>Jadwal Perkuliahan
@@ -25,8 +25,8 @@
                     <i class="bi bi-pencil-fill" aria-hidden="true"></i>
                 </div>
                 <div>
-                    <div class="fw-bold" style="font-size:.95rem;">Ubah Jadwal Perkuliahan</div>
-                    <div style="font-size:.875rem;color:var(--text-muted);">
+                    <div class="fw-bold" style="font-size:var(--fs-base);">Ubah Jadwal Perkuliahan</div>
+                    <div style="font-size:var(--fs-base);color:var(--text-muted);">
                         {{ $jadwal->mataKuliah->nama_mk ?? 'Tanpa mata kuliah' }} · {{ $jadwal->kelas->nama_kelas ?? '—' }}
                     </div>
                 </div>

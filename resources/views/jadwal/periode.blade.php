@@ -8,7 +8,7 @@
 @php $tgl = fn ($d) => $d?->format('d/m/Y'); @endphp
 
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
-    <p class="mb-0" style="font-size:.875rem;color:var(--text-muted);">Perbarui periode setiap pergantian periode atau setengah semester. Jadwal periode sebelumnya disimpan sebagai arsip dan tidak dapat diubah.</p>
+    <p class="mb-0" style="font-size:var(--fs-base);color:var(--text-muted);">Perbarui periode setiap pergantian periode atau setengah semester. Jadwal periode sebelumnya disimpan sebagai arsip dan tidak dapat diubah.</p>
     <a href="{{ route('jadwal.index') }}" class="btn btn-outline-silab d-flex align-items-center gap-2"><i class="bi bi-arrow-left" aria-hidden="true"></i> Jadwal Perkuliahan</a>
 </div>
 
@@ -21,7 +21,7 @@
     <div class="col-12 col-lg-6">
         <form method="POST" action="{{ route('jadwal.periode.update', $berjalan->id_periode) }}" class="card-modern p-4 h-100">
             @csrf @method('PUT')
-            <h5 class="fw-bold mb-3" style="font-size:1rem;">Periode Berjalan</h5>
+            <h5 class="fw-bold mb-3" style="font-size:var(--fs-md);">Periode Berjalan</h5>
             <div class="row g-3">
                 <div class="col-12">
                     <label class="form-label" for="u_nama">Nama Periode <span class="text-danger">*</span></label>
@@ -45,8 +45,8 @@
         <form method="POST" action="{{ route('jadwal.periode.store') }}" class="card-modern p-4 h-100"
               data-konfirmasi="Mulai periode baru? Periode berjalan akan diarsipkan dan jadwalnya tidak dapat diubah lagi.">
             @csrf
-            <h5 class="fw-bold mb-1" style="font-size:1rem;">Mulai Periode Baru</h5>
-            <p class="mb-3" style="font-size:.875rem;color:var(--text-muted);">{{ $berjalan ? 'Periode berjalan saat ini akan diarsipkan.' : 'Belum ada periode berjalan.' }} Jadwal baru akan tercatat pada periode ini.</p>
+            <h5 class="fw-bold mb-1" style="font-size:var(--fs-md);">Mulai Periode Baru</h5>
+            <p class="mb-3" style="font-size:var(--fs-base);color:var(--text-muted);">{{ $berjalan ? 'Periode berjalan saat ini akan diarsipkan.' : 'Belum ada periode berjalan.' }} Jadwal baru akan tercatat pada periode ini.</p>
             <div class="row g-3">
                 <div class="col-12">
                     <label class="form-label" for="b_nama">Nama Periode <span class="text-danger">*</span></label>

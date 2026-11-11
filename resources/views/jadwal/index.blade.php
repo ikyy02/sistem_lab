@@ -101,18 +101,18 @@
                     <td class="ps-4 text-muted">{{ $data->firstItem() + $loop->index }}</td>
                     <td>
                         <div class="fw-semibold text-capitalize">{{ $j->hari }}</div>
-                        <div style="font-size:.875rem;color:var(--text-muted);">{{ $jamTeks($j->jam_mulai) }} - {{ $jamTeks($j->jam_selesai) }}</div>
-                        <div style="font-size:.875rem;color:var(--text-muted);">{{ $j->tahun_akademik }} · {{ ucfirst($j->semester) }}</div>
-                        @if($j->periode)<div style="font-size:.875rem;color:var(--text-muted);">{{ $j->periode->nama }}@if($j->terarsip()) <span class="badge-status" style="background:#f1f5f9;color:#475569;">Arsip</span>@endif</div>@endif
+                        <div style="font-size:var(--fs-base);color:var(--text-muted);">{{ $jamTeks($j->jam_mulai) }} - {{ $jamTeks($j->jam_selesai) }}</div>
+                        <div style="font-size:var(--fs-base);color:var(--text-muted);">{{ $j->tahun_akademik }} · {{ ucfirst($j->semester) }}</div>
+                        @if($j->periode)<div style="font-size:var(--fs-base);color:var(--text-muted);">{{ $j->periode->nama }}@if($j->terarsip()) <span class="badge-status" style="background:#f1f5f9;color:#475569;">Arsip</span>@endif</div>@endif
                     </td>
                     <td>
                         <div class="fw-semibold">{{ $j->mataKuliah->nama_mk ?? '—' }}</div>
-                        <div style="font-size:.875rem;color:var(--text-muted);">{{ $j->mataKuliah->kode_mk ?? 'Tanpa mata kuliah' }}@if($j->mataKuliah) · {{ $j->mataKuliah->sks }} SKS @endif</div>
+                        <div style="font-size:var(--fs-base);color:var(--text-muted);">{{ $j->mataKuliah->kode_mk ?? 'Tanpa mata kuliah' }}@if($j->mataKuliah) · {{ $j->mataKuliah->sks }} SKS @endif</div>
                     </td>
                     <td>{{ $j->kelas->nama_kelas ?? '—' }}</td>
                     <td>
                         <div>{{ $j->dosen->nama ?? '—' }}</div>
-                        <div style="font-size:.875rem;color:var(--text-muted);">{{ $j->nuptk_nidn }}</div>
+                        <div style="font-size:var(--fs-base);color:var(--text-muted);">{{ $j->nuptk_nidn }}</div>
                     </td>
                     <td>{{ $j->ruangan->nama_ruangan ?? '—' }}</td>
                     <td>

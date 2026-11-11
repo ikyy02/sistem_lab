@@ -7,7 +7,7 @@
 @section('content')
 @php $satuan = $tab === 'satuan'; @endphp
 
-<p class="mb-3" style="font-size:.875rem;color:var(--text-muted);">
+<p class="mb-3" style="font-size:var(--fs-base);color:var(--text-muted);">
     @if($satuan)Perubahan di sini otomatis mengikuti dropdown pada form Kelola Katalog.@else Jam dan hari operasional dipakai untuk memeriksa waktu pengajuan peminjaman.@endif
 </p>
 
@@ -107,7 +107,7 @@
             @csrf
             <input type="hidden" name="_method" id="masterMethod" value="PUT" disabled>
             <div class="modal-header">
-                <h5 class="modal-title fw-bold" id="masterModalTitle" style="font-size:1rem;">Tambah Satuan</h5>
+                <h5 class="modal-title fw-bold" id="masterModalTitle" style="font-size:var(--fs-md);">Tambah Satuan</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
             </div>
             <div class="modal-body p-4">
@@ -132,7 +132,7 @@
 
 <form method="POST" action="{{ route('pengaturan-lab.operasional.update') }}" class="card-modern p-4">
     @csrf @method('PUT')
-    <h5 class="fw-bold mb-3" style="font-size:1rem;">Jam &amp; Hari Operasional</h5>
+    <h5 class="fw-bold mb-3" style="font-size:var(--fs-md);">Jam &amp; Hari Operasional</h5>
     <div class="row g-3">
         <div class="col-6">
             <label class="form-label" for="jam_buka">Jam Buka <span class="text-danger">*</span></label>
