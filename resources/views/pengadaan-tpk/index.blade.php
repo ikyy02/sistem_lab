@@ -8,79 +8,78 @@
 <style>
     /* Modul TPK: memakai token global siarka.css; tidak ada palet sendiri. */
     .tpk-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
-    .tpk-konteks { margin: 0; font-size: var(--fs-base, 14px); color: var(--text-secondary); }
+    .tpk-konteks { margin: 0; font-size: var(--fs-base); color: var(--text-secondary); }
     .tpk-konteks strong { color: var(--text-primary); font-weight: 600; }
 
     .tpk-panel { background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-lg); }
     .tpk-param { padding: 16px; margin-bottom: 16px; }
-    .tpk-label { display: block; font-size: var(--fs-sm, 13px); font-weight: 500; color: var(--text-secondary); margin-bottom: 6px; }
-    .tpk-sub { font-size: var(--fs-xs, 12px); color: var(--text-muted); }
+    .tpk-label { display: block; font-size: var(--fs-sm); font-weight: 500; color: var(--text-secondary); margin-bottom: 6px; }
+    .tpk-sub { font-size: var(--fs-xs); color: var(--text-muted); }
 
     .tpk-presets { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
     .tpk-preset {
         text-align: left; padding: 8px 12px; background: var(--bg-surface); color: var(--text-primary);
-        border: 1px solid var(--border-input, #7B8AA0); border-radius: var(--radius-md); cursor: pointer; line-height: 1.3;
+        border: 1px solid var(--border-input); border-radius: var(--radius-md); cursor: pointer; line-height: 1.3;
         transition: background-color 150ms var(--ease-standard), border-color 150ms var(--ease-standard);
     }
     .tpk-preset:hover { background: var(--bg-subtle); }
-    .tpk-preset[aria-pressed="true"] { background: var(--brand-soft, #E8EEF6); border-color: var(--brand, #143A6B); box-shadow: inset 0 0 0 1px var(--brand, #143A6B); }
-    .tpk-preset b { display: block; font-size: var(--fs-sm, 13px); font-weight: 600; }
-    .tpk-preset span { font-size: var(--fs-xs, 12px); color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+    .tpk-preset[aria-pressed="true"] { background: var(--brand-soft); border-color: var(--brand); box-shadow: inset 0 0 0 1px var(--brand); }
+    .tpk-preset b { display: block; font-size: var(--fs-sm); font-weight: 600; }
+    .tpk-preset span { font-size: var(--fs-xs); color: var(--text-secondary); font-variant-numeric: tabular-nums; }
 
     .tpk-manual { margin-top: 12px; padding: 12px 16px; background: var(--bg-subtle); border-radius: var(--radius-md); }
     .tpk-manual-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) auto; gap: 12px; align-items: end; }
-    .tpk-total { font-size: var(--fs-sm, 13px); font-weight: 600; padding: 6px 10px; border-radius: var(--radius-md); white-space: nowrap; }
-    .tpk-total.ok { background: var(--success-soft); color: var(--success-text, #166534); }
-    .tpk-total.bad { background: var(--danger-soft); color: var(--danger-text, #B91C1C); }
+    .tpk-total { font-size: var(--fs-sm); font-weight: 600; padding: 6px 10px; border-radius: var(--radius-md); white-space: nowrap; }
+    .tpk-total.ok { background: var(--success-soft); color: var(--success-text); }
+    .tpk-total.bad { background: var(--danger-soft); color: var(--danger-text); }
 
     .tpk-ringkas { display: grid; grid-template-columns: 2fr 1fr 1fr; margin-bottom: 16px; }
     .tpk-ringkas > div { padding: 14px 16px; min-width: 0; }
     .tpk-ringkas > div + div { border-left: 1px solid var(--border); }
-    .tpk-ringkas .k { font-size: var(--fs-xs, 12px); font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--text-secondary); }
-    .tpk-ringkas .v { font-size: var(--fs-lg, 18px); font-weight: 600; color: var(--text-primary); line-height: 1.3; margin-top: 2px; }
+    .tpk-ringkas .k { font-size: var(--fs-xs); font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--text-secondary); }
+    .tpk-ringkas .v { font-size: var(--fs-lg); font-weight: 600; color: var(--text-primary); line-height: 1.3; margin-top: 2px; }
 
-    .tpk-tabs { display: flex; gap: 4px; padding: 0 12px; border-bottom: 1px solid var(--border); overflow-x: auto; overflow-y: hidden; }
-    .tpk-panel .table-responsive { overflow-y: hidden; }
+    .tpk-tabs { display: flex; gap: 4px; padding: 0 12px; border-bottom: 1px solid var(--border); overflow-x: auto; }
     .tpk-tab {
-        border: 0; background: none; padding: 12px; font-size: var(--fs-base, 14px); font-weight: 500; color: var(--text-secondary);
+        border: 0; background: none; padding: 12px; font-size: var(--fs-base); font-weight: 500; color: var(--text-secondary);
         border-bottom: 2px solid transparent; margin-bottom: -1px; white-space: nowrap; display: inline-flex; align-items: center; gap: 8px;
     }
     .tpk-tab:hover { color: var(--text-primary); }
-    .tpk-tab.active { color: var(--brand, #143A6B); border-bottom-color: var(--brand, #143A6B); font-weight: 600; }
-    .tpk-count { font-size: var(--fs-xs, 12px); padding: 1px 7px; border-radius: 999px; background: var(--bg-subtle); color: var(--text-secondary); font-weight: 600; }
+    .tpk-tab.active { color: var(--brand); border-bottom-color: var(--brand); font-weight: 600; }
+    .tpk-count { font-size: var(--fs-xs); padding: 1px 7px; border-radius: 999px; background: var(--bg-subtle); color: var(--text-secondary); font-weight: 600; }
 
     .tpk-table { width: 100%; margin: 0; border-collapse: collapse; font-variant-numeric: tabular-nums; }
-    .tpk-table th { background: var(--bg-subtle); color: var(--text-secondary); font-size: var(--fs-xs, 12px); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; padding: 10px 12px; white-space: nowrap; border-bottom: 1px solid var(--border); }
-    .tpk-table td { padding: 10px 12px; font-size: var(--fs-base, 14px); border-bottom: 1px solid var(--border); vertical-align: middle; }
+    .tpk-table th { background: var(--bg-subtle); color: var(--text-secondary); font-size: var(--fs-xs); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; padding: 10px 12px; white-space: nowrap; border-bottom: 1px solid var(--border); }
+    .tpk-table td { padding: 10px 12px; font-size: var(--fs-base); border-bottom: 1px solid var(--border); vertical-align: middle; }
     .tpk-table tbody tr:hover td { background: var(--bg-subtle); }
     .tpk-table .nama { font-weight: 500; color: var(--text-primary); }
-    .tpk-table .meta { font-size: var(--fs-xs, 12px); color: var(--text-secondary); }
-    .tpk-rank { display: inline-flex; align-items: center; justify-content: center; min-width: 28px; height: 28px; border-radius: var(--radius-md); font-weight: 600; font-size: var(--fs-sm, 13px); background: var(--bg-subtle); color: var(--text-secondary); }
-    .tpk-rank.top { background: var(--brand, #143A6B); color: #fff; }
+    .tpk-table .meta { font-size: var(--fs-xs); color: var(--text-secondary); }
+    .tpk-rank { display: inline-flex; align-items: center; justify-content: center; min-width: 28px; height: 28px; border-radius: var(--radius-md); font-weight: 600; font-size: var(--fs-sm); background: var(--bg-subtle); color: var(--text-secondary); }
+    .tpk-rank.top { background: var(--brand); color: #fff; }
     .tpk-skor { display: flex; align-items: center; gap: 8px; min-width: 150px; }
     .tpk-skor b { font-weight: 600; min-width: 48px; }
     .tpk-bar-track { flex: 1; height: 6px; background: var(--border); border-radius: 999px; overflow: hidden; }
-    .tpk-bar-fill { height: 100%; background: var(--brand, #143A6B); border-radius: 999px; }
-    .tpk-stok-kritis { color: var(--danger-text, #B91C1C); font-weight: 600; }
-    .tpk-prio { display: inline-block; padding: 2px 8px; border-radius: var(--radius-md); font-size: var(--fs-xs, 12px); font-weight: 600; white-space: nowrap; }
-    .tpk-prio-1 { background: var(--danger-soft); color: var(--danger-text, #B91C1C); }
-    .tpk-prio-2 { background: var(--warning-soft); color: var(--warning-text, #92400E); }
-    .tpk-prio-3 { background: var(--info-soft); color: var(--info-text, #0369A1); }
+    .tpk-bar-fill { height: 100%; background: var(--brand); border-radius: 999px; }
+    .tpk-stok-kritis { color: var(--danger-text); font-weight: 600; }
+    .tpk-prio { display: inline-block; padding: 2px 8px; border-radius: var(--radius-md); font-size: var(--fs-xs); font-weight: 600; white-space: nowrap; }
+    .tpk-prio-1 { background: var(--danger-soft); color: var(--danger-text); }
+    .tpk-prio-2 { background: var(--warning-soft); color: var(--warning-text); }
+    .tpk-prio-3 { background: var(--info-soft); color: var(--info-text); }
     .tpk-prio-4 { background: var(--bg-subtle); color: var(--text-secondary); }
     .tpk-qty { width: 80px; text-align: center; }
 
     .tpk-usulan {
         position: sticky; bottom: 0; z-index: 5; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px;
-        padding: 12px 16px; background: var(--bg-surface); border-top: 1px solid var(--border-strong, #CBD5E1); border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+        padding: 12px 16px; background: var(--bg-surface); border-top: 1px solid var(--border-strong); border-radius: 0 0 var(--radius-lg) var(--radius-lg);
     }
-    .tpk-usulan .total { font-size: var(--fs-lg, 18px); font-weight: 600; font-variant-numeric: tabular-nums; }
+    .tpk-usulan .total { font-size: var(--fs-lg); font-weight: 600; font-variant-numeric: tabular-nums; }
 
     .tpk-pane { padding: 16px; }
     .tpk-acuan { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 12px 0 16px; }
     .tpk-acuan > div { padding: 10px 12px; background: var(--bg-subtle); border-radius: var(--radius-md); }
-    .tpk-acuan .k { display: block; font-size: var(--fs-xs, 12px); color: var(--text-secondary); }
-    .tpk-acuan .v { font-size: var(--fs-md, 16px); font-weight: 600; }
-    .tpk-rumus { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: var(--fs-sm, 13px); padding: 10px 12px; background: var(--bg-subtle); border-radius: var(--radius-md); }
+    .tpk-acuan .k { display: block; font-size: var(--fs-xs); color: var(--text-secondary); }
+    .tpk-acuan .v { font-size: var(--fs-md); font-weight: 600; }
+    .tpk-rumus { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: var(--fs-sm); padding: 10px 12px; background: var(--bg-subtle); border-radius: var(--radius-md); }
     .tpk-matriks th, .tpk-matriks td { text-align: right; }
     .tpk-matriks th:nth-child(-n+2), .tpk-matriks td:nth-child(-n+2) { text-align: left; }
 
@@ -99,7 +98,7 @@
         .tpk-rank-table, .tpk-rank-table tbody, .tpk-rank-table tr, .tpk-rank-table td { display: block; width: 100%; }
         .tpk-rank-table tr { padding: 12px 0; border-bottom: 1px solid var(--border); }
         .tpk-rank-table td { border: 0; padding: 4px 16px; display: flex; justify-content: space-between; align-items: center; gap: 12px; text-align: right; }
-        .tpk-rank-table td[data-label]::before { content: attr(data-label); font-size: var(--fs-xs, 12px); color: var(--text-secondary); text-align: left; }
+        .tpk-rank-table td[data-label]::before { content: attr(data-label); font-size: var(--fs-xs); color: var(--text-secondary); text-align: left; }
         .tpk-rank-table td.judul { justify-content: flex-start; text-align: left; }
         .tpk-rank-table td.judul::before { content: none; }
         .tpk-rank-table tbody tr:hover td { background: none; }
@@ -169,12 +168,12 @@
         </div>
         <div class="col-12 col-lg-7">
             <label class="tpk-label" for="f-cari">Cari barang</label>
-            <div class="input-group">
+            <div class="input-group input-group-sm">
                 <input type="search" name="search" id="f-cari" class="form-control" placeholder="Nama, jenis, atau satuan" value="{{ $search }}">
                 @if($search !== '')
-                    <a href="{{ route('pengadaan-tpk.index', request()->except('search')) }}" class="btn btn-outline-silab">Hapus</a>
+                    <a href="{{ route('pengadaan-tpk.index', request()->except('search')) }}" class="btn btn-outline-silab btn-sm">Hapus</a>
                 @endif
-                <button type="submit" class="btn btn-primary js-submit-bobot">Terapkan</button>
+                <button type="submit" class="btn btn-primary btn-sm js-submit-bobot">Terapkan</button>
             </div>
         </div>
 
@@ -304,7 +303,7 @@
             </div>
 
             <div class="tpk-usulan">
-                <div class="tpk-sub tpk-bantuan" style="font-size:var(--fs-sm, 13px);">
+                <div class="tpk-sub tpk-bantuan" style="font-size:var(--fs-sm);">
                     Menampilkan <strong>{{ count($filteredItems) }}</strong> dari <strong>{{ $totalItem }}</strong> item. Isi kolom <strong>Usulan</strong> untuk menyusun estimasi anggaran.
                 </div>
                 <div class="text-end" aria-live="polite">
