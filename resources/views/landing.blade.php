@@ -28,11 +28,16 @@
            - Radius: 10px, Bayangan max: 0 1px 2px rgba(0,0,0,.06)
            - Spasi skala: 8 / 16 / 24 / 32 / 48 / 80
            - Ikon: Lucide/Tabler outline seragam, tanpa emoji
-           - Garis aksen biru: HANYA pada 3 kartu bidang layanan
+           - Tanpa garis aksen dekoratif
            ========================================================================== */
         :root {
             --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             --brand: #1E4E8C;
+            /* Alias token: dipakai di CSS halaman ini tetapi sebelumnya tidak terdefinisi */
+            --primary: var(--brand);
+            --primary-hover: #17406F;
+            --border: var(--border-color);
+            --info-soft: var(--brand-blue-light);
             --brand-dark: var(--brand);
             --brand-blue: var(--brand);
             --brand-blue-hover: var(--brand);
@@ -810,7 +815,7 @@
 
         /* ==========================================================================
            B.3 LAYANAN
-           - 3 kartu bidang (bergaris aksen biru di atas)
+           - 3 kartu bidang (tanpa garis aksen)
            - 4 kartu layanan (tinggi seragam, tanpa garis aksen)
            - Ikon outline seragam
            ========================================================================== */
@@ -826,8 +831,6 @@
             padding: 24px;
             background-color: var(--bg-white);
             border: 1px solid var(--border);
-            /* Garis aksen biru di atas kartu hanya pada SATU jenis kartu ini */
-            border-top: 3px solid var(--primary);
             border-radius: var(--radius-main);
             box-shadow: var(--shadow-subtle);
         }
@@ -1514,13 +1517,6 @@
             margin-bottom: 6px;
             letter-spacing: -0.01em;
         }
-        .footer-title-bar {
-            width: 28px;
-            height: 3px;
-            background-color: rgba(255, 255, 255, 0.9);
-            border-radius: 2px;
-            margin-bottom: 16px;
-        }
         .footer-nav-list {
             list-style: none;
             display: flex;
@@ -2012,7 +2008,7 @@
 
     {{-- ==========================================================================
          B.3 LAYANAN (Putih)
-         - 3 kartu bidang (garis aksen biru di atas)
+         - 3 kartu bidang (tanpa garis aksen)
          - 4 kartu layanan (tinggi seragam, tanpa garis aksen)
          - Ikon outline seragam
          ========================================================================== --}}
@@ -2023,7 +2019,7 @@
                 <p class="section-desc">Fasilitas laboratorium terbagi ke dalam kluster keahlian vokasional dengan dukungan sarana perangkat keras dan perangkat lunak standar industri.</p>
             </div>
 
-            {{-- 3 Kartu Bidang (Satu-satunya jenis kartu bergaris aksen biru di atas) --}}
+            {{-- 3 Kartu Bidang --}}
             <div class="layanan-fields-grid">
                 <div class="field-card card-interactive reveal tier-0">
                     <div class="field-card-icon-box">
@@ -2521,7 +2517,6 @@
             {{-- Kolom 2: Alamat Kami (sesuai referensi resmi Politala) --}}
             <div>
                 <h4 class="footer-col-title">Alamat Kami</h4>
-                <div class="footer-title-bar"></div>
                 <ul class="footer-contact-list">
                     <li class="footer-contact-item">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
@@ -2537,7 +2532,6 @@
             {{-- Kolom 3: Kontak Kami (sesuai referensi resmi Politala) --}}
             <div>
                 <h4 class="footer-col-title">Kontak Kami</h4>
-                <div class="footer-title-bar"></div>
                 <ul class="footer-contact-list">
                     <li class="footer-contact-item">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
@@ -2557,7 +2551,6 @@
             {{-- Kolom 4: Ikuti Kami (sesuai referensi resmi Politala) --}}
             <div>
                 <h4 class="footer-col-title">Ikuti Kami</h4>
-                <div class="footer-title-bar"></div>
                 <div class="footer-social-list">
                     {{-- Facebook --}}
                     <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" class="footer-social-link" aria-label="Facebook Politeknik Negeri Tanah Laut">
