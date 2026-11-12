@@ -286,7 +286,7 @@ class AksesDataTest extends TestCase
         $s = $this->skenario();
         $pemilik = $s['mhsMandiri'];
 
-        $this->sebagai('mahasiswa', $pemilik)->get(route('peminjaman.riwayat', ['status' => 'menunggu', 'per_page' => 100]))->assertOk()
+        $this->sebagai('mahasiswa', $pemilik)->get(route('peminjaman.saya', ['status' => 'menunggu', 'per_page' => 100]))->assertOk()
             ->assertViewHas('data', fn ($d) => $d->total() === 1 && $d->first()->id_peminjaman === $s['mandiri']->id_peminjaman);
         $this->sebagai('mahasiswa', $pemilik)->get(route('dashboard'))->assertOk()
             ->assertViewHas('ringkasan', fn ($r) => $r['menunggu'] === 1);

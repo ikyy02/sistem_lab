@@ -13,6 +13,7 @@ use App\Services\PeminjamanService;
 use App\Support\Role;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
@@ -27,11 +28,15 @@ class PeminjamanController extends Controller
     public const PESAN_MINIMAL_ITEM = 'Pilih minimal satu ruangan, alat, atau bahan yang ingin dipinjam sebelum mengajukan peminjaman.';
 
     /** Halaman Ajukan Peminjaman + data pilihan form (katalog, ruangan, dosen, jam kerja). */
-    public function index()
+    public function index(Request $request)
     {
         $me = AuthService::user();
         $operasional = PengaturanOperasional::ambil();
         $roleDosen = ($me['role'] ?? null) === Role::DOSEN;
+
+        // Ruangan, alat, dan bahan dipisah ke 3 tab berbeda; tipe menentukan sumber daya mana yang ditampilkan.
+        $tipeQuery = $request->query('tipe');
+        $tipeAktif = in_array($tipeQuery, ['alat', 'bahan', 'ruangan'], true) ? $tipeQuery : 'ruangan';
 
         // Form pengajuan hanya menampilkan katalog yang stoknya masih ada.
         // Opsi dropdown: hanya katalog dengan stok tersedia.
@@ -42,13 +47,20 @@ class PeminjamanController extends Controller
             ->orderBy('alat_bahans.nama')
             ->get();
 
+        // Peminjaman aktif: 1 akun 1 hari (boleh isi ruangan + alat/bahan sekaligus).
+        // Cek di service layer sudah dilakukan via `aktifMilik()->exists()`.
+        // Di sini hanya tampilkan status agar user tau peminjaman apa yang masih berjalan.
+        $aktif = Peminjaman::aktifMilik($me['email'])->with(['details', 'ruangans'])->orderByDesc('id_peminjaman')->get();
+        $peminjamanAktif = $aktif->first();
+
         return view('peminjaman.index', [
             'opsiKatalog' => $opsiKatalog,
             'opsiRuangan' => Ruangan::orderBy('nama_ruangan')->get(),
             'opsiDosen' => Dosen::where('status', 'aktif')->orderBy('nama')->get(['nama', 'email']),
             'me' => $me,
             'roleDosen' => $roleDosen,
-            'peminjamanAktif' => Peminjaman::aktifMilik($me['email'])->orderByDesc('id_peminjaman')->first(),
+            'tipeAktif' => $tipeAktif,
+            'peminjamanAktif' => $peminjamanAktif,
             'aturanJamKerja' => $operasional->aturan(),
             // Batas waktu terendah (hari & jam operasional pertama yang belum lewat).
             'awalIzin' => $operasional->waktuPalingAwal(),
@@ -71,6 +83,16 @@ class PeminjamanController extends Controller
             'detail' => $this->barisTerisi($request->input('detail'), 'id_katalog'),
             'ruangan' => $this->barisTerisi($request->input('ruangan'), 'id_ruangan'),
         ]);
+
+        // Tipe hanya untuk tampilan/pencatatan; isian ruangan maupun alat/bahan TIDAK dibuang,
+        // supaya pengajuan yang berisi keduanya tetap tersimpan utuh.
+        $tipePeminjaman = $request->input('tipe_peminjaman');
+        if (! in_array($tipePeminjaman, ['ruangan', 'alat', 'bahan', 'barang'], true)) {
+            $detail = $request->input('detail');
+            $ruangan = $request->input('ruangan');
+            $tipePeminjaman = $detail && $ruangan ? 'campuran' : ($detail ? 'barang' : 'ruangan');
+        }
+        $request->merge(['tipe_peminjaman' => $tipePeminjaman]);
 
         // Aturan validasi form pengajuan; ubah di sini bila ada field baru.
         $data = $request->validate([
@@ -120,6 +142,7 @@ class PeminjamanController extends Controller
 
         $payload = [
             'jenis_peminjaman' => $data['jenis_peminjaman'] ?? null,
+            'tipe_peminjaman' => $tipePeminjaman,
             'email_dosen' => $data['email_dosen'] ?? null,
             'tanggal_peminjaman' => $data['tanggal_peminjaman'],
             'tanggal_rencana_kembali' => $data['tanggal_rencana_kembali'],
@@ -168,13 +191,40 @@ class PeminjamanController extends Controller
         'tanggal_rencana_kembali' => 'Tanggal Pengembalian', 'status' => 'Status',
     ];
 
-    /** Riwayat peminjaman milik sendiri: terbaru (waktu pengajuan) di atas; ada pencarian, filter status, sorting, pagination. */
-    // Riwayat hanya milik pengguna login; mendukung filter status, pencarian, urutan, dan pagination.
+    /**
+     * Status yang tampil di "Peminjaman Saya": pengajuan yang belum diproses.
+     */
+    public const STATUS_SAYA = ['menunggu'];
+
+    /**
+     * Status yang tampil di "Riwayat Peminjaman": pengajuan milik sendiri
+     * (menunggu, disetujui, selesai, ditolak, dibatalkan).
+     */
+    public const STATUS_RIWAYAT = ['menunggu', 'disetujui', 'selesai', 'ditolak', 'dibatalkan'];
+
+    /** Peminjaman Saya: pengajuan milik sendiri yang belum di-acc. */
+    public function saya(Request $request)
+    {
+        return $this->daftar($request, 'peminjaman.saya', 'peminjaman.saya', self::STATUS_SAYA);
+    }
+
+    /** Riwayat Peminjaman: pengajuan milik sendiri yang sudah disetujui/selesai/ditolak/dibatalkan. */
     public function riwayat(Request $request)
     {
+        return $this->daftar($request, 'peminjaman.riwayat', 'peminjaman.riwayat', self::STATUS_RIWAYAT);
+    }
+
+    /**
+     * Daftar transaksi milik pengguna login dengan filter status terbatas,
+     * pencarian, urutan, dan pagination. Dipakai Peminjaman Saya & Riwayat.
+     */
+    private function daftar(Request $request, string $namaRoute, string $view, array $statusBoleh)
+    {
         $me = AuthService::user();
+
         $status = $request->query('status');
-        $status = in_array($status, Peminjaman::STATUS, true) ? $status : null;
+        $status = in_array($status, $statusBoleh, true) ? $status : null;
+
         $search = mb_substr(trim((string) $request->query('search', '')), 0, 100);
         $sort = array_key_exists($request->query('sort'), self::SORT) ? $request->query('sort') : 'tanggal_pengajuan';
         $arah = strtolower((string) $request->query('direction'));
@@ -182,10 +232,11 @@ class PeminjamanController extends Controller
         $perPage = (int) $request->query('per_page');
         $perPage = in_array($perPage, self::PER_PAGE, true) ? $perPage : self::PER_PAGE[0];
 
-        // Query dasar riwayat dengan eager loading agar cepat.
+        // Query dasar: hanya milik sendiri dan hanya status yang relevan untuk halaman ini.
         $query = Peminjaman::query()
             ->with(Peminjaman::withProfil())
             ->where('email_peminjam', $me['email'])
+            ->whereIn('status', $statusBoleh)
             ->when($status, fn ($q) => $q->where('status', $status));
         foreach (Cari::kata($search) as $word) {
             $like = Cari::like($word);
@@ -208,19 +259,24 @@ class PeminjamanController extends Controller
             ->paginate($perPage)
             ->withQueryString();
         if ($data->currentPage() > $data->lastPage() && $data->lastPage() > 0) {
-            return redirect()->route('peminjaman.riwayat', array_merge($request->query(), ['page' => $data->lastPage()]));
+            return redirect()->route($namaRoute, array_merge($request->query(), ['page' => $data->lastPage()]));
         }
 
-        return view('peminjaman.riwayat', [
+        // Pilihan filter status dibatasi pada status yang memang tampil di halaman ini.
+        $labels = array_intersect_key(Peminjaman::LABELS, array_flip($statusBoleh));
+
+        return view($view, [
             'data' => $data,
             'status' => $status,
+            'statusBoleh' => $statusBoleh,
+            'labels' => $labels,
             'search' => $search,
             'sort' => $sort,
             'direction' => $direction,
             'sortLabels' => self::SORT,
             'perPage' => $perPage,
             'perPageOptions' => self::PER_PAGE,
-            'labels' => Peminjaman::LABELS,
+            'namaRoute' => $namaRoute,
         ]);
     }
 
@@ -235,7 +291,14 @@ class PeminjamanController extends Controller
         $me = AuthService::user();
         abort_unless($p->bisaDilihatOleh($me['email'], $me['role']), 403);
 
-        $sudah = $service->jumlahDikembalikan($p->id_peminjaman);
+        // Jumlah yang sudah dikembalikan per detail peminjaman.
+        // Total jumlah yang sudah dikembalikan per detail barang.
+        $sudah = DB::table('pengembalian_details as pd')
+            ->join('pengembalians as pg', 'pg.id_pengembalian', '=', 'pd.id_pengembalian')
+            ->where('pg.id_peminjaman', $p->id_peminjaman)
+            ->groupBy('pd.id_detail_peminjaman')
+            ->selectRaw('pd.id_detail_peminjaman as id_detail, SUM(pd.jumlah_dikembalikan) as total')
+            ->pluck('total', 'id_detail');
 
         $dapatMemproses = $p->status === 'menunggu' && $p->bisaDiprosesOleh($me['email'], $me['role']);
 

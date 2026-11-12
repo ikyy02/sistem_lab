@@ -18,7 +18,7 @@ class AlatBahanController extends Controller
         $room = $jenis === 'ruangan';
         $search = mb_substr(trim((string) $request->query('search', '')), 0, 100);
         // Kolom urut dibatasi whitelist agar aman dari SQL injection; nilai lain jatuh ke 'nama'.
-        $sortable = $room ? ['nama'] : ['nama', 'stok', 'harga'];
+        $sortable = $room ? ['nama'] : ['nama', 'stok'];
         $sort = in_array($request->query('sort'), $sortable, true) ? $request->query('sort') : 'nama';
         $direction = strtolower((string) $request->query('direction')) === 'desc' ? 'desc' : 'asc';
         $perPage = (int) $request->query('per_page');

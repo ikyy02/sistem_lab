@@ -47,10 +47,10 @@ class AuthController extends Controller
             'password.required' => 'Password wajib diisi.',
         ]);
 
-        // Batas percobaan: 5x per kombinasi email+IP dan 300x per IP per 5 menit (mencegah tebak password).
+        // Batas percobaan: 5x per kombinasi email+IP dan 30x per IP (mencegah tebak password).
         $kunci = 'login:'.mb_strtolower($data['email']).'|'.$request->ip();
         $kunciIp = 'login-ip:'.$request->ip(); // banyak email dari satu IP (password spraying)
-        if (RateLimiter::tooManyAttempts($kunci, 5) || RateLimiter::tooManyAttempts($kunciIp, 300)) {
+        if (RateLimiter::tooManyAttempts($kunci, 5) || RateLimiter::tooManyAttempts($kunciIp, 30)) {
             return back()->withInput($request->only('email'))
                 ->withErrors(['email' => 'Terlalu banyak percobaan login. Coba lagi dalam '.max(RateLimiter::availableIn($kunci), RateLimiter::availableIn($kunciIp)).' detik.']);
         }
@@ -58,9 +58,21 @@ class AuthController extends Controller
         // attempt() mengembalikan identitas (role, key, nama, email) atau null bila email/password salah.
         $identity = $auth->attempt($data['email'], $data['password']);
 
+        $clientIp = $request->header('CF-Connecting-IP')
+            ?: ($request->header('X-Forwarded-For') ? trim(explode(',', $request->header('X-Forwarded-For'))[0]) : $request->ip());
+
         if (! $identity) {
             RateLimiter::hit($kunci, 300);
             RateLimiter::hit($kunciIp, 300);
+
+            $this->catatLogLogin([
+                'timestamp' => now()->setTimezone('Asia/Makassar')->toDateTimeString(),
+                'ip' => $clientIp,
+                'email' => $data['email'],
+                'status' => 'FAILED',
+                'alasan' => 'Email atau password salah',
+                'user_agent' => $request->userAgent(),
+            ]);
 
             return back()->withInput($request->only('email'))
                 ->withErrors(['email' => 'Email atau password salah.']);
@@ -70,7 +82,27 @@ class AuthController extends Controller
         RateLimiter::clear($kunci);
         $auth->login($request, $identity);
 
+        $this->catatLogLogin([
+            'timestamp' => now()->setTimezone('Asia/Makassar')->toDateTimeString(),
+            'ip' => $clientIp,
+            'email' => $identity['email'],
+            'nama' => $identity['nama'] ?? '-',
+            'role' => $identity['role'] ?? '-',
+            'status' => 'SUCCESS',
+            'user_agent' => $request->userAgent(),
+        ]);
+
         return redirect()->route('dashboard');
+    }
+
+    private function catatLogLogin(array $entry): void
+    {
+        try {
+            $logFile = storage_path('logs/auth_logins.jsonl');
+            @file_put_contents($logFile, json_encode($entry, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . "\n", FILE_APPEND | LOCK_EX);
+        } catch (\Throwable $e) {
+            // Jangan mengganggu flow jika logging gagal
+        }
     }
 
     // Logout: hapus sesi lalu kembali ke landing.

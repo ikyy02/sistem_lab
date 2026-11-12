@@ -1,4 +1,4 @@
-@props(['tabs', 'active', 'route', 'param' => 'kategori', 'import' => false, 'addLabel' => null, 'addOnclick' => null])
+@props(['tabs', 'active', 'route', 'param' => 'kategori', 'import' => false, 'exportUrl' => null, 'addLabel' => null, 'addOnclick' => null])
 
 {{-- Page Toolbar: Kiri = Tab, Kanan = Tombol Aksi. Satu baris rapi, responsive wrap. --}}
 <div class="tab-action-bar mb-3">
@@ -14,16 +14,21 @@
         @endforeach
     </ul>
 
-    @if($import || $addLabel)
+    @if($import || $exportUrl || $addLabel)
     <div class="tab-action-bar__actions">
+        @if($exportUrl)
+        <a href="{{ $exportUrl }}" class="btn btn-outline-silab">
+            <i class="bi bi-file-earmark-arrow-down"></i> Export Excel
+        </a>
+        @endif
         @if($import)
         <button type="button" class="btn btn-outline-silab" data-bs-toggle="modal" data-bs-target="#importModal">
-            <i class="bi bi-file-earmark-excel" aria-hidden="true"></i> Import Excel
+            <i class="bi bi-file-earmark-excel"></i> Import Excel
         </button>
         @endif
         @if($addLabel)
         <button type="button" class="btn btn-primary" onclick="{{ $addOnclick }}">
-            <i class="bi bi-plus-lg" aria-hidden="true"></i> {{ $addLabel }}
+            <i class="bi bi-plus-lg"></i> {{ $addLabel }}
         </button>
         @endif
     </div>

@@ -112,7 +112,7 @@
 
     {{-- JUDUL LAPORAN --}}
     <div class="judul-laporan">REKOMENDASI PRIORITAS PENGADAAN ALAT DAN BAHAN LABORATORIUM</div>
-    <div class="subjudul-laporan">Berdasarkan SPK Metode AHP (bobot kriteria) dan Simple Additive Weighting (SAW)</div>
+    <div class="subjudul-laporan">Berdasarkan Analisis Keputusan Menggunakan Metode Simple Additive Weighting (SAW)</div>
 
     {{-- TABEL METADATA --}}
     <table class="meta-table">
@@ -133,14 +133,12 @@
             <td>{{ $user['nama'] ?? 'Laboran' }}</td>
         </tr>
         <tr>
-            <td><strong>Bobot AHP (W)</strong></td>
+            <td><strong>Bobot Penilaian (W)</strong></td>
             <td>:</td>
             <td colspan="4">
-                W1 (Stok - Cost) = {{ number_format($ahp['bobot'][0], 4, ',', '.') }} &bull;
-                W2 (Peminjaman - Benefit) = {{ number_format($ahp['bobot'][1], 4, ',', '.') }} &bull;
-                W3 (Harga - Cost) = {{ number_format($ahp['bobot'][2], 4, ',', '.') }}<br>
-                &lambda;max = {{ number_format($ahp['lambda_max'], 4, ',', '.') }} &bull; CI = {{ number_format($ahp['ci'], 4, ',', '.') }} &bull;
-                CR = {{ number_format($ahp['cr'], 4, ',', '.') }} (RI 0,58; konsisten bila CR &le; 0,10)
+                W1 (Sisa Stok - Cost) = {{ $w1 }} ({{ round($w1*100) }}%) &bull;
+                W2 (Peminjaman - Benefit) = {{ $w2 }} ({{ round($w2*100) }}%) &bull;
+                W3 (Harga - Cost) = {{ $w3 }} ({{ round($w3*100) }}%)
             </td>
         </tr>
     </table>
@@ -157,7 +155,6 @@
                 <th style="width:65px;">Total Pinjam</th>
                 <th style="width:90px;">Harga Satuan</th>
                 <th style="width:65px;">Nilai (V)</th>
-                <th style="width:85px;">Prioritas</th>
             </tr>
         </thead>
         <tbody>
@@ -174,11 +171,10 @@
                     <td class="text-center">{{ $it['jumlah_peminjaman'] }}</td>
                     <td class="text-end">Rp {{ number_format($it['harga'], 0, ',', '.') }}</td>
                     <td class="text-end font-monospace"><strong>{{ number_format($it['nilai'], 4) }}</strong></td>
-                    <td class="text-center">{{ $it['prioritas_label'] }}</td>
                 </tr>
             @empty
                 <tr>
-                    <td colspan="9" class="text-center py-3">Tidak ada data katalog untuk dianalisis.</td>
+                    <td colspan="8" class="text-center py-3">Tidak ada data katalog untuk dianalisis.</td>
                 </tr>
             @endforelse
         </tbody>
@@ -186,7 +182,7 @@
 
     {{-- CATATAN PENJELASAN SINGKAT --}}
     <div style="font-size:8.5pt; margin-top:12px; color:#444;">
-        <em>Catatan: Rekomendasi prioritas dihitung secara objektif menggunakan bobot kriteria hasil AHP dan metode Simple Additive Weighting (SAW) berdasarkan data inventaris dan aktivitas peminjaman laboratorium. Prioritas Sangat Tinggi dan Tinggi menjadi usulan pertama untuk diajukan dalam pengadaan periode berikutnya.</em>
+        <em>Catatan: Rekomendasi ini dihitung secara objektif menggunakan metode Simple Additive Weighting (SAW) berdasarkan data inventaris dan aktivitas peminjaman laboratorium. Alternatif dengan Nilai Preferensi (V) tertinggi menempati peringkat teratas sebagai rekomendasi utama pengadaan.</em>
     </div>
 
     {{-- BLOK TANDA TANGAN --}}

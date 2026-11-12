@@ -9,7 +9,10 @@ use App\Support\ExcelFile;
 use App\Support\Options;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use RuntimeException;
 
@@ -181,5 +184,100 @@ class AkademikImportService
         });
 
         return ['success' => true, 'total' => $total, 'inserted' => count($valid)];
+    }
+
+    /**
+     * Export data akademik ke file Excel (.xlsx).
+     *
+     * @return array{0: \PhpOffice\PhpSpreadsheet\Writer\Xlsx, 1: string}
+     */
+    public function export(string $tab, iterable $items): array
+    {
+        $book = new Spreadsheet();
+        $sheetTitle = mb_substr(ucwords(str_replace('-', ' ', $tab)), 0, 31);
+        $sheet = $book->getActiveSheet()->setTitle($sheetTitle ?: 'Data');
+
+        $headers = [];
+        $data = [];
+
+        if ($tab === 'mata-kuliah') {
+            $headers = ['No', 'Kode MK', 'Nama Mata Kuliah', 'SKS', 'Semester', 'Program Studi'];
+            $no = 1;
+            foreach ($items as $item) {
+                $data[] = [
+                    $no++,
+                    (string) $item->kode_mk,
+                    (string) $item->nama_mk,
+                    (int) $item->sks,
+                    ucfirst((string) $item->semester),
+                    (string) ($item->nama_prodi ?? '-'),
+                ];
+            }
+        } elseif ($tab === 'kelas') {
+            $headers = ['No', 'Nama Kelas', 'Program Studi'];
+            $no = 1;
+            foreach ($items as $item) {
+                $data[] = [
+                    $no++,
+                    (string) $item->nama_kelas,
+                    (string) ($item->nama_prodi ?? '-'),
+                ];
+            }
+        } elseif ($tab === 'dosen') {
+            $headers = ['No', 'NUPTK / NIDN', 'Nama Lengkap', 'Program Studi', 'No. WhatsApp', 'Status'];
+            $no = 1;
+            foreach ($items as $item) {
+                $data[] = [
+                    $no++,
+                    (string) $item->nuptk_nidn,
+                    (string) $item->nama,
+                    (string) ($item->nama_prodi ?? '-'),
+                    (string) ($item->no_whatsapp ?? '-'),
+                    ucfirst((string) $item->status),
+                ];
+            }
+        } elseif ($tab === 'semester') {
+            $headers = ['No', 'Semester', 'Jadwal Perkuliahan', 'Mata Kuliah'];
+            $no = 1;
+            foreach ($items as $item) {
+                $data[] = [
+                    $no++,
+                    'Semester ' . ($item['label'] ?? '-'),
+                    (int) ($item['jadwal'] ?? 0),
+                    (int) ($item['mata_kuliah'] ?? 0),
+                ];
+            }
+        }
+
+        $sheet->fromArray([$headers], null, 'A1');
+        $lastCol = Coordinate::stringFromColumnIndex(max(1, count($headers)));
+
+        // Header style
+        $sheet->getStyle("A1:{$lastCol}1")->getFont()->setBold(true);
+        $sheet->getStyle("A1:{$lastCol}1")->getFill()
+            ->setFillType(Fill::FILL_SOLID)
+            ->getStartColor()->setARGB('FFF1F5F9');
+
+        if (! empty($data)) {
+            $sheet->fromArray($data, null, 'A2');
+
+            // Format teks untuk kolom kode/NUPTK/nomor agar leading zero tidak hilang
+            $rowCount = count($data) + 1;
+            if ($tab === 'mata-kuliah') {
+                $sheet->getStyle("B2:B{$rowCount}")->getNumberFormat()->setFormatCode(NumberFormat::FORMAT_TEXT);
+            } elseif ($tab === 'dosen') {
+                $sheet->getStyle("B2:B{$rowCount}")->getNumberFormat()->setFormatCode(NumberFormat::FORMAT_TEXT);
+                $sheet->getStyle("E2:E{$rowCount}")->getNumberFormat()->setFormatCode(NumberFormat::FORMAT_TEXT);
+            }
+        }
+
+        foreach ($headers as $i => $h) {
+            $colLetter = Coordinate::stringFromColumnIndex($i + 1);
+            $sheet->getColumnDimension($colLetter)->setAutoSize(true);
+        }
+
+        $filename = 'data-' . $tab . '-' . date('Y-m-d') . '.xlsx';
+
+        return [new Xlsx($book), $filename];
     }
 }

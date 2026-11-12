@@ -17,6 +17,7 @@
 @section('content')
 
 <x-tab-actions :tabs="$tabs" :active="$tab" route="data-akademik.index" param="tab"
+    :export-url="route('data-akademik.export', array_merge(request()->query(), ['tab' => $tab]))"
     :import="$bisaImport" :add-label="$sembunyiTambah ? null : 'Tambah ' . $label" add-onclick="openAkademikModal('create')" />
 
 @if($bisaImport)
@@ -32,21 +33,21 @@
         <div class="col-12 col-md-6">
             <div class="card-modern p-4 h-100">
                 <div class="d-flex align-items-center gap-3 mb-3">
-                    <div style="width:40px;height:40px;border-radius:6px;background:var(--bg-subtle);color:var(--primary);border:1px solid rgba(47,93,138,.18);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                        <i class="bi bi-calendar2 fs-5" aria-hidden="true"></i>
+                    <div style="width:40px;height:40px;border-radius:6px;background:var(--accent-soft);color:var(--accent);border:1px solid rgba(47,93,138,.18);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                        <i class="bi bi-calendar2 fs-5"></i>
                     </div>
                     <div>
                         <div class="fw-bold" style="font-size:1.1rem;">Semester {{ $s['label'] }}</div>
-                        <div style="font-size:var(--fs-base);color:var(--text-muted);">Nilai tetap sistem</div>
+                        <div style="font-size:.8rem;color:var(--text-muted);">Nilai tetap sistem</div>
                     </div>
                 </div>
                 <div class="d-flex align-items-center justify-content-between py-2" style="border-top:1px solid var(--border);">
-                    <span style="font-size:var(--fs-base);">Jadwal perkuliahan</span>
-                    <span class="badge-status badge-tab" style="font-size:var(--fs-base);">{{ $s['jadwal'] }}</span>
+                    <span style="font-size:.85rem;">Jadwal perkuliahan</span>
+                    <span class="badge-status badge-tab" style="font-size:.8rem;">{{ $s['jadwal'] }}</span>
                 </div>
                 <div class="d-flex align-items-center justify-content-between py-2" style="border-top:1px solid var(--border);">
-                    <span style="font-size:var(--fs-base);">Mata kuliah</span>
-                    <span class="badge-status badge-tab" style="font-size:var(--fs-base);">{{ $s['mata_kuliah'] }}</span>
+                    <span style="font-size:.85rem;">Mata kuliah</span>
+                    <span class="badge-status badge-tab" style="font-size:.8rem;">{{ $s['mata_kuliah'] }}</span>
                 </div>
             </div>
         </div>
@@ -55,8 +56,8 @@
 
     <div class="card-modern p-4">
         <div class="d-flex gap-3">
-            <i class="bi bi-info-circle-fill fs-5" aria-hidden="true" style="color:var(--primary);"></i>
-            <div style="font-size:var(--fs-base);color:var(--text-muted);">
+            <i class="bi bi-info-circle-fill fs-5" style="color:var(--accent);"></i>
+            <div style="font-size:.85rem;color:var(--text-muted);">
                 Semester hanya bernilai <strong>Ganjil</strong> atau <strong>Genap</strong> dan ditetapkan oleh sistem,
                 sehingga tidak dapat ditambah atau diubah. Nilai ini dipakai pada setiap data Jadwal Perkuliahan
                 bersama tahun akademik (contoh: 2026/2027).
@@ -73,7 +74,7 @@
         <div class="col-12 col-lg-6">
             <label class="form-label" for="search">Pencarian</label>
             <div class="input-group">
-                <span class="input-group-text bg-white" style="border-color:var(--border);"><i class="bi bi-search" aria-hidden="true"></i></span>
+                <span class="input-group-text bg-white" style="border-color:var(--border-color);"><i class="bi bi-search"></i></span>
                 <input type="text" id="search" name="search" value="{{ $search }}" maxlength="100" class="form-control"
                        placeholder="Cari {{ strtolower($label) }}...">
             </div>
@@ -86,7 +87,7 @@
         </div>
         <div class="col-6 col-lg-4 d-flex gap-2">
             <button type="submit" class="btn btn-primary flex-grow-1">Terapkan</button>
-            <a href="{{ route('data-akademik.index', ['tab' => $tab]) }}" class="btn btn-outline-silab" title="Reset"><i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i></a>
+            <a href="{{ route('data-akademik.index', ['tab' => $tab]) }}" class="btn btn-outline-silab" title="Reset"><i class="bi bi-arrow-counterclockwise"></i></a>
         </div>
     </div>
 </form>
@@ -94,27 +95,26 @@
 <div class="card-modern overflow-hidden">
     <div class="table-responsive">
         <table class="table table-silab mb-0">
-<caption class="visually-hidden">{{ trim($__env->yieldContent('page-title')) }}</caption>
             <thead>
                 <tr>
-                    <th scope="col" class="ps-4" style="width:56px;">No</th>
+                    <th class="ps-4" style="width:56px;">No</th>
                     @if($tab === 'mata-kuliah')
-                        <th scope="col" style="width:130px;">Kode</th>
-                        <th scope="col">Mata Kuliah</th>
-                        <th scope="col" style="width:80px;">SKS</th>
-                        <th scope="col" style="width:120px;">Semester</th>
-                        @if($pilihProdiMk)<th scope="col">Prodi</th>@endif
+                        <th style="width:130px;">Kode</th>
+                        <th>Mata Kuliah</th>
+                        <th style="width:80px;">SKS</th>
+                        <th style="width:120px;">Semester</th>
+                        @if($pilihProdiMk)<th>Prodi</th>@endif
                     @elseif($tab === 'kelas')
-                        <th scope="col" style="width:140px;">Kelas</th>
-                        <th scope="col">Prodi</th>
+                        <th style="width:140px;">Kelas</th>
+                        <th>Prodi</th>
                     @else
-                        <th scope="col" style="width:150px;">NUPTK/NIDN</th>
-                        <th scope="col">Nama Dosen</th>
-                        <th scope="col">Prodi</th>
-                        <th scope="col" style="width:150px;">No. Telepon</th>
-                        <th scope="col" style="width:100px;">Status</th>
+                        <th style="width:150px;">NUPTK/NIDN</th>
+                        <th>Nama Dosen</th>
+                        <th>Prodi</th>
+                        <th style="width:150px;">No. Telepon</th>
+                        <th style="width:100px;">Status</th>
                     @endif
-                    @unless($isDosen)<th scope="col" class="text-end pe-4">Aksi</th>@endunless
+                    @unless($isDosen)<th class="text-end pe-4">Aksi</th>@endunless
                 </tr>
             </thead>
             <tbody>
@@ -129,7 +129,7 @@
                 <tr>
                     <td class="ps-4 text-muted">{{ $data->firstItem() + $loop->index }}</td>
                     @if($tab === 'mata-kuliah')
-                        <td><span class="badge-status badge-tab" style="font-size:var(--fs-base);">{{ $item->kode_mk }}</span></td>
+                        <td><span class="badge-status badge-tab" style="font-size:.8rem;">{{ $item->kode_mk }}</span></td>
                         <td>
                             <span class="fw-semibold">{{ $item->nama_mk }}</span>
                         </td>
@@ -140,7 +140,7 @@
                         <td><span class="fw-semibold">{{ $item->nama_kelas }}</span></td>
                         <td>{{ $item->nama_prodi ?? '—' }}</td>
                     @else
-                        <td><span class="badge-status badge-tab" style="font-size:var(--fs-base);">{{ $item->nuptk_nidn }}</span></td>
+                        <td><span class="badge-status badge-tab" style="font-size:.8rem;">{{ $item->nuptk_nidn }}</span></td>
                         <td>
                             <span class="fw-semibold">{{ $item->nama }}</span>
                         </td>
@@ -148,9 +148,9 @@
                         <td>{{ $item->no_whatsapp ?? '—' }}</td>
                         <td>
                             @if(($item->status ?? 'aktif') === 'nonaktif')
-                                <span class="badge-status badge-status-bad" style="font-size:var(--fs-base);">Nonaktif</span>
+                                <span class="badge-status badge-status-bad" style="font-size:.8rem;">Nonaktif</span>
                             @else
-                                <span class="badge-status badge-tab" style="font-size:var(--fs-base);">Aktif</span>
+                                <span class="badge-status badge-tab" style="font-size:.8rem;">Aktif</span>
                             @endif
                         </td>
                     @endif
@@ -160,11 +160,11 @@
                             <button type="button" class="btn btn-edit d-flex align-items-center gap-1"
                                     data-id="{{ $itemKey }}"
                                     data-item="{{ json_encode($itemData) }}"
-                                    onclick="openAkademikModal('edit', this)"><i class="bi bi-pencil" aria-hidden="true"></i> Edit</button>
+                                    onclick="openAkademikModal('edit', this)"><i class="bi bi-pencil"></i> Edit</button>
                             <form action="{{ route('data-akademik.destroy', ['tab' => $tab, 'id' => $itemKey] + $listQuery) }}" method="POST"
                                   data-konfirmasi="Hapus {{ strtolower($label) }} &quot;{{ $itemName }}&quot;?">
                                 @csrf @method('DELETE')
-                                <button type="submit" class="btn btn-del d-flex align-items-center gap-1"><i class="bi bi-trash" aria-hidden="true"></i> Hapus</button>
+                                <button type="submit" class="btn btn-del d-flex align-items-center gap-1"><i class="bi bi-trash"></i> Hapus</button>
                             </form>
                         </div>
                     </td>
@@ -172,7 +172,7 @@
                 </tr>
             @empty
                 <tr><td colspan="7" class="text-center py-5" style="color:var(--text-muted);">
-                    <i class="bi bi-inbox fs-1 d-block mb-2" aria-hidden="true" style="color:#c3cbdb;"></i>
+                    <i class="bi bi-inbox fs-1 d-block mb-2" style="color:#c3cbdb;"></i>
                     {{ $search !== '' ? 'Tidak ada ' . strtolower($label) . ' yang cocok dengan “' . $search . '”.' : 'Belum ada data ' . strtolower($label) . '.' }}
                 </td></tr>
             @endforelse
@@ -186,7 +186,7 @@
 </div>
 
 {{-- Modal Mata Kuliah --}}
-<div class="modal fade" id="mkModal" aria-labelledby="mkModalTitle" tabindex="-1" aria-hidden="true">
+<div class="modal fade" id="mkModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <form method="POST" id="mkForm" class="modal-content" autocomplete="off"
               data-store="{{ route('data-akademik.store', ['tab' => 'mata-kuliah']) }}"
@@ -195,7 +195,7 @@
             @csrf
             <input type="hidden" name="_method" id="mkMethod" value="PUT" disabled>
             <div class="modal-header">
-                <h5 class="modal-title fw-bold" id="mkModalTitle" style="font-size:var(--fs-md);">Tambah Mata Kuliah</h5>
+                <h5 class="modal-title fw-bold" id="mkModalTitle" style="font-size:1rem;">Tambah Mata Kuliah</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
             </div>
             <div class="modal-body p-4">
@@ -249,7 +249,7 @@
 </div>
 
 {{-- Modal Kelas --}}
-<div class="modal fade" id="kelasModal" aria-labelledby="kelasModalTitle" tabindex="-1" aria-hidden="true">
+<div class="modal fade" id="kelasModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <form method="POST" id="kelasForm" class="modal-content" autocomplete="off"
               data-store="{{ route('data-akademik.store', ['tab' => 'kelas']) }}"
@@ -258,7 +258,7 @@
             @csrf
             <input type="hidden" name="_method" id="kelasMethod" value="PUT" disabled>
             <div class="modal-header">
-                <h5 class="modal-title fw-bold" id="kelasModalTitle" style="font-size:var(--fs-md);">Tambah Kelas</h5>
+                <h5 class="modal-title fw-bold" id="kelasModalTitle" style="font-size:1rem;">Tambah Kelas</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
             </div>
             <div class="modal-body p-4">

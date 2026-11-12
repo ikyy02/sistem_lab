@@ -129,6 +129,9 @@ class PeminjamanService
         $p = DB::transaction(function () use ($pengaju, $jenis, $emailDosen, $sekarang, $pinjam, $kembali, $data, $barang, $ruangan) {
             // Kunci baris akun pengaju: dua pengajuan bersamaan dari akun yang sama diproses bergantian.
             Akun::whereKey($pengaju->email)->lockForUpdate()->first();
+
+            // Aturan 1 akun 1 peminjaman aktif per hari. Satu peminjaman boleh berisi
+            // ruangan, alat, dan bahan sekaligus, jadi cek-nya cukup satu kali (bukan per tipe).
             if (Peminjaman::aktifMilik($pengaju->email)->exists()) {
                 $this->gagal(['status' => 'Anda masih memiliki peminjaman yang berjalan (status Menunggu Persetujuan atau Disetujui). Selesaikan atau batalkan peminjaman tersebut sebelum mengajukan yang baru.']);
             }
@@ -313,29 +316,13 @@ class PeminjamanService
     /** True bila ada Alat pada transaksi yang belum seluruhnya dikembalikan. */
     public function alatBelumKembali(Peminjaman $p): bool
     {
-        $sudah = $this->jumlahDikembalikan($p->id_peminjaman);
-
         return DB::table('peminjaman_details as d')
             ->join('alat_bahans as k', 'k.id_katalog', '=', 'd.id_katalog')
             ->where('d.id_peminjaman', $p->id_peminjaman)->where('k.jenis', 'alat')
-            ->get(['d.id_detail', 'd.jumlah'])
-            ->contains(fn ($d) => $d->jumlah > (int) ($sudah[$d->id_detail] ?? 0));
-    }
-
-    /**
-     * Total jumlah yang sudah dikembalikan per detail peminjaman.
-     *
-     * @param  int|iterable<int>  $idPeminjaman
-     * @return \Illuminate\Support\Collection<int,int|string> id_detail => total
-     */
-    public function jumlahDikembalikan(mixed $idPeminjaman)
-    {
-        return DB::table('pengembalian_details as pd')
-            ->join('pengembalians as pg', 'pg.id_pengembalian', '=', 'pd.id_pengembalian')
-            ->whereIn('pg.id_peminjaman', is_iterable($idPeminjaman) ? $idPeminjaman : [$idPeminjaman])
-            ->groupBy('pd.id_detail_peminjaman')
-            ->selectRaw('pd.id_detail_peminjaman as id_detail, SUM(pd.jumlah_dikembalikan) as total')
-            ->pluck('total', 'id_detail');
+            ->whereRaw('d.jumlah > COALESCE((SELECT SUM(pd.jumlah_dikembalikan) FROM pengembalian_details pd
+                        JOIN pengembalians pg ON pg.id_pengembalian = pd.id_pengembalian
+                        WHERE pd.id_detail_peminjaman = d.id_detail AND pg.id_peminjaman = d.id_peminjaman), 0)')
+            ->exists();
     }
 
     /**
@@ -404,11 +391,6 @@ class PeminjamanService
                 $this->gagal(['status' => $pesan]);
             }
             $p->update(['status' => 'selesai']);
-            // Lepas sisa jam ruangan yang sedang berjalan supaya pengajuan lain bisa memakainya.
-            $sekarang = now();
-            PeminjamanRuangan::where('id_peminjaman', $p->id_peminjaman)
-                ->where('tanggal_mulai', '<', $sekarang)->where('tanggal_selesai', '>', $sekarang)
-                ->update(['tanggal_selesai' => $sekarang]);
 
             return $p->refresh();
         });
@@ -471,7 +453,12 @@ class PeminjamanService
             $details = PeminjamanDetail::where('id_peminjaman', $p->id_peminjaman)->orderBy('id_detail')->lockForUpdate()->get()->keyBy('id_detail');
             $katalog = AlatBahan::whereIn('id_katalog', $details->pluck('id_katalog'))->orderBy('id_katalog')->lockForUpdate()->get()->keyBy('id_katalog');
             // Total yang sudah dikembalikan sebelumnya per detail, untuk mencegah pengembalian melebihi jumlah pinjam.
-            $sudah = $this->jumlahDikembalikan($p->id_peminjaman);
+            $sudah = DB::table('pengembalian_details as pd')
+                ->join('pengembalians as pg', 'pg.id_pengembalian', '=', 'pd.id_pengembalian')
+                ->where('pg.id_peminjaman', $p->id_peminjaman)
+                ->groupBy('pd.id_detail_peminjaman')
+                ->selectRaw('pd.id_detail_peminjaman as id, SUM(pd.jumlah_dikembalikan) as total')
+                ->pluck('total', 'id');
 
             $baru = [];       // akumulasi per detail dalam pengembalian ini (baris duplikat dijumlahkan)
             $tambahStok = []; // id_katalog => jumlah

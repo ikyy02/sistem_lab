@@ -30,11 +30,21 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', [AuthController::class, 'landing'])->name('landing');
 Route::get('login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('login', [AuthController::class, 'login'])->name('login.attempt');
+
 Route::post('logout', [AuthController::class, 'logout'])->name('logout');
 
 // Semua route di dalam grup ini wajib login (middleware silab.auth = SilabAuth)
 // dan wajib ganti password awal bila ditandai (silab.password = WajibGantiPassword).
 Route::middleware(['silab.auth', 'silab.password'])->group(function () {
+
+    // SOP & Panduan: halaman statis untuk semua role yang sudah login.
+    Route::get('sop', [\App\Http\Controllers\SopController::class, 'index'])->name('sop.index');
+
+    // Bantuan: FAQ aplikasi + kontak layanan laboratorium (semua role).
+    Route::get('bantuan', [\App\Http\Controllers\BantuanController::class, 'index'])->name('bantuan.index');
+
+    // Jadwal Praktikum (hanya-baca) untuk semua role.
+    Route::get('jadwal-praktikum', [\App\Http\Controllers\JadwalPraktikumController::class, 'index'])->name('jadwal-praktikum.index');
 
     // Beranda: dashboard ringkas sesuai role
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
@@ -58,6 +68,8 @@ Route::middleware(['silab.auth', 'silab.password'])->group(function () {
         // Data Akademik: Mata Kuliah, Kelas, Semester, dan Dosen (satu menu, empat tab)
         $tabAkademik = ['mata-kuliah', 'kelas', 'dosen'];
         Route::get('data-akademik', [DataAkademikController::class, 'index'])->name('data-akademik.index');
+        Route::get('data-akademik-export/{tab}', [DataAkademikController::class, 'export'])
+            ->whereIn('tab', array_merge($tabAkademik, ['semester']))->name('data-akademik.export');
         Route::get('data-akademik/{tab}/template', [DataAkademikController::class, 'template'])
             ->whereIn('tab', $tabAkademik)->name('data-akademik.template');
         Route::post('data-akademik/{tab}/import', [DataAkademikController::class, 'import'])
@@ -89,6 +101,7 @@ Route::middleware(['silab.auth', 'silab.password'])->group(function () {
         Route::get('peminjaman', [PeminjamanController::class, 'index'])->name('peminjaman.index');
         Route::post('peminjaman', [PeminjamanController::class, 'store'])->middleware('throttle:10,1')->name('peminjaman.store');
         Route::get('peminjaman/riwayat', [PeminjamanController::class, 'riwayat'])->name('peminjaman.riwayat');
+        Route::get('peminjaman/saya', [PeminjamanController::class, 'saya'])->name('peminjaman.saya');
     });
 
     // Detail transaksi: pemilik pengajuan, Dosen, dan Laboran/Admin (dicek ulang di controller)
@@ -132,7 +145,10 @@ Route::middleware(['silab.auth', 'silab.password'])->group(function () {
         // Pengadaan TPK (Sistem Pendukung Keputusan SAW)
         Route::get('pengadaan-tpk', [PengadaanTpkController::class, 'index'])->name('pengadaan-tpk.index');
         Route::get('pengadaan-tpk/cetak', [PengadaanTpkController::class, 'cetak'])->name('pengadaan-tpk.cetak');
+        Route::get('pengadaan-tpk/export-excel', [PengadaanTpkController::class, 'exportExcel'])->name('pengadaan-tpk.export-excel');
         Route::get('pengadaan-tpk/export-csv', [PengadaanTpkController::class, 'exportCsv'])->name('pengadaan-tpk.export-csv');
+        Route::get('pengadaan-tpk/template', [PengadaanTpkController::class, 'template'])->name('pengadaan-tpk.template');
+        Route::post('pengadaan-tpk/import', [PengadaanTpkController::class, 'importExcel'])->name('pengadaan-tpk.import');
 
         // Kelola Data User (satu menu, 4 kategori)
         Route::get('kelola-user', [UserManagementController::class, 'index'])->name('kelola-user.index');

@@ -158,6 +158,51 @@ class DataAkademikController extends Controller
             : $back->with('import_report', $result);
     }
 
+    /**
+     * Export data akademik ke format Excel (.xlsx).
+     * Mendukung tab mata-kuliah, kelas, semester, dan dosen (sesuai hak akses role).
+     */
+    public function export(Request $request, string $tab, AkademikImportService $svc)
+    {
+        $tabs = $this->tabs();
+        abort_unless(array_key_exists($tab, $tabs), 404);
+
+        $search = mb_substr(trim((string) $request->query('search', '')), 0, 100);
+
+        if ($tab === 'mata-kuliah') {
+            $query = $this->dasar('mata-kuliah')->select('mata_kuliahs.*')
+                ->leftJoin('prodis', 'prodis.id_prodi', '=', 'mata_kuliahs.id_prodi')
+                ->addSelect('prodis.nama_prodi');
+            Cari::kolom($query, $search, ['mata_kuliahs.kode_mk', 'mata_kuliahs.nama_mk', 'prodis.nama_prodi']);
+            $items = $query->orderBy('mata_kuliahs.kode_mk')->orderBy('mata_kuliahs.id_mata_kuliah')->get();
+        } elseif ($tab === 'kelas') {
+            $query = $this->dasar('kelas')->select('kelas.*')
+                ->leftJoin('prodis', 'prodis.id_prodi', '=', 'kelas.id_prodi')
+                ->addSelect('prodis.nama_prodi');
+            Cari::kolom($query, $search, ['kelas.nama_kelas', 'prodis.nama_prodi']);
+            $items = $query->orderBy('kelas.nama_kelas')->orderBy('kelas.id_kelas')->get();
+        } elseif ($tab === 'dosen') {
+            $query = Dosen::query()->batasProdi(AuthService::batasProdi())->select('dosens.nuptk_nidn', 'dosens.nama', 'dosens.id_prodi', 'dosens.no_whatsapp', 'dosens.status')
+                ->leftJoin('prodis', 'prodis.id_prodi', '=', 'dosens.id_prodi')
+                ->addSelect('prodis.nama_prodi');
+            Cari::kolom($query, $search, ['dosens.nuptk_nidn', 'dosens.nama', 'dosens.no_whatsapp', 'prodis.nama_prodi']);
+            $items = $query->orderBy('dosens.nama')->orderBy('dosens.nuptk_nidn')->get();
+        } elseif ($tab === 'semester') {
+            $items = [
+                ['label' => 'Ganjil', 'jadwal' => Jadwal::where('semester', 'ganjil')->count(), 'mata_kuliah' => MataKuliah::where('semester', 'ganjil')->count()],
+                ['label' => 'Genap', 'jadwal' => Jadwal::where('semester', 'genap')->count(), 'mata_kuliah' => MataKuliah::where('semester', 'genap')->count()],
+            ];
+        } else {
+            abort(404);
+        }
+
+        [$writer, $name] = $svc->export($tab, $items);
+
+        return response()->streamDownload(fn () => $writer->save('php://output'), $name, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ]);
+    }
+
     /** Query dasar per tab: Kelas dan Mata Kuliah dibatasi ke prodi Staf Prodi (404 untuk prodi lain); Laboran tanpa batas. */
     private function dasar(string $tab)
     {

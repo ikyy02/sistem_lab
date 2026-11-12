@@ -136,8 +136,8 @@ class SatuPengajuanAktifTest extends TestCase
         $p = $this->ajukan($m->email);
         $sebagai = $this->withSession(['silab_user' => ['role' => 'mahasiswa', 'key' => (string) $m->getKey(), 'nama' => $m->nama, 'email' => $m->email]]);
 
-        $sebagai->get(route('peminjaman.index'))->assertOk()
-            ->assertSee('Anda masih memiliki peminjaman yang berjalan')
+        $sebagai->get(route('peminjaman.index', ['tipe' => 'barang']))->assertOk()
+            ->assertSee('Anda masih memiliki peminjaman')
             ->assertSee(route('peminjaman.show', $p->id_peminjaman), false)
             ->assertSee('<fieldset disabled', false);
         $sebagai->post(route('peminjaman.store'), [

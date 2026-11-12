@@ -11,9 +11,9 @@
         if ($role === \App\Support\Role::DOSEN || $role === \App\Support\Role::LABORAN) {
             $badgePersetujuan = \App\Models\Peminjaman::where('status', 'menunggu')->count();
         }
-        if ($role === \App\Support\Role::MAHASISWA) {
+        if ($role === \App\Support\Role::DOSEN) {
             $badgePeminjamanSaya = \App\Models\Peminjaman::where('email_peminjam', $me['email'] ?? '')
-                ->whereIn('status', ['menunggu', 'disetujui'])->count();
+                ->where('status', 'menunggu')->count();
         }
     } catch (\Throwable $e) {
         // Fallback gracefully if database table is unavailable
@@ -22,46 +22,32 @@
     // Single menu configuration array filtered by role
     $menuConfig = [
         \App\Support\Role::MAHASISWA => [
-            'Utama' => [
+            '' => [
                 ['label' => 'Dashboard', 'icon' => 'bi-speedometer2', 'route' => 'dashboard'],
-                ['label' => 'Katalog Lab', 'icon' => 'bi-collection', 'route' => 'katalog'],
-            ],
-            'Peminjaman' => [
-                ['label' => 'Peminjaman', 'icon' => 'bi-card-checklist', 'route' => 'peminjaman.index', 'badge' => $badgePeminjamanSaya],
-                ['label' => 'Riwayat', 'icon' => 'bi-clock-history', 'route' => 'peminjaman.riwayat'],
-            ],
-            'Informasi' => [
-                ['label' => 'Jadwal Praktikum', 'icon' => 'bi-calendar3', 'url' => url('/#jadwal'), 'external' => true],
-                ['label' => 'SOP & Panduan', 'icon' => 'bi-file-earmark-text', 'url' => url('/#sop'), 'external' => true],
+                ['label' => 'Katalog & Ajukan', 'icon' => 'bi-collection', 'route' => 'peminjaman.index'],
+                ['label' => 'Riwayat Peminjaman', 'icon' => 'bi-clock-history', 'route' => 'peminjaman.riwayat'],
+                ['label' => 'Jadwal & SOP', 'icon' => 'bi-file-earmark-text', 'route' => 'sop.index'],
                 ['label' => 'Notifikasi', 'icon' => 'bi-bell', 'route' => 'notifikasi.index'],
-            ],
-            'Akun' => [
                 ['label' => 'Profil', 'icon' => 'bi-person', 'route' => 'profil.index'],
-                ['label' => 'Bantuan', 'icon' => 'bi-question-circle', 'url' => url('/#faq'), 'external' => true],
             ],
         ],
         \App\Support\Role::DOSEN => [
-            'Utama' => [
+            'Menu Utama' => [
                 ['label' => 'Dashboard', 'icon' => 'bi-speedometer2', 'route' => 'dashboard'],
-                ['label' => 'Katalog Lab', 'icon' => 'bi-collection', 'route' => 'katalog'],
-            ],
-            'Peminjaman' => [
-                ['label' => 'Peminjaman', 'icon' => 'bi-card-checklist', 'route' => 'peminjaman.index'],
+                ['label' => 'Peminjaman', 'icon' => 'bi-plus-circle', 'route' => 'peminjaman.index'],
+                ['label' => 'Peminjaman Saya', 'icon' => 'bi-card-checklist', 'route' => 'peminjaman.saya', 'badge' => $badgePeminjamanSaya],
+                ['label' => 'Riwayat Peminjaman', 'icon' => 'bi-clock-history', 'route' => 'peminjaman.riwayat'],
                 ['label' => 'Persetujuan', 'icon' => 'bi-clipboard-check', 'route' => 'pengajuan.index', 'badge' => $badgePersetujuan],
-                ['label' => 'Riwayat', 'icon' => 'bi-clock-history', 'route' => 'peminjaman.riwayat'],
-            ],
-            'Informasi' => [
-                ['label' => 'Jadwal Praktikum', 'icon' => 'bi-calendar3', 'url' => url('/#jadwal'), 'external' => true],
-            ],
-            'Akun' => [
+                ['label' => 'Jadwal Praktikum', 'icon' => 'bi-calendar3', 'route' => 'jadwal.index'],
+                ['label' => 'Katalog Lab', 'icon' => 'bi-collection', 'route' => 'katalog'],
                 ['label' => 'Profil', 'icon' => 'bi-person', 'route' => 'profil.index'],
             ],
         ],
         \App\Support\Role::LABORAN => [
             'Operasional' => [
                 ['label' => 'Dashboard', 'icon' => 'bi-speedometer2', 'route' => 'dashboard'],
-                ['label' => 'Persetujuan', 'icon' => 'bi-clipboard-check', 'route' => 'pengajuan.index', 'badge' => $badgePersetujuan],
-                ['label' => 'Pengembalian', 'icon' => 'bi-arrow-down-left-square', 'route' => 'pengembalian.index'],
+                ['label' => 'Persetujuan Peminjaman', 'icon' => 'bi-clipboard-check', 'route' => 'pengajuan.index', 'badge' => $badgePersetujuan],
+                ['label' => 'Kelola Peminjaman', 'icon' => 'bi-arrow-down-left-square', 'route' => 'pengembalian.index'],
                 ['label' => 'Pengadaan TPK', 'icon' => 'bi-calculator', 'route' => 'pengadaan-tpk.index'],
             ],
             'Data Master' => [
@@ -78,15 +64,11 @@
             ],
         ],
         \App\Support\Role::STAFF => [
-            'Utama' => [
+            'Menu Utama' => [
                 ['label' => 'Dashboard', 'icon' => 'bi-speedometer2', 'route' => 'dashboard'],
-                ['label' => 'Katalog Lab', 'icon' => 'bi-collection', 'route' => 'katalog'],
-            ],
-            'Akademik' => [
                 ['label' => 'Data Akademik', 'icon' => 'bi-mortarboard', 'route' => 'data-akademik.index'],
                 ['label' => 'Jadwal Perkuliahan', 'icon' => 'bi-calendar-week', 'route' => 'jadwal.index'],
-            ],
-            'Akun' => [
+                ['label' => 'Katalog', 'icon' => 'bi-collection', 'route' => 'katalog'],
                 ['label' => 'Profil', 'icon' => 'bi-person', 'route' => 'profil.index'],
             ],
         ],
@@ -105,13 +87,18 @@
                 <span class="sidebar-app-sub">Lab Komputer & Bisnis</span>
             </div>
         </a>
+        <button type="button" class="sidebar-collapse-toggle d-none d-lg-flex" onclick="toggleSidebarCollapse()" title="Perkecil / Perluas Sidebar" aria-label="Toggle Collapse Sidebar">
+            <i class="bi bi-chevron-left collapse-icon"></i>
+        </button>
     </div>
 
     {{-- Navigasi Menu Berdasarkan Konfigurasi Array --}}
     <nav class="sidebar-nav-container" aria-label="Navigasi Menu Utama">
         @foreach($currentRoleGroups as $groupLabel => $items)
             <div class="sidebar-group">
-                <div class="sidebar-group-title">{{ $groupLabel }}</div>
+                @if(!empty($groupLabel))
+                    <div class="sidebar-group-title" title="{{ $groupLabel }}">{{ $groupLabel }}</div>
+                @endif
                 <ul class="sidebar-menu-list">
                     @foreach($items as $item)
                         @php
@@ -125,10 +112,9 @@
                             }
                         @endphp
                         <li class="sidebar-menu-item">
-                            <a href="{{ $href }}" class="sidebar-link {{ $isActive ? 'is-active' : '' }}" data-label="{{ $item['label'] }}" @if($isActive) aria-current="page" @endif>
-                                <i class="bi {{ $item['icon'] }} sidebar-link-icon" aria-hidden="true"></i>
-                                <span class="sidebar-link-text">{{ $item['label'] }}@if(!empty($item['external']))<span class="visually-hidden-sr"> (membuka halaman beranda)</span>@endif</span>
-                                @if(!empty($item['external']))<i class="bi bi-box-arrow-up-right sidebar-link-ext" aria-hidden="true"></i>@endif
+                            <a href="{{ $href }}" class="sidebar-link {{ $isActive ? 'is-active' : '' }}" title="{{ $item['label'] }}">
+                                <i class="bi {{ $item['icon'] }} sidebar-link-icon"></i>
+                                <span class="sidebar-link-text">{{ $item['label'] }}</span>
                                 @if(!empty($item['badge']) && $item['badge'] > 0)
                                     <span class="sidebar-item-badge">{{ $item['badge'] > 99 ? '99+' : $item['badge'] }}</span>
                                 @endif
@@ -139,11 +125,4 @@
             </div>
         @endforeach
     </nav>
-
-    <div class="sidebar-foot">
-        <button type="button" class="sidebar-collapse-toggle d-none d-lg-flex" data-sidebar="collapse" data-label="Perkecil sidebar" aria-label="Perkecil sidebar" aria-controls="sidebar" aria-expanded="true">
-            <i class="bi bi-chevron-left collapse-icon" aria-hidden="true"></i>
-            <span class="sidebar-collapse-label">Perkecil</span>
-        </button>
-    </div>
 </aside>

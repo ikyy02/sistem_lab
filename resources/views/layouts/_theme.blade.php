@@ -24,6 +24,8 @@
         --primary-hover:  #1E293B;
         --primary-focus:  rgba(15, 23, 42, 0.15);
 
+        --font-sans:      'Inter', system-ui, -apple-system, sans-serif;
+
         --border:         #E2E8F0;
         --text-primary:   #0F172A;
         --text-secondary: #64748B;
@@ -294,7 +296,8 @@
         display: flex;
         align-items: center;
         gap: 12px;
-        padding: 9px 12px;
+        padding: 10px 14px;
+        min-height: 44px;
         border-radius: var(--radius-md);
         color: var(--text-secondary);
         text-decoration: none;

@@ -240,8 +240,9 @@ class KelolaHttpTest extends TestCase
     public function test_katalog_tampil_harga_per_satuan(): void
     {
         $this->katalog('bahan', 3, ['nama' => 'Kabel UTP', 'harga' => '491.80', 'id_satuan' => $this->satuan('meter')->id_satuan]);
+        // Harga tetap tampil di Kelola Katalog (laboran), tetapi tidak lagi di halaman Katalog publik.
         $this->admin()->get(route('kelola-katalog.index', ['kategori' => 'bahan']))->assertSee('491,80');
-        $this->admin()->get(route('katalog'))->assertSee('491,80')->assertSee('meter');
+        $this->admin()->get(route('katalog'))->assertSee('meter')->assertDontSee('491,80')->assertDontSee('Harga');
     }
 
     // ------------------------------------------------------------------ master

@@ -13,15 +13,15 @@
     </div>
     <div class="d-flex flex-wrap gap-2">
         @if($p->email_peminjam === $saya['email'])
-            <a href="{{ route('peminjaman.riwayat') }}" class="btn btn-outline-silab"><i class="bi bi-arrow-left me-1" aria-hidden="true"></i> Riwayat Saya</a>
+            <a href="{{ ($saya['role'] ?? '') === \App\Support\Role::MAHASISWA ? route('peminjaman.riwayat') : route('peminjaman.saya') }}" class="btn btn-outline-silab"><i class="bi bi-arrow-left me-1"></i> Riwayat Saya</a>
         @else
-            <a href="{{ url()->previous() }}" class="btn btn-outline-silab"><i class="bi bi-arrow-left me-1" aria-hidden="true"></i> Kembali</a>
+            <a href="{{ url()->previous() }}" class="btn btn-outline-silab"><i class="bi bi-arrow-left me-1"></i> Kembali</a>
         @endif
     </div>
 </div>
 
 @if($errors->any())
-    <div class="alert alert-danger mb-3" role="alert">
+    <div class="alert alert-danger mb-3">
         <ul class="mb-0 ps-3">
             @foreach($errors->all() as $pesan)<li>{{ $pesan }}</li>@endforeach
         </ul>
@@ -30,10 +30,10 @@
 
 {{-- Blok aksi muncul sesuai hak akses (flag dari PeminjamanController::show): proses (setujui/tolak). --}}
 @if($dapatMemproses)
-    <div class="card-modern p-4 mb-3" style="background:var(--warning-soft);border:1px solid rgba(168,116,26,.2)">
+    <div class="card-modern p-4 mb-3" style="background:var(--warning-bg);border:1px solid rgba(168,116,26,.2);border-left:3px solid var(--warning);">
         <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
-            <div style="font-size:var(--fs-base);color:var(--warning)">
-                <i class="bi bi-exclamation-circle me-1" aria-hidden="true"></i>
+            <div style="font-size:.85rem;color:var(--warning);">
+                <i class="bi bi-exclamation-circle me-1"></i>
                 Pengajuan ini <strong>menunggu persetujuan</strong>.
                 @if($p->menungguDosen() && (\App\Services\AuthService::user()['role'] ?? null) === 'dosen')
                     Jika Anda setujui, pengajuan diteruskan ke Laboran untuk keputusan akhir; stok belum berubah.
@@ -43,12 +43,12 @@
             </div>
             <div class="d-flex flex-wrap gap-2">
                 <button type="button" class="btn btn-del d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#tolakModal">
-                    <i class="bi bi-x-lg" aria-hidden="true"></i> Tolak
+                    <i class="bi bi-x-lg"></i> Tolak
                 </button>
                 <form action="{{ route('pengajuan.setujui', $p->id_peminjaman) }}" method="POST" class="d-inline"
                       data-konfirmasi="Setujui pengajuan peminjaman #{{ $p->id_peminjaman }}? {{ $p->menungguDosen() && (\App\Services\AuthService::user()['role'] ?? null) === 'dosen' ? 'Pengajuan akan diteruskan ke Laboran.' : 'Stok barang akan dipotong sesuai jumlah yang diajukan.' }}">
                     @csrf
-                    <button type="submit" class="btn btn-primary d-flex align-items-center gap-2"><i class="bi bi-check-lg" aria-hidden="true"></i> Setujui</button>
+                    <button type="submit" class="btn btn-primary d-flex align-items-center gap-2"><i class="bi bi-check-lg"></i> Setujui</button>
                 </form>
             </div>
         </div>
@@ -59,8 +59,8 @@
 @if($dapatKembalikan)
     <div class="card-modern p-4 mb-3">
         <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
-            <div style="font-size:var(--fs-base);color:var(--text-muted)">
-                <i class="bi bi-arrow-down-left-square me-1" aria-hidden="true"></i>
+            <div style="font-size:.85rem;color:var(--text-muted);">
+                <i class="bi bi-arrow-down-left-square me-1"></i>
                 Peminjaman aktif. Catat pengembalian barang untuk mengembalikan stok.
             </div>
         </div>
@@ -71,8 +71,8 @@
 @if($dapatSelesai)
     <div class="card-modern p-4 mb-3">
         <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
-            <div style="font-size:var(--fs-base);color:var(--text-muted)">
-                <i class="bi bi-check2-circle me-1" aria-hidden="true"></i>
+            <div style="font-size:.85rem;color:var(--text-muted);">
+                <i class="bi bi-check2-circle me-1"></i>
                 @if($hambatanSelesai)
                     {{ $hambatanSelesai }}
                 @else
@@ -86,7 +86,7 @@
             <form action="{{ route('peminjaman.selesai', $p->id_peminjaman) }}" method="POST" class="d-inline"
                   data-konfirmasi="Tandai peminjaman #{{ $p->id_peminjaman }} sebagai selesai?">
                 @csrf
-                <button type="submit" class="btn btn-primary d-flex align-items-center gap-2" @disabled($hambatanSelesai)><i class="bi bi-check2-circle" aria-hidden="true"></i> Selesai</button>
+                <button type="submit" class="btn btn-primary d-flex align-items-center gap-2" @disabled($hambatanSelesai)><i class="bi bi-check2-circle"></i> Selesai</button>
             </form>
         </div>
     </div>
@@ -96,8 +96,8 @@
 @if($dapatBatalkan)
     <div class="card-modern p-4 mb-3">
         <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
-            <div style="font-size:var(--fs-base);color:var(--text-muted)">
-                <i class="bi bi-calendar-x me-1" aria-hidden="true"></i>
+            <div style="font-size:.85rem;color:var(--text-muted);">
+                <i class="bi bi-calendar-x me-1"></i>
                 @if($p->status === 'menunggu')
                     Peminjaman ini belum diproses sehingga masih dapat dibatalkan.
                 @else
@@ -107,7 +107,7 @@
             <form action="{{ route('peminjaman.batal', $p->id_peminjaman) }}" method="POST" class="d-inline"
                   data-konfirmasi="Batalkan peminjaman #{{ $p->id_peminjaman }}? Tindakan ini tidak dapat dibatalkan.">
                 @csrf
-                <button type="submit" class="btn btn-del d-flex align-items-center gap-2"><i class="bi bi-x-lg" aria-hidden="true"></i> Batalkan</button>
+                <button type="submit" class="btn btn-del d-flex align-items-center gap-2"><i class="bi bi-x-lg"></i> Batalkan</button>
             </form>
         </div>
     </div>
@@ -117,17 +117,16 @@
     <div class="col-12 col-lg-6">
         <div class="card-modern p-4 h-100">
             <h3 class="h-card mb-3">Data Peminjam</h3>
-            <div class="table-responsive"><table class="table table-sm mb-0" style="font-size:var(--fs-base);word-break:break-word">
-<caption class="visually-hidden">{{ trim($__env->yieldContent('page-title')) }}</caption>
+            <div class="table-responsive"><table class="table table-sm mb-0" style="font-size:.85rem;word-break:break-word;">
                 <tbody>
-                    <tr><td style="width:170px;color:var(--text-muted)">Nama</td><td class="fw-semibold">{{ $p->nama_peminjam }}</td></tr>
-                    <tr><td style="color:var(--text-muted)">{{ $p->mahasiswaPeminjam ? 'NIM' : 'NIDN/ID' }}</td><td>{{ $p->identitas_peminjam }}</td></tr>
-                    <tr><td style="color:var(--text-muted)">Email</td><td>{{ $p->email_peminjam }}</td></tr>
-                    <tr><td style="color:var(--text-muted)">Jenis Peminjaman</td><td>{{ $p->label_jenis }}</td></tr>
+                    <tr><td style="width:170px;color:var(--text-muted);">Nama</td><td class="fw-semibold">{{ $p->nama_peminjam }}</td></tr>
+                    <tr><td style="color:var(--text-muted);">{{ $p->mahasiswaPeminjam ? 'NIM' : 'NIDN/ID' }}</td><td>{{ $p->identitas_peminjam }}</td></tr>
+                    <tr><td style="color:var(--text-muted);">Email</td><td>{{ $p->email_peminjam }}</td></tr>
+                    <tr><td style="color:var(--text-muted);">Jenis Peminjaman</td><td>{{ $p->label_jenis }}</td></tr>
                     @if($p->email_dosen)
-                        <tr><td style="color:var(--text-muted)">Dosen Penanggung Jawab</td><td>{{ $p->dosenPenanggung?->nama ?? $p->email_dosen }}</td></tr>
+                        <tr><td style="color:var(--text-muted);">Dosen Penanggung Jawab</td><td>{{ $p->dosenPenanggung?->nama ?? $p->email_dosen }}</td></tr>
                     @endif
-                    <tr><td style="color:var(--text-muted)">Keperluan</td><td>{{ $p->keterangan ?? '—' }}</td></tr>
+                    <tr><td style="color:var(--text-muted);">Keperluan</td><td>{{ $p->keterangan ?? '—' }}</td></tr>
                 </tbody>
             </table></div>
         </div>
@@ -136,21 +135,20 @@
     <div class="col-12 col-lg-6">
         <div class="card-modern p-4 h-100">
             <h3 class="h-card mb-3">Waktu & Proses</h3>
-            <div class="table-responsive"><table class="table table-sm mb-0" style="font-size:var(--fs-base);word-break:break-word">
-<caption class="visually-hidden">{{ trim($__env->yieldContent('page-title')) }}</caption>
+            <div class="table-responsive"><table class="table table-sm mb-0" style="font-size:.85rem;word-break:break-word;">
                 <tbody>
-                    <tr><td style="width:190px;color:var(--text-muted)">Waktu Pengajuan</td><td>{{ $p->tanggal_pengajuan?->format('d/m/Y H:i') }}</td></tr>
-                    <tr><td style="color:var(--text-muted)">Tanggal Peminjaman</td><td>{{ $p->tanggal_peminjaman?->format('d/m/Y H:i') }}</td></tr>
-                    <tr><td style="color:var(--text-muted)">Batas Pengembalian</td><td>{{ $p->tanggal_rencana_kembali?->format('d/m/Y H:i') }}</td></tr>
+                    <tr><td style="width:190px;color:var(--text-muted);">Waktu Pengajuan</td><td>{{ $p->tanggal_pengajuan?->format('d/m/Y H:i') }}</td></tr>
+                    <tr><td style="color:var(--text-muted);">Tanggal Peminjaman</td><td>{{ $p->tanggal_peminjaman?->format('d/m/Y H:i') }}</td></tr>
+                    <tr><td style="color:var(--text-muted);">Batas Pengembalian</td><td>{{ $p->tanggal_rencana_kembali?->format('d/m/Y H:i') }}</td></tr>
                     <tr>
-                        <td style="color:var(--text-muted)">Diproses Oleh</td>
+                        <td style="color:var(--text-muted);">Diproses Oleh</td>
                         <td>{{ $p->email_pemroses ? ($p->pemroses?->role === 'dosen' ? 'Dosen' : 'Laboran/Admin') . ' · ' . $p->email_pemroses : '—' }}</td>
                     </tr>
-                    <tr><td style="color:var(--text-muted)">Waktu Persetujuan</td><td>{{ $p->tanggal_persetujuan?->format('d/m/Y H:i') ?? '—' }}</td></tr>
+                    <tr><td style="color:var(--text-muted);">Waktu Persetujuan</td><td>{{ $p->tanggal_persetujuan?->format('d/m/Y H:i') ?? '—' }}</td></tr>
                     @if($p->status === 'ditolak')
                         <tr>
-                            <td style="color:var(--text-muted)">Alasan Ditolak</td>
-                            <td style="color:var(--danger-text)">{{ $p->alasan_ditolak ?? '—' }}</td>
+                            <td style="color:var(--text-muted);">Alasan Ditolak</td>
+                            <td style="color:#b42318;">{{ $p->alasan_ditolak ?? '—' }}</td>
                         </tr>
                     @endif
                 </tbody>
@@ -162,22 +160,21 @@
 <div class="card-modern overflow-hidden mt-3">
     <div class="p-4 pb-2">
         <h3 class="h-card mb-1">Barang yang Dipinjam</h3>
-        <p class="mb-0" style="font-size:var(--fs-base);color:var(--text-muted)">Jumlah yang sudah dikembalikan dicatat melalui menu Pengembalian.</p>
+        <p class="mb-0" style="font-size:.8rem;color:var(--text-muted);">Jumlah yang sudah dikembalikan dicatat melalui menu Pengembalian.</p>
     </div>
     @if($p->details->isEmpty())
-        <div class="text-center py-4" style="color:var(--text-muted);font-size:var(--fs-base);border-top:1px solid var(--border)">Tidak ada barang pada peminjaman ini.</div>
+        <div class="text-center py-4" style="color:var(--text-muted);font-size:.85rem;border-top:1px solid var(--border-color);">Tidak ada barang pada peminjaman ini.</div>
     @else
         <div class="table-responsive">
             <table class="table table-silab mb-0">
-<caption class="visually-hidden">{{ trim($__env->yieldContent('page-title')) }}</caption>
                 <thead>
                     <tr>
-                        <th scope="col" class="ps-4">Barang</th>
-                        <th scope="col" style="width:90px">Jenis</th>
-                        <th scope="col" style="width:90px">Stok Saat Ini</th>
-                        <th scope="col" style="width:110px">Dipinjam</th>
-                        <th scope="col" style="width:130px">Dikembalikan</th>
-                        <th scope="col" class="pe-4" style="width:90px">Sisa</th>
+                        <th class="ps-4">Barang</th>
+                        <th style="width:90px;">Jenis</th>
+                        <th style="width:90px;">Stok Saat Ini</th>
+                        <th style="width:110px;">Dipinjam</th>
+                        <th style="width:130px;">Dikembalikan</th>
+                        <th class="pe-4" style="width:90px;">Sisa</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -208,13 +205,12 @@
     </div>
     <div class="table-responsive">
         <table class="table table-silab mb-0">
-<caption class="visually-hidden">{{ trim($__env->yieldContent('page-title')) }}</caption>
             <thead>
                 <tr>
-                    <th scope="col" class="ps-4">Ruangan</th>
-                    <th scope="col" style="width:160px">Mulai</th>
-                    <th scope="col" style="width:160px">Selesai</th>
-                    <th scope="col" class="pe-4">Keterangan</th>
+                    <th class="ps-4">Ruangan</th>
+                    <th style="width:160px;">Mulai</th>
+                    <th style="width:160px;">Selesai</th>
+                    <th class="pe-4">Keterangan</th>
                 </tr>
             </thead>
             <tbody>
@@ -235,20 +231,19 @@
 <div class="card-modern overflow-hidden mt-3">
     <div class="p-4 pb-2">
         <h3 class="h-card mb-1">Riwayat Pengembalian</h3>
-        <p class="mb-0" style="font-size:var(--fs-base);color:var(--text-muted)">Setiap pencatatan pengembalian beserta penerimanya.</p>
+        <p class="mb-0" style="font-size:.8rem;color:var(--text-muted);">Setiap pencatatan pengembalian beserta penerimanya.</p>
     </div>
     @if($p->pengembalians->isEmpty())
-        <div class="text-center py-4" style="color:var(--text-muted);font-size:var(--fs-base);border-top:1px solid var(--border)">Belum ada pengembalian yang dicatat.</div>
+        <div class="text-center py-4" style="color:var(--text-muted);font-size:.85rem;border-top:1px solid var(--border-color);">Belum ada pengembalian yang dicatat.</div>
     @else
         <div class="table-responsive">
             <table class="table table-silab mb-0">
-<caption class="visually-hidden">{{ trim($__env->yieldContent('page-title')) }}</caption>
                 <thead>
                     <tr>
-                        <th scope="col" class="ps-4" style="width:160px">Tanggal Aktual</th>
-                        <th scope="col" style="width:220px">Penerima</th>
-                        <th scope="col">Barang</th>
-                        <th scope="col" class="pe-4">Keterangan</th>
+                        <th class="ps-4" style="width:160px;">Tanggal Aktual</th>
+                        <th style="width:220px;">Penerima</th>
+                        <th>Barang</th>
+                        <th class="pe-4">Keterangan</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -258,16 +253,16 @@
                         <td>{{ $pg->email_penerima }}</td>
                         <td>
                             @foreach($pg->details as $det)
-                                <div style="font-size:var(--fs-base)">
+                                <div style="font-size:.82rem;">
                                     {{ $det->detailPeminjaman?->katalog?->nama ?? 'Barang' }}
                                     <strong>{{ $det->jumlah_dikembalikan }}</strong>
                                     @if($det->kondisi)
-                                        <span class="badge-status" style="background:{{ $det->kondisi === 'baik' ? '#ecfdf3;color:var(--success-text)' : '#fef2f2;color:var(--danger-text)' }}">{{ $det->kondisi === 'baik' ? 'Baik' : 'Rusak' }}</span>
+                                        <span class="badge-status" style="background:{{ $det->kondisi === 'baik' ? '#ecfdf3;color:#146c43' : '#fef2f2;color:#b42318' }};">{{ $det->kondisi === 'baik' ? 'Baik' : 'Rusak' }}</span>
                                     @endif
                                 </div>
                             @endforeach
                         </td>
-                        <td class="pe-4" style="font-size:var(--fs-base)">{{ $pg->keterangan ?? '—' }}</td>
+                        <td class="pe-4" style="font-size:.82rem;">{{ $pg->keterangan ?? '—' }}</td>
                     </tr>
                 @endforeach
                 </tbody>
@@ -278,17 +273,17 @@
 
 {{-- Modal penolakan --}}
 @if($dapatMemproses)
-<div class="modal fade" id="tolakModal" aria-labelledby="tolakModal-judul" tabindex="-1" aria-hidden="true">
+<div class="modal fade" id="tolakModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <form action="{{ route('pengajuan.tolak', $p->id_peminjaman) }}" method="POST" class="modal-content"
               >
             @csrf
             <div class="modal-header">
-                <h5 id="tolakModal-judul" class="modal-title fw-semibold" style="font-size:var(--fs-md)">Tolak Pengajuan Peminjaman</h5>
+                <h5 class="modal-title fw-semibold" style="font-size:1rem;">Tolak Pengajuan Peminjaman</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
             </div>
             <div class="modal-body">
-                <p class="mb-3" style="font-size:var(--fs-base);color:var(--text-muted)">Pengajuan oleh <strong>{{ $p->nama_peminjam }}</strong> akan berstatus <strong>Ditolak</strong>. Stok barang tidak berubah.</p>
+                <p class="mb-3" style="font-size:.85rem;color:var(--text-muted);">Pengajuan oleh <strong>{{ $p->nama_peminjam }}</strong> akan berstatus <strong>Ditolak</strong>. Stok barang tidak berubah.</p>
                 <label class="form-label" for="alasan">Alasan Penolakan</label>
                 <textarea id="alasan" name="alasan" rows="3" maxlength="500" required
                           class="form-control @error('alasan') is-invalid @enderror"
@@ -297,7 +292,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-outline-silab" data-bs-dismiss="modal">Batal</button>
-                <button type="submit" class="btn btn-del d-flex align-items-center gap-2"><i class="bi bi-x-lg" aria-hidden="true"></i> Tolak Pengajuan</button>
+                <button type="submit" class="btn btn-del d-flex align-items-center gap-2"><i class="bi bi-x-lg"></i> Tolak Pengajuan</button>
             </div>
         </form>
     </div>

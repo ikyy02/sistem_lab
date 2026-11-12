@@ -28,6 +28,7 @@ class HakAksesSuperAdminTest extends TestCase
 
         return [
             'dashboard' => $semua, 'katalog' => $semua,
+            'sop.index' => $semua,
             'data-akademik.index' => ['laboran', 'staff_prodi'],
             'jadwal.index' => ['laboran', 'staff_prodi'],
             'jadwal.create' => ['laboran', 'staff_prodi'],
@@ -35,6 +36,7 @@ class HakAksesSuperAdminTest extends TestCase
             'pengajuan.index' => ['laboran', 'dosen'],
             'peminjaman.index' => ['dosen', 'mahasiswa'],
             'peminjaman.riwayat' => ['dosen', 'mahasiswa'],
+            'peminjaman.saya' => ['dosen', 'mahasiswa'],
             'pengembalian.index' => ['laboran'],
             'kelola-katalog.index' => ['laboran'],
             'kelola-user.index' => ['laboran'],

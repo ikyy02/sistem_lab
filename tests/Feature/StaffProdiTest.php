@@ -111,9 +111,9 @@ class StaffProdiTest extends TestCase
         $this->sebagai('laboran', $this->laboran())->get(route('katalog'))
             ->assertOk()->assertSee('Oscilloscope X1');
 
-        // Staf Prodi melihat data yang sama (sumber database yang sama)
+        // Staf Prodi melihat data yang sama (sumber database yang sama). Harga disembunyikan di katalog publik.
         $this->sebagaiStaff()->get(route('katalog'))
-            ->assertOk()->assertSee('Oscilloscope X1')->assertSee('1.500.000');
+            ->assertOk()->assertSee('Oscilloscope X1')->assertDontSee('1.500.000');
 
         // Laboran mengubah data -> Staf Prodi langsung melihat versi terbaru tanpa proses apapun
         $this->sebagai('laboran', $this->laboran())->put(
