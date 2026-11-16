@@ -21,6 +21,10 @@ Variabel environment:
 - `WA_PORT`: Port server (default 3001)
 - `WA_GATEWAY_TOKEN`: Token autentikasi untuk semua endpoint
 - `WA_MAX_PER_HARI`: Batas maksimal pesan per hari (default 40)
+- `WA_MAX_PER_JAM`: Batas maksimal pesan per jam (default 15) untuk mencegah lonjakan/burst
+- `WA_MIN_DELAY`: Jeda minimum antar-pesan dalam ms (default 4000)
+- `WA_MAX_DELAY`: Jeda maksimum antar-pesan dalam ms (default 9000)
+- `WA_RECIPIENT_COOLDOWN_SEC`: Cooldown anti-flood per nomor penerima dalam detik (default 300)
 
 ## Scan QR Code
 
@@ -84,13 +88,15 @@ Response error:
 - `429`: Batas harian tercapai
 - `503`: Gateway belum terkoneksi
 
-## Fitur
+## Fitur Anti-Spam & Anti-Ban
 
-- **Auto-reconnect**: Reconnect otomatis bila koneksi terputus (kecuali logout manual)
-- **Rate limiting**: Jeda acak 4-9 detik antar pesan, maksimal 40 pesan/hari
-- **Queue system**: Satu pesan per kali, diproses berurutan
-- **Validasi nomor**: Cek nomor terdaftar sebelum kirim
-- **Privacy**: Nomor di log disamarkan (4 digit tengah)
+- **Human Presence Emulation**: Simulasi kehadiran manusiawi dengan mengirim sinyal presence `composing` (mengetik) selama 1.2 - 2.5 detik sebelum pesan dikirim.
+- **Dynamic Jitter & Delay**: Jeda acak 4-9 detik (dapat diatur) antar pengiriman pesan untuk menghindari pola frekuensi konstan bot.
+- **Rate Limiting Bertingkat**: Pembatasan harian (default 40 pesan/hari) dan per jam (default 15 pesan/jam) untuk mencegah pengiriman serentak/burst.
+- **Recipient Cooldown**: Mencegah spam berulang ke nomor penerima yang sama dalam interval singkat (default 300 detik).
+- **Negative Cache Nomor**: Nomor yang tidak terdaftar di WhatsApp disimpan dalam cache agar tidak membebani pengecekan berulang ke server WhatsApp.
+- **Queue System**: Antrean pesan terurut (satu pesan per siklus).
+- **Privacy & Masking**: Nomor HP pada log disamarkan untuk privasi pengguna.
 
 ## Troubleshooting
 

@@ -67,6 +67,20 @@ class PesanPengingatWaTest extends TestCase
         $this->assertSame('baru saja', PesanPengingatWa::formatTerlambat($batas, $batas->addSeconds(45)));
     }
 
+    public function test_pesan_berisi_token_referensi_anti_spam(): void
+    {
+        $pesan = PesanPengingatWa::buat(
+            'Budi',
+            [['nama' => 'Mikroskop', 'jumlah' => 1]],
+            $this->batas(),
+            1,
+            $this->batas()->addDay(),
+            'Asia/Makassar',
+        );
+
+        $this->assertMatchesRegularExpression('/Ref:\s*#?[A-F0-9]{4,}/i', $pesan);
+    }
+
     private function batas(): CarbonImmutable
     {
         return CarbonImmutable::parse('2026-10-18 10:00:00', 'Asia/Makassar');

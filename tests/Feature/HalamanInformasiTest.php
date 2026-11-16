@@ -61,4 +61,21 @@ class HalamanInformasiTest extends TestCase
         $res->assertOk();
         $res->assertSee('Jadwal Praktikum', false);
     }
+
+    public function test_dosen_bisa_buka_jadwal_praktikum_dan_sop_lewat_sidebar(): void
+    {
+        $d = $this->dosen();
+        $sess = ['silab_user' => [
+            'role' => 'dosen', 'key' => (string) $d->getKey(), 'nama' => $d->nama, 'email' => $d->email,
+        ]];
+
+        $this->withSession($sess)->get(route('jadwal-praktikum.index'))->assertOk();
+        $this->withSession($sess)->get(route('sop.index'))->assertOk();
+
+        // Cek bahwa sidebar dosen memiliki link ke jadwal-praktikum dan sop yang benar, bukan jadwal staf
+        $dash = $this->withSession($sess)->get(route('dashboard'))->assertOk();
+        $dash->assertSee('href="' . route('jadwal-praktikum.index') . '"', false);
+        $dash->assertSee('href="' . route('sop.index') . '"', false);
+        $dash->assertDontSee('href="' . route('jadwal.index') . '"', false);
+    }
 }

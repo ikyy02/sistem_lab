@@ -20,6 +20,8 @@ final class PesanPengingatWa
         CarbonInterface $sekarang,
         string $timezone,
     ): string {
+        $idUnik = strtoupper(substr(md5($nama.$batas->getTimestamp().$sekarang->getTimestamp()), 0, 6));
+
         return implode("\n", [
             '*Pengingat Pengembalian – SIARKA*',
             '',
@@ -30,6 +32,8 @@ final class PesanPengingatWa
             'Barang: '.self::ringkasanBarang($barang),
             'Batas kembali: '.self::formatBatas($batas, $timezone),
             'Terlambat: '.self::formatTerlambat($batas, $sekarang),
+            '',
+            '_Pesan otomatis lab • Ref: #'.$idUnik.'_',
         ]);
     }
 

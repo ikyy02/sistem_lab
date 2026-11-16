@@ -320,9 +320,9 @@ class PeminjamanService
      * @param  iterable<int, int|string>  $idPeminjaman
      * @return \Illuminate\Support\Collection<int, int>
      */
-    public function jumlahDikembalikan(iterable $idPeminjaman): \Illuminate\Support\Collection
+    public function jumlahDikembalikan(mixed $idPeminjaman): \Illuminate\Support\Collection
     {
-        $ids = collect($idPeminjaman)->filter()->values();
+        $ids = collect(is_iterable($idPeminjaman) ? $idPeminjaman : [$idPeminjaman])->filter()->values();
         if ($ids->isEmpty()) {
             return collect();
         }
@@ -413,8 +413,9 @@ class PeminjamanService
                 $this->gagal(['status' => $pesan]);
             }
             $p->update(['status' => 'selesai']);
-            // Simpan waktu selesai aktual agar sisa waktu reservasi segera dilepas.
-            $p->ruangans()->update(['tanggal_selesai_aktual' => now()]);
+            // Simpan waktu selesai aktual agar sisa waktu reservasi segera dilepas supaya pengajuan lain bisa memakainya.
+            $sekarang = now();
+            $p->ruangans()->update(['tanggal_selesai_aktual' => $sekarang]);
 
             return $p->refresh();
         });

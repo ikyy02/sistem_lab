@@ -25,6 +25,15 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const logger = pino({ level: process.env.LOG_LEVEL || 'info' });
 
+// Tangani unhandled rejection / exception agar gateway tidak crash saat socket terputus/reconnect
+process.on('unhandledRejection', (reason) => {
+  logger.warn({ reason: reason?.message || reason }, 'Baileys Unhandled Rejection (diabaikan agar tetap online)');
+});
+
+process.on('uncaughtException', (err) => {
+  logger.warn({ err: err.message }, 'Baileys Uncaught Exception (diabaikan agar tetap online)');
+});
+
 const PORT = process.env.WA_PORT || 3001;
 const WA_GATEWAY_TOKEN = process.env.WA_GATEWAY_TOKEN;
 if (!WA_GATEWAY_TOKEN || WA_GATEWAY_TOKEN === 'default-token-change-me') {
@@ -32,6 +41,10 @@ if (!WA_GATEWAY_TOKEN || WA_GATEWAY_TOKEN === 'default-token-change-me') {
   process.exit(1);
 }
 const WA_MAX_PER_HARI = parseInt(process.env.WA_MAX_PER_HARI || '40', 10);
+const WA_MAX_PER_JAM = parseInt(process.env.WA_MAX_PER_JAM || '15', 10);
+const WA_MIN_DELAY = parseInt(process.env.WA_MIN_DELAY || '4000', 10);
+const WA_MAX_DELAY = parseInt(process.env.WA_MAX_DELAY || '9000', 10);
+const WA_RECIPIENT_COOLDOWN_SEC = parseInt(process.env.WA_RECIPIENT_COOLDOWN_SEC || '300', 10);
 
 let sock = null;
 let qrShown = false;
@@ -39,6 +52,11 @@ let currentQr = null;
 const messageQueue = [];
 let messageSentToday = 0;
 let lastResetDate = new Date().toDateString();
+
+let messageSentThisHour = 0;
+let lastResetHour = new Date().getHours();
+const lastSentPerRecipient = new Map();
+const invalidNumbersCache = new Set();
 
 const app = express();
 app.use(express.json());
@@ -89,16 +107,28 @@ const normalizePhoneNumber = (phone) => {
   return phone;
 };
 
-// Utility: reset counter harian
+// Utility: reset counter harian & jam
 const resetDailyCounter = () => {
   const today = new Date().toDateString();
   if (today !== lastResetDate) {
     messageSentToday = 0;
     lastResetDate = today;
+    lastSentPerRecipient.clear();
+    invalidNumbersCache.clear();
   }
 };
 
-// Process queue pesan dengan jeda random
+const resetHourlyCounter = () => {
+  const now = new Date();
+  const currentHour = now.getHours();
+  const currentDate = now.toDateString();
+  if (currentHour !== lastResetHour || currentDate !== lastResetDate) {
+    messageSentThisHour = 0;
+    lastResetHour = currentHour;
+  }
+};
+
+// Process queue pesan dengan simulasi perilaku manusiawi (human presence, typing, jeda acak)
 let sedangJalan = false;
 const processMessageQueue = async () => {
   if (sedangJalan) return; // tanpa ini setInterval menjalankan loop paralel dan jeda antar-pesan hilang
@@ -106,9 +136,15 @@ const processMessageQueue = async () => {
   try {
   while (messageQueue.length > 0 && sock?.user) {
     resetDailyCounter();
+    resetHourlyCounter();
     
     if (messageSentToday >= WA_MAX_PER_HARI) {
-      logger.warn('Daily limit reached');
+      logger.warn('Anti-Spam Filter: Batas harian tercapai (' + WA_MAX_PER_HARI + '/hari)');
+      break;
+    }
+
+    if (messageSentThisHour >= WA_MAX_PER_JAM) {
+      logger.warn('Anti-Spam Filter: Batas per jam tercapai (' + WA_MAX_PER_JAM + '/jam)');
       break;
     }
     
@@ -117,25 +153,53 @@ const processMessageQueue = async () => {
     try {
       const jid = to.includes('@') ? to : `${to}@s.whatsapp.net`;
       
-      // Cek nomor terdaftar
+      // 1. Cek cache nomor tidak terdaftar untuk kurangi query ke server WA
+      if (invalidNumbersCache.has(to)) {
+        logger.warn(`Anti-Spam Filter: Nomor ${maskPhone(to)} terdeteksi tidak terdaftar (cached)`);
+        reject({ status: 422, error: 'Number not registered' });
+        continue;
+      }
+
+      // Cek nomor terdaftar di WhatsApp
       const [result] = await sock.onWhatsApp(to);
       if (!result?.exists) {
-        logger.warn(`Number ${maskPhone(to)} not registered`);
+        invalidNumbersCache.add(to);
+        logger.warn(`Number ${maskPhone(to)} not registered on WhatsApp`);
         reject({ status: 422, error: 'Number not registered' });
         continue;
       }
       
+      // 2. Simulasi Human Emulation (Presence & Typing) agar tidak dicap bot spam
+      try {
+        await sock.presenceSubscribe(jid);
+        await sock.sendPresenceUpdate('composing', jid);
+
+        // Durasi mengetik wajar proporsional dengan panjang pesan (1.2 - 2.5 detik)
+        const typingDuration = Math.min(Math.max((message.length || 0) * 12, 1200), 2500);
+        await new Promise((r) => setTimeout(r, typingDuration));
+
+        await sock.sendPresenceUpdate('paused', jid);
+      } catch (presenceErr) {
+        // Abaikan error pada presence, lanjutkan kirim
+      }
+
       await sock.sendMessage(jid, { text: message });
       messageSentToday++;
-      logger.info(`Message sent to ${maskPhone(to)}`);
+      messageSentThisHour++;
+      lastSentPerRecipient.set(to, Date.now());
+
+      logger.info(`Message sent to ${maskPhone(to)} (Hari ini: ${messageSentToday}/${WA_MAX_PER_HARI}, Jam ini: ${messageSentThisHour}/${WA_MAX_PER_JAM})`);
       resolve({ success: true });
     } catch (err) {
       logger.error(`Failed to send to ${maskPhone(to)}: ${err.message}`);
       reject({ status: 500, error: err.message });
     }
     
-    // Jeda acak 4-9 detik sebelum pesan berikutnya
-    const delay = Math.random() * 5000 + 4000;
+    // Jeda acak (jitter) antar pesan (default 4-9 detik) untuk mencegah deteksi frekuensi konstan bot
+    const minDelay = Math.max(WA_MIN_DELAY, 2000);
+    const maxDelay = Math.max(WA_MAX_DELAY, minDelay + 1000);
+    const delay = Math.floor(Math.random() * (maxDelay - minDelay + 1)) + minDelay;
+    logger.debug(`Anti-Spam Delay: Menunggu ${(delay / 1000).toFixed(1)}s sebelum pesan berikutnya...`);
     await new Promise(resolve => setTimeout(resolve, delay));
   }
   } finally {
@@ -206,19 +270,43 @@ const initializeBaileys = async () => {
   }
 };
 
-// Endpoint: status
+// Endpoint: status dengan info anti-spam
 app.get('/status', (req, res) => {
+  resetDailyCounter();
+  resetHourlyCounter();
   const connected = sock?.user ? true : false;
   const nomor = sock?.user?.id?.split(':')[0] || null;
-  res.json({ connected, nomor });
+  res.json({
+    connected,
+    nomor,
+    anti_spam: {
+      sent_today: messageSentToday,
+      max_per_hari: WA_MAX_PER_HARI,
+      sent_this_hour: messageSentThisHour,
+      max_per_jam: WA_MAX_PER_JAM,
+      min_delay_ms: WA_MIN_DELAY,
+      max_delay_ms: WA_MAX_DELAY,
+      recipient_cooldown_sec: WA_RECIPIENT_COOLDOWN_SEC,
+      cached_invalid_numbers: invalidNumbersCache.size,
+      queue_length: messageQueue.length,
+    },
+  });
 });
 
-// Endpoint: send pesan
+// Endpoint: send pesan dengan validasi filter anti-spam
 app.post('/send', (req, res) => {
   const { to, message } = req.body;
   
   if (!to || !message) {
     return res.status(400).json({ error: 'Missing to or message' });
+  }
+
+  if (typeof message !== 'string' || message.trim().length === 0) {
+    return res.status(400).json({ error: 'Message cannot be empty' });
+  }
+
+  if (message.length > 2500) {
+    return res.status(400).json({ error: 'Message is too long (maximum 2500 characters)' });
   }
   
   if (!sock?.user) {
@@ -226,12 +314,33 @@ app.post('/send', (req, res) => {
   }
   
   resetDailyCounter();
+  resetHourlyCounter();
   
   if (messageSentToday >= WA_MAX_PER_HARI) {
     return res.status(429).json({ error: 'Daily limit exceeded' });
   }
+
+  if (messageSentThisHour >= WA_MAX_PER_JAM) {
+    return res.status(429).json({ error: 'Hourly limit exceeded. Anti-spam throttle active.' });
+  }
   
   const normalizedTo = normalizePhoneNumber(to);
+
+  // Anti-Spam: Cek apakah nomor ada di cache nomor tidak terdaftar
+  if (invalidNumbersCache.has(normalizedTo)) {
+    return res.status(422).json({ error: 'Number not registered' });
+  }
+
+  // Anti-Spam: Cek cooldown per penerima
+  if (lastSentPerRecipient.has(normalizedTo)) {
+    const elapsedSec = (Date.now() - lastSentPerRecipient.get(normalizedTo)) / 1000;
+    if (elapsedSec < WA_RECIPIENT_COOLDOWN_SEC) {
+      const waitRemaining = Math.ceil(WA_RECIPIENT_COOLDOWN_SEC - elapsedSec);
+      return res.status(429).json({
+        error: `Nomor masih dalam masa cooldown anti-spam. Harap tunggu ${waitRemaining} detik lagi.`,
+      });
+    }
+  }
   
   const promise = new Promise((resolve, reject) => {
     messageQueue.push({ to: normalizedTo, message, resolve, reject });

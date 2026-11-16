@@ -12,6 +12,8 @@ return [
         'jam_mulai' => env('WA_JAM_MULAI', '08:00'),
         'jam_selesai' => env('WA_JAM_SELESAI', '16:00'),
         'maks_pengingat' => (int) env('WA_MAKS_PENGINGAT', 3),
+        'cooldown_menit' => (int) env('WA_COOLDOWN_MENIT', 30),
+        'blacklist' => array_filter(array_map('trim', explode(',', env('WA_BLACKLIST', '')))),
     ],
 
     // Akun uji manual (NotifikasiUjiSeeder): arahkan email ke inbox yang benar-benar bisa menerima pesan.
