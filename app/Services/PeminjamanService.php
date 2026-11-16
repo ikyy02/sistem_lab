@@ -313,6 +313,28 @@ class PeminjamanService
         return true;
     }
 
+    /**
+     * Total barang yang sudah dikembalikan per detail peminjaman.
+     * Key hasil adalah id_detail, sehingga langsung dapat dipakai oleh halaman pengembalian.
+     *
+     * @param  iterable<int, int|string>  $idPeminjaman
+     * @return \Illuminate\Support\Collection<int, int>
+     */
+    public function jumlahDikembalikan(iterable $idPeminjaman): \Illuminate\Support\Collection
+    {
+        $ids = collect($idPeminjaman)->filter()->values();
+        if ($ids->isEmpty()) {
+            return collect();
+        }
+
+        return DB::table('pengembalian_details as pd')
+            ->join('pengembalians as pg', 'pg.id_pengembalian', '=', 'pd.id_pengembalian')
+            ->whereIn('pg.id_peminjaman', $ids->all())
+            ->groupBy('pd.id_detail_peminjaman')
+            ->selectRaw('pd.id_detail_peminjaman, SUM(pd.jumlah_dikembalikan) as total')
+            ->pluck('total', 'pd.id_detail_peminjaman');
+    }
+
     /** True bila ada Alat pada transaksi yang belum seluruhnya dikembalikan. */
     public function alatBelumKembali(Peminjaman $p): bool
     {
@@ -391,6 +413,8 @@ class PeminjamanService
                 $this->gagal(['status' => $pesan]);
             }
             $p->update(['status' => 'selesai']);
+            // Simpan waktu selesai aktual agar sisa waktu reservasi segera dilepas.
+            $p->ruangans()->update(['tanggal_selesai_aktual' => now()]);
 
             return $p->refresh();
         });
@@ -524,22 +548,22 @@ class PeminjamanService
         return $pg;
     }
 
-    /** Pesan konflik bila periode ruangan beririsan dengan JADWAL aktif atau peminjaman ruangan lain yang disetujui; null bila bebas. */
-    // Cek bentrok ruangan: (1) peminjaman lain yang sudah disetujui, (2) jadwal kuliah aktif pada hari peminjaman.
+    /** Pesan konflik bila periode ruangan beririsan dengan jadwal aktif atau peminjaman lain yang masih memakai ruangan. */
+    // Reservasi selesai memakai tanggal_selesai_aktual; reservasi aktif memakai tanggal_selesai rencana.
     public function konflikRuangan(PeminjamanRuangan $r): ?string
     {
         $mulai = Carbon::parse($r->tanggal_mulai);
         $selesai = Carbon::parse($r->tanggal_selesai);
 
-        // 1) Peminjaman lain yang sudah disetujui (selesai = sudah pernah disetujui, tetap dihitung bila periodenya beririsan).
+        // 1) Peminjaman yang masih aktif, atau sisa rentang peminjaman yang telah selesai lebih awal.
         $bentrok = PeminjamanRuangan::query()
             ->join('peminjamans as p', 'p.id_peminjaman', '=', 'peminjaman_ruangans.id_peminjaman')
             ->where('peminjaman_ruangans.id_ruangan', $r->id_ruangan)
             ->where('peminjaman_ruangans.id_peminjaman', '!=', $r->id_peminjaman)
             ->whereIn('p.status', ['disetujui', 'selesai'])
-            // Dua rentang waktu beririsan jika mulai A < selesai B dan selesai A > mulai B.
-            ->where('peminjaman_ruangans.tanggal_mulai', '<', $selesai)   // batas menempel (10:00–10:00) tidak dianggap irisan
-            ->where('peminjaman_ruangans.tanggal_selesai', '>', $mulai)
+            // Batas waktu yang menempel (10:00–10:00) tidak dianggap beririsan.
+            ->where('peminjaman_ruangans.tanggal_mulai', '<', $selesai)
+            ->whereRaw('COALESCE(peminjaman_ruangans.tanggal_selesai_aktual, peminjaman_ruangans.tanggal_selesai) > ?', [$mulai])
             ->exists();
         if ($bentrok) {
             return 'Ruangan bentrok dengan peminjaman lain yang sudah disetujui.';

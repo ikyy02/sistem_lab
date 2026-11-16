@@ -2,7 +2,7 @@
 
 @section('title', 'Pengadaan TPK')
 @section('page-title', 'Pengadaan TPK')
-@section('page-subtitle', 'Sistem Pendukung Keputusan prioritas pengadaan alat dan bahan laboratorium (Metode SAW).')
+@section('page-subtitle', 'Sistem Pendukung Keputusan prioritas pengadaan alat dan bahan laboratorium (Metode AHP–SAW).')
 
 @push('styles')
 <style>
@@ -351,6 +351,7 @@
             </p>
         </div>
         <div class="d-flex flex-wrap gap-2">
+            @if($resmi)
             <a href="{{ route('pengadaan-tpk.cetak', request()->query()) }}" target="_blank" class="btn-admin-secondary">
                 <i class="bi bi-printer"></i>
                 <span>Cetak Rekomendasi</span>
@@ -359,6 +360,7 @@
                 <i class="bi bi-file-earmark-arrow-down"></i>
                 <span>Export Excel</span>
             </a>
+            @endif
             <button type="button" class="btn-admin-secondary" data-bs-toggle="modal" data-bs-target="#importTpkModal">
                 <i class="bi bi-file-earmark-arrow-up"></i>
                 <span>Import Excel</span>
@@ -366,18 +368,8 @@
         </div>
     </div>
 
-    {{-- Alert Validasi Bobot --}}
-    @if(isset($bobotValid) && !$bobotValid)
-        <div class="alert mb-3 d-flex align-items-center gap-2" style="background:var(--warning-bg); color:var(--warning); border:1px solid #EAD8B5; border-radius:6px; font-size:13px;" role="alert">
-            <i class="bi bi-exclamation-triangle"></i>
-            <div>
-                Jumlah bobot W1 + W2 + W3 harus tepat 1.0 (100%). Sistem secara otomatis menerapkan bobot acuan standar (0.40, 0.30, 0.30).
-            </div>
-            <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close" style="font-size:10px;"></button>
-        </div>
-    @endif
-
-    {{-- Kartu Ringkasan (Gaya Seragam & Tenang) --}}
+    {{-- Ringkasan dan ranking hanya ditampilkan untuk matriks AHP yang konsisten. --}}
+    @if($resmi)
     <div class="row g-3 mb-3">
         <div class="col-12 col-sm-6 col-xl-3">
             <div class="summary-card active-top">
@@ -432,18 +424,15 @@
         </div>
     </div>
 
-    {{-- Panel Pengaturan & Pembobotan Kriteria --}}
+    @endif
+
+    {{-- Panel Perbandingan Berpasangan AHP --}}
     <div class="admin-card mb-3">
         <div class="admin-card-header">
             <h6 class="admin-card-title">
                 <i class="bi bi-funnel text-secondary"></i>
-                <span>Parameter & Pembobotan Kriteria</span>
+                <span>Parameter dan Perbandingan Kriteria AHP</span>
             </h6>
-            <div>
-                <span id="total-bobot-badge" style="background:var(--success-bg); color:var(--success); font-size:11px; font-weight:600; padding:2px 8px; border-radius:4px;">
-                    Total Bobot: 100% (Valid)
-                </span>
-            </div>
         </div>
 
         <div class="p-3">
@@ -471,65 +460,73 @@
                         </select>
                     </div>
 
-                    {{-- Preset Bobot AHP --}}
-                    <div class="col-12 col-md-6">
-                        <label class="form-label">Preset Pembobotan Cepat</label>
-                        <div class="d-flex flex-wrap gap-2">
-                            <button type="button" class="btn-preset-quiet {{ $preset === 'standar' || (!$preset && $w1==0.4 && $w2==0.3 && $w3==0.3) ? 'active' : '' }}" onclick="terapkanPreset(0.40, 0.30, 0.30, 'standar')">
-                                Standar (40-30-30)
-                            </button>
-                            <button type="button" class="btn-preset-quiet {{ $preset === 'peminjaman_tinggi' ? 'active' : '' }}" onclick="terapkanPreset(0.30, 0.50, 0.20, 'peminjaman_tinggi')">
-                                Kebutuhan Praktikum (30-50-20)
-                            </button>
-                            <button type="button" class="btn-preset-quiet {{ $preset === 'stok_kritis' ? 'active' : '' }}" onclick="terapkanPreset(0.60, 0.25, 0.15, 'stok_kritis')">
-                                Kelangkaan Stok (60-25-15)
-                            </button>
-                        </div>
-                    </div>
-
-                    {{-- Kotak Rincian Bobot --}}
                     <div class="col-12">
                         <div class="p-3 rounded-2" style="background:var(--bg-subtle); border:1px solid var(--border);">
-                            <div class="row g-2 align-items-center">
-                                <div class="col-12 col-md-3">
-                                    <span style="font-size:12px; font-weight:600; color:var(--text-primary);">Nilai Bobot (W):</span>
-                                    <div style="font-size:11px; color:var(--text-muted);">Jumlah harus tepat 1.0 (100%)</div>
+                            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+                                <div>
+                                    <div style="font-size:13px; font-weight:600; color:var(--text-primary);">Perbandingan Berpasangan Kriteria (Skala Saaty)</div>
+                                    <div style="font-size:11px; color:var(--text-muted);">Tentukan tingkat kepentingan antar-kriteria. Bobot SAW dihitung otomatis dari AHP.</div>
                                 </div>
-                                <div class="col-12 col-md-3">
-                                    <div class="input-group input-group-sm">
-                                        <span class="input-group-text" style="font-size:11px; background:var(--bg-surface); color:var(--text-secondary); width:85px;">W1: Stok</span>
-                                        <input type="number" step="0.05" min="0" max="1" name="w1" id="w1" class="form-control" value="{{ $w1 }}" oninput="updateTotalBobot()">
-                                        <span class="input-group-text" style="font-size:11px; background:var(--bg-surface); color:var(--text-muted);">{{ round($w1 * 100) }}%</span>
+                                <span style="font-size:11px; color:var(--text-secondary);">Nilai di luar skala dikembalikan ke 1</span>
+                            </div>
+                            <div class="row g-3">
+                                @foreach([
+                                    'a12' => 'C1 Stok dibanding C2 Peminjaman',
+                                    'a13' => 'C1 Stok dibanding C3 Harga',
+                                    'a23' => 'C2 Peminjaman dibanding C3 Harga',
+                                ] as $key => $label)
+                                    <div class="col-12 col-md-4">
+                                        <label class="form-label" for="{{ $key }}">{{ $label }}</label>
+                                        <select name="{{ $key }}" id="{{ $key }}" class="form-select form-select-sm">
+                                            @foreach($skala as $nilai)
+                                                <option value="{{ $nilai }}" {{ $pair[$key] === $nilai ? 'selected' : '' }}>{{ $nilai }}</option>
+                                            @endforeach
+                                        </select>
                                     </div>
-                                </div>
-                                <div class="col-12 col-md-3">
-                                    <div class="input-group input-group-sm">
-                                        <span class="input-group-text" style="font-size:11px; background:var(--bg-surface); color:var(--text-secondary); width:85px;">W2: Pinjam</span>
-                                        <input type="number" step="0.05" min="0" max="1" name="w2" id="w2" class="form-control" value="{{ $w2 }}" oninput="updateTotalBobot()">
-                                        <span class="input-group-text" style="font-size:11px; background:var(--bg-surface); color:var(--text-muted);">{{ round($w2 * 100) }}%</span>
-                                    </div>
-                                </div>
-                                <div class="col-12 col-md-3">
-                                    <div class="input-group input-group-sm">
-                                        <span class="input-group-text" style="font-size:11px; background:var(--bg-surface); color:var(--text-secondary); width:85px;">W3: Harga</span>
-                                        <input type="number" step="0.05" min="0" max="1" name="w3" id="w3" class="form-control" value="{{ $w3 }}" oninput="updateTotalBobot()">
-                                        <span class="input-group-text" style="font-size:11px; background:var(--bg-surface); color:var(--text-muted);">{{ round($w3 * 100) }}%</span>
-                                    </div>
-                                </div>
+                                @endforeach
                             </div>
                         </div>
-                        <input type="hidden" name="preset" id="preset_input" value="{{ $preset }}">
                     </div>
-
+                    <div class="col-12">
+                        <div class="p-3 rounded-2" style="background:var(--bg-surface); border:1px solid var(--border);">
+                            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+                                <strong style="font-size:13px;">Hasil Analisis AHP</strong>
+                                @if($ahp['konsisten'])
+                                    <span class="badge bg-success">Konsisten</span>
+                                @else
+                                    <span class="badge bg-danger">Tidak konsisten</span>
+                                @endif
+                            </div>
+                            <div class="row g-2">
+                                <div class="col-12 col-md-3">
+                                    <div style="font-size:11px; color:var(--text-muted);">Consistency Ratio (CR)</div>
+                                    <strong>{{ number_format($ahp['cr'], 4, ',', '.') }}</strong>
+                                    <span style="font-size:11px; color:var(--text-secondary);">(batas 0,10)</span>
+                                </div>
+                                @foreach(['C1 Stok', 'C2 Peminjaman', 'C3 Harga'] as $i => $namaKriteria)
+                                    <div class="col-12 col-md-3">
+                                        <div style="font-size:11px; color:var(--text-muted);">Bobot {{ $namaKriteria }}</div>
+                                        <strong>{{ number_format($ahp['bobot'][$i], 4, ',', '.') }}</strong>
+                                        <span style="font-size:11px; color:var(--text-secondary);">({{ number_format($ahp['bobot'][$i] * 100, 2, ',', '.') }}%)</span>
+                                    </div>
+                                @endforeach
+                            </div>
+                            @unless($ahp['konsisten'])
+                                <div class="alert alert-warning mt-3 mb-0" role="alert" style="font-size:12px;">
+                                    Matriks perbandingan belum konsisten (CR lebih dari 0,10). Perbaiki perbandingan kriteria untuk menghasilkan ranking SAW resmi. Ranking, cetak, dan export tidak tersedia selama matriks belum konsisten.
+                                </div>
+                            @endunless
+                        </div>
+                    </div>
                     {{-- Tombol Submit --}}
                     <div class="col-12">
                         <button type="submit" id="btn-terapkan-tpk" class="btn-admin-primary">
-                            <span>Terapkan</span>
+                            <span>Hitung AHP–SAW</span>
                         </button>
                     </div>
                     <div class="col-12 col-md-4 text-md-end">
                         <a href="{{ route('pengadaan-tpk.index') }}" style="font-size:12px; color:var(--text-secondary); text-decoration:none;">
-                            Kembalikan ke Standar
+                            Reset Perbandingan
                         </a>
                     </div>
                 </div>
@@ -537,7 +534,8 @@
         </div>
     </div>
 
-    {{-- Tabs Konten Utama --}}
+    @if($resmi)
+    {{-- Hasil pemeringkatan SAW hanya tersedia jika CR memenuhi batas. --}}
     <div class="admin-card overflow-hidden">
         {{-- Navigation Tabs --}}
         <div class="admin-tabs" id="tpkTabs" role="tablist">
@@ -778,6 +776,11 @@
             </div>
         </div>
     </div>
+    @else
+        <div class="alert alert-warning" role="alert" style="font-size:13px;">
+            Ranking SAW belum ditampilkan karena matriks AHP tidak konsisten. Sesuaikan perbandingan kriteria di atas sampai CR maksimal 0,10.
+        </div>
+    @endif
 
     {{-- Flash Messages Import --}}
     @if(session('import_success'))
@@ -878,40 +881,6 @@
 
 @push('scripts')
 <script>
-    function terapkanPreset(w1, w2, w3, presetName) {
-        document.getElementById('w1').value = w1.toFixed(2);
-        document.getElementById('w2').value = w2.toFixed(2);
-        document.getElementById('w3').value = w3.toFixed(2);
-        document.getElementById('preset_input').value = presetName;
-        updateTotalBobot();
-        document.getElementById('form-tpk').submit();
-    }
-
-    function updateTotalBobot() {
-        const w1 = parseFloat(document.getElementById('w1').value) || 0;
-        const w2 = parseFloat(document.getElementById('w2').value) || 0;
-        const w3 = parseFloat(document.getElementById('w3').value) || 0;
-        const total = Math.round((w1 + w2 + w3) * 100);
-        const badge = document.getElementById('total-bobot-badge');
-
-        if (total === 100) {
-            badge.style.background = 'var(--success-bg)';
-            badge.style.color = 'var(--success)';
-            badge.textContent = 'Total Bobot: 100% (Valid)';
-        } else {
-            badge.style.background = 'var(--danger-bg)';
-            badge.style.color = 'var(--danger)';
-            badge.textContent = 'Total Bobot: ' + total + '% (Harus 100%)';
-        }
-
-        const btnTerapkan = document.getElementById('btn-terapkan-tpk');
-        if (btnTerapkan) {
-            btnTerapkan.disabled = total !== 100;
-            btnTerapkan.style.opacity = total !== 100 ? '0.5' : '';
-            btnTerapkan.style.cursor = total !== 100 ? 'not-allowed' : '';
-        }
-    }
-
     // Auto-open import modal if there's a file validation error
     @if($errors->has('file'))
         document.addEventListener('DOMContentLoaded', function() {

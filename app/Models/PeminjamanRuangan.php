@@ -10,8 +10,8 @@ class PeminjamanRuangan extends Model
     protected $table = 'peminjaman_ruangans';
     protected $primaryKey = 'id_peminjaman_ruangan';
     public $timestamps = false;
-    protected $fillable = ['id_peminjaman', 'id_ruangan', 'tanggal_mulai', 'tanggal_selesai', 'keterangan'];
-    protected $casts = ['tanggal_mulai' => 'datetime', 'tanggal_selesai' => 'datetime'];
+    protected $fillable = ['id_peminjaman', 'id_ruangan', 'tanggal_mulai', 'tanggal_selesai', 'tanggal_selesai_aktual', 'keterangan'];
+    protected $casts = ['tanggal_mulai' => 'datetime', 'tanggal_selesai' => 'datetime', 'tanggal_selesai_aktual' => 'datetime'];
 
     public function peminjaman()
     {

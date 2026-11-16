@@ -112,7 +112,7 @@
 
     {{-- JUDUL LAPORAN --}}
     <div class="judul-laporan">REKOMENDASI PRIORITAS PENGADAAN ALAT DAN BAHAN LABORATORIUM</div>
-    <div class="subjudul-laporan">Berdasarkan Analisis Keputusan Menggunakan Metode Simple Additive Weighting (SAW)</div>
+    <div class="subjudul-laporan">Berdasarkan pembobotan AHP dan pemeringkatan Simple Additive Weighting (SAW)</div>
 
     {{-- TABEL METADATA --}}
     <table class="meta-table">
@@ -136,9 +136,10 @@
             <td><strong>Bobot Penilaian (W)</strong></td>
             <td>:</td>
             <td colspan="4">
-                W1 (Sisa Stok - Cost) = {{ $w1 }} ({{ round($w1*100) }}%) &bull;
-                W2 (Peminjaman - Benefit) = {{ $w2 }} ({{ round($w2*100) }}%) &bull;
-                W3 (Harga - Cost) = {{ $w3 }} ({{ round($w3*100) }}%)
+                CR = {{ number_format($ahp['cr'], 4, ',', '.') }} &bull;
+                W1 (Stok - Cost) = {{ number_format($w1, 4, ',', '.') }} ({{ number_format($w1*100, 2, ',', '.') }}%) &bull;
+                W2 (Peminjaman - Benefit) = {{ number_format($w2, 4, ',', '.') }} ({{ number_format($w2*100, 2, ',', '.') }}%) &bull;
+                W3 (Harga - Cost) = {{ number_format($w3, 4, ',', '.') }} ({{ number_format($w3*100, 2, ',', '.') }}%)
             </td>
         </tr>
     </table>
