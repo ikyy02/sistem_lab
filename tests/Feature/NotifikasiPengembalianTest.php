@@ -13,7 +13,6 @@ use App\Notifications\PengembalianDicatat;
 use App\Notifications\PengingatPengembalian;
 use App\Services\PeminjamanService;
 use App\Services\PengingatPeminjamanService;
-use App\Services\SinkronSelesaiService;
 use App\Support\Notif;
 use Carbon\Carbon;
 use Illuminate\Console\Scheduling\Schedule;
@@ -202,14 +201,14 @@ class NotifikasiPengembalianTest extends TestCase
 
             Carbon::setTestNow('2030-01-12 08:00:00');
             $akunM = Akun::findOrFail($m->email);
-            $svc = app(SinkronSelesaiService::class);
+            $svc = app(PeminjamanService::class);
 
-            $this->assertSame(1, $svc->jalankan());
+            $this->assertSame(1, $svc->sinkronSelesai());
             $this->assertSame('selesai', $p->fresh()->status);
             Notification::assertSentToTimes($akunM, PeminjamanSelesai::class, 1);
 
             // evaluasi berikutnya: status sudah selesai -> tidak ada kiriman baru
-            $this->assertSame(0, $svc->jalankan());
+            $this->assertSame(0, $svc->sinkronSelesai());
             Notification::assertSentToTimes($akunM, PeminjamanSelesai::class, 1);
 
             // penjaga cache juga mencegah duplikat dari jalur lain (mis. balapan dengan controller)

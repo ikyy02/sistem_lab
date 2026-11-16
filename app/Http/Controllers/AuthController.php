@@ -6,6 +6,7 @@ use App\Models\PengaturanOperasional;
 use App\Models\Ruangan;
 use App\Services\AuthService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
 
 class AuthController extends Controller
@@ -58,8 +59,7 @@ class AuthController extends Controller
         // attempt() mengembalikan identitas (role, key, nama, email) atau null bila email/password salah.
         $identity = $auth->attempt($data['email'], $data['password']);
 
-        $clientIp = $request->header('CF-Connecting-IP')
-            ?: ($request->header('X-Forwarded-For') ? trim(explode(',', $request->header('X-Forwarded-For'))[0]) : $request->ip());
+        $clientIp = $request->ip(); // proxy hanya dipercaya bila TRUSTED_PROXIES diisi
 
         if (! $identity) {
             RateLimiter::hit($kunci, 300);
@@ -98,8 +98,7 @@ class AuthController extends Controller
     private function catatLogLogin(array $entry): void
     {
         try {
-            $logFile = storage_path('logs/auth_logins.jsonl');
-            @file_put_contents($logFile, json_encode($entry, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . "\n", FILE_APPEND | LOCK_EX);
+            Log::channel('auth')->info(json_encode($entry, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
         } catch (\Throwable $e) {
             // Jangan mengganggu flow jika logging gagal
         }

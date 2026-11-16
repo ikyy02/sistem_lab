@@ -25,7 +25,7 @@ class WhatsAppService
 
         try {
             $response = Http::withToken(config('notifikasi.wa.gateway_token'))
-                ->timeout(10)
+                ->timeout(30)
                 ->post(rtrim(config('notifikasi.wa.gateway_url'), '/') . '/send', [
                     'to' => $nomor,
                     'message' => $pesan,

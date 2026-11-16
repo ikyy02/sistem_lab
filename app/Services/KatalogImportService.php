@@ -81,6 +81,8 @@ class KatalogImportService
         $index = ExcelFile::matchHeaders($header, $map);
         
         $room = $kategori === 'ruangan';
+        // Kolom "Jenis" di file menentukan alat/bahan; tanpa kolom itu, pakai kategori impor.
+        $jenisCol = array_search('jenis', array_map(fn ($h) => mb_strtolower(trim((string) $h)), $header), true);
         // Peta nama (huruf kecil) => id untuk mengubah teks Excel menjadi id_satuan/id_ruangan.
         $satuan = Satuan::pluck('id_satuan', 'nama_satuan')->mapWithKeys(fn ($id, $n) => [mb_strtolower($n) => $id])->all();
         $ruangan = Ruangan::pluck('id_ruangan', 'nama_ruangan')->mapWithKeys(fn ($id, $n) => [mb_strtolower($n) => $id])->all();
@@ -115,9 +117,13 @@ class KatalogImportService
                 $msg[] = 'Nama duplikat di file (baris ' . $seen[mb_strtolower($nama)] . ').';
             }
             
-            $record = $room ? ['nama_ruangan' => $nama] : ['nama' => $nama, 'jenis' => $kategori];
+            $jenis = mb_strtolower($jenisCol === false ? $kategori : trim((string) ($row[$jenisCol] ?? '')));
+            $record = $room ? ['nama_ruangan' => $nama] : ['nama' => $nama, 'jenis' => $jenis];
             
             if (! $room) {
+                if (! in_array($jenis, ['alat', 'bahan'], true)) {
+                    $msg[] = 'Jenis harus alat atau bahan.';
+                }
                 $stok = $get('stok');
                 if (! preg_match('/^\d{1,9}$/', $stok)) {
                     $msg[] = 'Stok harus berupa angka bulat 0 atau lebih.';

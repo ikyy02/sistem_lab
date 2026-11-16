@@ -15,7 +15,7 @@ class AuthService
     /** @return array{role: string, key: string, nama: string, email: string}|null */
     public function attempt(string $email, string $password): ?array
     {
-        $akun = Akun::query()->whereRaw('LOWER(email) = ?', [mb_strtolower(trim($email))])->first();
+        $akun = Akun::query()->where('email', trim($email))->first();
         // Bandingkan password apa adanya (hashing belum diterapkan, ditunda); hash_equals menghindari timing attack.
         if (! $akun || ! hash_equals((string) $akun->password, $password)) {
             return null;

@@ -1,12 +1,12 @@
 <?php
 
 use App\Services\PengingatPeminjamanService;
-use App\Services\SinkronSelesaiService;
+use App\Services\PeminjamanService;
 use Illuminate\Support\Facades\Schedule;
 
 // Status "selesai" ditentukan sistem (ruangan berakhir, bahan saja setelah rencana kembali): evaluasi berkala
 // sekaligus kirim PeminjamanSelesai sekali untuk tiap transaksi yang baru berubah menjadi selesai.
-Schedule::call(fn () => app(SinkronSelesaiService::class)->jalankan())
+Schedule::call(fn () => app(PeminjamanService::class)->sinkronSelesai())
     ->everyFiveMinutes()->name('peminjaman-sinkron-selesai')->withoutOverlapping();
 
 // Pengingat harian peminjam: H-1 pengembalian dan peminjaman yang sudah terlambat (sekali per transaksi per tanggal).

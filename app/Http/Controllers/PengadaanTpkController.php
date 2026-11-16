@@ -105,10 +105,10 @@ class PengadaanTpkController extends Controller
                 fputcsv($handle, [
                     $it['ranking'],
                     $it['id_katalog'],
-                    $it['nama'],
+                    $this->aman($it['nama']),
                     ucfirst($it['jenis']),
-                    $it['nama_satuan'] ?? '-',
-                    $it['nama_ruangan'] ?? '-',
+                    $this->aman($it['nama_satuan'] ?? '-'),
+                    $this->aman($it['nama_ruangan'] ?? '-'),
                     $it['stok'],
                     $it['jumlah_peminjaman'],
                     $it['harga'],
@@ -255,6 +255,12 @@ class PengadaanTpkController extends Controller
         ]);
     }
 
+    // Cegah sel teks dijalankan sebagai rumus oleh Excel (diawali = + - @).
+    private function aman($v)
+    {
+        return is_string($v) && preg_match('/^[=+\-@]/', $v) ? "'" . $v : $v;
+    }
+
     /**
      * Import data katalog dari file Excel (sama seperti import katalog).
      */
@@ -269,19 +275,7 @@ class PengadaanTpkController extends Controller
         try {
             $service = app(\App\Services\KatalogImportService::class);
 
-            // Detect jenis from file content or default to 'alat'
-            $rows = ExcelFile::rows($request->file('file'), 2010);
-            $header = $rows[0] ?? [];
-            $hasJenis = false;
-            foreach ($header as $cell) {
-                if (mb_strtolower(trim((string) $cell)) === 'jenis') {
-                    $hasJenis = true;
-                    break;
-                }
-            }
-
-            // Use the KatalogImportService for 'alat' category as default
-            // The service handles both alat and bahan based on the 'jenis' column in file
+            // Kolom "Jenis" di file menentukan alat atau bahan (lihat KatalogImportService::import).
             $result = $service->import($request->file('file'), 'alat');
 
             if ($result['success']) {
