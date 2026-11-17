@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\GambarProfil;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Notifications\Notifiable;
 
@@ -18,7 +19,13 @@ class Akun extends Model
     public $incrementing = false;
     protected $keyType = 'string';
     public $timestamps = false;
-    protected $fillable = ['email', 'password', 'role', 'wajib_ganti_password'];
+    protected $fillable = ['email', 'password', 'role', 'wajib_ganti_password', 'foto'];
     protected $casts = ['wajib_ganti_password' => 'boolean'];
     protected $hidden = ['password'];
+
+    // URL foto profil untuk ditampilkan di <img>; null bila belum mengunggah foto.
+    public function getFotoUrlAttribute(): ?string
+    {
+        return GambarProfil::url($this->foto);
+    }
 }

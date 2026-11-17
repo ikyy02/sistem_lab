@@ -86,7 +86,11 @@
 
         <div class="topbar-right dropdown">
             <button class="topbar-user dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-                <span class="topbar-avatar">{{ $initial }}</span>
+                @if($notifAkun?->foto_url)
+                    <span class="topbar-avatar" style="overflow:hidden;"><img src="{{ $notifAkun->foto_url }}" alt="Foto profil" style="width:100%;height:100%;object-fit:cover;display:block;"></span>
+                @else
+                    <span class="topbar-avatar">{{ $initial }}</span>
+                @endif
                 <span class="d-none d-sm-block text-start lh-sm">
                     <span class="d-block fw-semibold" style="font-size:.82rem">{{ $me['nama'] ?? '' }}</span>
                 </span>

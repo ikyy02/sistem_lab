@@ -5,9 +5,11 @@ namespace App\Http\Controllers;
 use App\Models\Akun;
 use App\Services\AkunService;
 use App\Services\AuthService;
+use App\Support\GambarProfil;
 use App\Support\Role;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 /** Profil Saya: lihat/ubah profil sendiri dan ubah password (password disimpan apa adanya, sesuai project). */
@@ -20,6 +22,7 @@ class ProfilController extends Controller
 
         return view('profil.index', [
             'profil' => $profil,
+            'fotoUrl' => Akun::find($me['email'])?->foto_url,
             'roleLabel' => Role::LABELS[$me['role']],
             'idLabel' => match ($me['role']) {
                 Role::MAHASISWA => 'NIM',
@@ -63,6 +66,43 @@ class ProfilController extends Controller
         session()->put('silab_user', ['key' => (string) $profil->getKey(), 'nama' => $profil->nama, 'email' => $profil->email] + $me);
 
         return redirect()->route('profil.index')->with('success', 'Profil berhasil diperbarui.');
+    }
+
+    // Tambah/ganti foto profil: file disimpan di disk 'public' dengan nama acak, namanya dicatat pada tabel akuns.
+    public function foto(Request $request)
+    {
+        $akun = Akun::findOrFail(AuthService::user()['email']);
+        $request->validate([
+            'foto' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+        ], [
+            'foto.required' => 'Pilih foto terlebih dahulu.',
+            'foto.image' => 'File harus berupa gambar.',
+            'foto.mimes' => 'Foto harus berformat JPG, PNG, atau WEBP.',
+            'foto.max' => 'Ukuran foto maksimal 2 MB.',
+        ]);
+
+        $file = $request->file('foto');
+        $nama = Str::uuid().'.'.($file->guessExtension() ?: 'jpg');
+        $file->storeAs(GambarProfil::DIR, $nama, 'public'); // storage/app/public/profil; tampil lewat public/storage (storage:link)
+
+        // Urutan: simpan nama baru ke database, baru hapus file lama.
+        $lama = $akun->foto;
+        $akun->update(['foto' => $nama]);
+        GambarProfil::hapus($lama);
+
+        return redirect()->route('profil.index')->with('success', 'Foto profil berhasil diperbarui.');
+    }
+
+    // Hapus foto profil: file di storage dihapus dan kolom foto dikosongkan.
+    public function hapusFoto()
+    {
+        $akun = Akun::findOrFail(AuthService::user()['email']);
+        if ($akun->foto) {
+            GambarProfil::hapus($akun->foto);
+            $akun->update(['foto' => null]);
+        }
+
+        return redirect()->route('profil.index')->with('success', 'Foto profil berhasil dihapus.');
     }
 
     // Ganti password: cek password lama, password baru minimal 8 karakter dan berbeda dari yang lama.

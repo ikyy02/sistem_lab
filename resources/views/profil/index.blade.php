@@ -20,17 +20,59 @@
         box-shadow: none;
     }
     .profil-avatar-circle {
-        width: 60px;
-        height: 60px;
+        width: 84px;
+        height: 84px;
         border-radius: 50%;
         background: #0f172a;
         color: #ffffff;
-        font-size: 1.5rem;
+        font-size: 1.8rem;
         font-weight: 700;
         display: flex;
         align-items: center;
         justify-content: center;
         flex-shrink: 0;
+    }
+    .profil-avatar-img {
+        width: 84px;
+        height: 84px;
+        border-radius: 50%;
+        object-fit: cover;
+        display: block;
+        flex-shrink: 0;
+        border: 1px solid #e2e8f0;
+    }
+    /* Aksi Foto Profil: Tambah/Ganti & Hapus */
+    .profil-foto-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 10px;
+    }
+    .btn-foto-profil {
+        height: 32px;
+        padding: 0 14px;
+        border-radius: 8px;
+        background: #ffffff;
+        color: #2563eb;
+        border: 1px solid #cbd5e1;
+        font-size: 13px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 150ms ease;
+    }
+    .btn-foto-profil:hover {
+        background: #eff6ff;
+        border-color: #2563eb;
+    }
+    .btn-foto-profil-danger {
+        color: #dc2626;
+    }
+    .btn-foto-profil-danger:hover {
+        background: #fef2f2;
+        border-color: #dc2626;
     }
     /* Tab Navigasi Minimalis */
     .profil-nav-tabs {
@@ -169,10 +211,14 @@
 @section('content')
 <div class="profil-page-container">
     <div class="profil-card">
-        {{-- Header Kartu: Avatar, Nama, Badge Peran, dan Teks Kecil Identitas --}}
+        {{-- Header Kartu: Avatar/Foto, Nama, Badge Peran, Identitas, dan Aksi Foto --}}
         <div class="d-flex align-items-center gap-3 pb-4 border-bottom mb-4">
-            <div class="profil-avatar-circle">
-                {{ mb_strtoupper(mb_substr($profil->nama ?? 'U', 0, 1)) }}
+            <div class="profil-avatar-wrap flex-shrink-0">
+                @if($fotoUrl)
+                    <img src="{{ $fotoUrl }}" alt="Foto profil {{ $profil->nama }}" class="profil-avatar-img">
+                @else
+                    <div class="profil-avatar-circle">{{ mb_strtoupper(mb_substr($profil->nama ?? 'U', 0, 1)) }}</div>
+                @endif
             </div>
             <div class="min-w-0 flex-grow-1">
                 <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
@@ -190,6 +236,26 @@
                         <span>{{ $prodi }}</span>
                     @endif
                 </div>
+
+                {{-- Aksi foto profil: tambah/ganti (unggah) dan hapus --}}
+                <div class="profil-foto-actions">
+                    <form method="POST" action="{{ route('profil.foto') }}" enctype="multipart/form-data" class="m-0">
+                        @csrf
+                        <input type="file" name="foto" id="inputFotoProfil" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" class="d-none" onchange="this.closest('form').submit()">
+                        <button type="button" class="btn-foto-profil" onclick="document.getElementById('inputFotoProfil').click()">
+                            <i class="bi bi-{{ $fotoUrl ? 'camera' : 'plus-lg' }} me-1"></i>{{ $fotoUrl ? 'Ganti Foto' : 'Tambah Foto' }}
+                        </button>
+                    </form>
+                    @if($fotoUrl)
+                    <form method="POST" action="{{ route('profil.foto.hapus') }}" data-konfirmasi="Hapus foto profil ini?" class="m-0">
+                        @csrf
+                        <button type="submit" class="btn-foto-profil btn-foto-profil-danger">
+                            <i class="bi bi-trash me-1"></i>Hapus Foto
+                        </button>
+                    </form>
+                    @endif
+                </div>
+                @error('foto')<div class="profil-error-msg">{{ $message }}</div>@enderror
             </div>
         </div>
 

@@ -62,6 +62,10 @@ Route::middleware(['silab.auth', 'silab.password'])->group(function () {
     Route::put('profil', [ProfilController::class, 'update'])->name('profil.update');
     Route::put('profil/password', [ProfilController::class, 'password'])->name('profil.password');
 
+    // Foto profil: tambah/ganti dan hapus (semua role; file disimpan pada akun sendiri).
+    Route::post('profil/foto', [ProfilController::class, 'foto'])->name('profil.foto');
+    Route::post('profil/foto/hapus', [ProfilController::class, 'hapusFoto'])->name('profil.foto.hapus');
+
     // Staf Prodi dan Laboran/Admin (Super Admin)
     Route::middleware('silab.role:' . Role::STAFF . ',' . Role::LABORAN)->group(function () {
 
