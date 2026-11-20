@@ -13,7 +13,7 @@
     </div>
     <div class="d-flex flex-wrap gap-2">
         @if($p->email_peminjam === $saya['email'])
-            <a href="{{ ($saya['role'] ?? '') === \App\Support\Role::MAHASISWA ? route('peminjaman.riwayat') : route('peminjaman.saya') }}" class="btn btn-outline-silab"><i class="bi bi-arrow-left me-1"></i> Riwayat Saya</a>
+            <a href="{{ route('peminjaman.riwayat') }}" class="btn btn-outline-silab"><i class="bi bi-arrow-left me-1"></i> Riwayat Saya</a>
         @else
             <a href="{{ url()->previous() }}" class="btn btn-outline-silab"><i class="bi bi-arrow-left me-1"></i> Kembali</a>
         @endif

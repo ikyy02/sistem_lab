@@ -32,11 +32,11 @@ class KelolaHttpTest extends TestCase
 
     // ------------------------------------------------------------------ login & role
 
-    public function test_login_memakai_password_apa_adanya_dan_role_wajib_punya_profil(): void
+    public function test_login_memakai_password_ter_hash_dan_role_wajib_punya_profil(): void
     {
         $m = $this->mahasiswa();
         $m->akun = Akun::find($m->email);
-        $this->assertSame('rahasia', Akun::find($m->email)->password);
+        $this->assertTrue(\Illuminate\Support\Facades\Hash::check('rahasia', Akun::find($m->email)->password));
         $this->post('/login', ['email' => $m->email, 'password' => 'rahasia'])->assertRedirect()->assertSessionHas('silab_user.role', 'mahasiswa');
         $this->post('/login', ['email' => $m->email, 'password' => 'salah'])->assertSessionHasErrors('email');
 
@@ -76,7 +76,7 @@ class KelolaHttpTest extends TestCase
 
         $akun = Akun::find('budi@mhs.politala.ac.id');
         $this->assertSame('mahasiswa', $akun->role);
-        $this->assertSame('abcd1234', $akun->password);
+        $this->assertTrue(\Illuminate\Support\Facades\Hash::check('abcd1234', $akun->password));
         $m = Mahasiswa::find('2210101001');
         $this->assertSame('budi@mhs.politala.ac.id', $m->email);
         $this->assertNull($m->no_whatsapp);
@@ -123,7 +123,7 @@ class KelolaHttpTest extends TestCase
             'nim' => $m->nim, 'nama' => 'Nama Baru', 'id_prodi' => $m->id_prodi, 'email' => 'baru@mhs.politala.ac.id', 'password' => 'passbaru',
         ])->assertSessionHasNoErrors();
         $this->assertNull(Akun::find('lama@mhs.politala.ac.id'));
-        $this->assertSame('passbaru', Akun::find('baru@mhs.politala.ac.id')->password);
+        $this->assertTrue(\Illuminate\Support\Facades\Hash::check('passbaru', Akun::find('baru@mhs.politala.ac.id')->password));
         $this->assertSame('baru@mhs.politala.ac.id', $m->fresh()->email); // ikut berubah (ON UPDATE CASCADE)
 
         $k = $this->katalog();

@@ -48,10 +48,12 @@ class WaKirimTerlambat extends Command
 
         $daftar = [];
         $terproses = 0;
+        // Satu query untuk semua peminjaman (bukan satu query per peminjaman).
+        $masihAlat = array_flip($this->peminjamanService->idDenganAlatBelumKembali($peminjamans->pluck('id_peminjaman')->all()));
 
         foreach ($peminjamans as $p) {
             // Cek kondisi: tanpa ruangan, dengan alat yang belum kembali
-            if ($p->melibatkanRuangan() || ! $this->peminjamanService->alatBelumKembali($p)) {
+            if ($p->melibatkanRuangan() || ! isset($masihAlat[$p->id_peminjaman])) {
                 continue;
             }
 

@@ -30,14 +30,17 @@ process.on('unhandledRejection', (reason) => {
   logger.warn({ reason: reason?.message || reason }, 'Baileys Unhandled Rejection (diabaikan agar tetap online)');
 });
 
+// Exception tak tertangani membuat state gateway tidak pasti: catat lalu keluar agar process manager me-restart.
 process.on('uncaughtException', (err) => {
-  logger.warn({ err: err.message }, 'Baileys Uncaught Exception (diabaikan agar tetap online)');
+  logger.fatal({ err: err.message }, 'Uncaught exception: gateway dihentikan untuk di-restart');
+  process.exit(1);
 });
 
 const PORT = process.env.WA_PORT || 3001;
 const WA_GATEWAY_TOKEN = process.env.WA_GATEWAY_TOKEN;
-if (!WA_GATEWAY_TOKEN || WA_GATEWAY_TOKEN === 'default-token-change-me') {
-  logger.fatal('WA_GATEWAY_TOKEN kosong atau masih default. Isi token yang kuat di .env, lalu jalankan ulang.');
+const TOKEN_CONTOH = ['default-token-change-me', 'your-secret-token-here'];
+if (!WA_GATEWAY_TOKEN || TOKEN_CONTOH.includes(WA_GATEWAY_TOKEN) || WA_GATEWAY_TOKEN.length < 32) {
+  logger.fatal('WA_GATEWAY_TOKEN kosong, masih contoh, atau kurang dari 32 karakter. Isi token acak yang kuat di .env, lalu jalankan ulang.');
   process.exit(1);
 }
 const WA_MAX_PER_HARI = parseInt(process.env.WA_MAX_PER_HARI || '40', 10);
@@ -128,6 +131,15 @@ const resetHourlyCounter = () => {
   }
 };
 
+// Kosongkan antrean dengan menolak semua item (agar HTTP caller tidak menunggu dan pesan tidak terkirim terlambat).
+const kosongkanAntrean = (status, error) => {
+  while (messageQueue.length > 0) {
+    const item = messageQueue.shift();
+    lastSentPerRecipient.delete(item.to);
+    item.reject({ status, error });
+  }
+};
+
 // Process queue pesan dengan simulasi perilaku manusiawi (human presence, typing, jeda acak)
 let sedangJalan = false;
 const processMessageQueue = async () => {
@@ -140,11 +152,13 @@ const processMessageQueue = async () => {
     
     if (messageSentToday >= WA_MAX_PER_HARI) {
       logger.warn('Anti-Spam Filter: Batas harian tercapai (' + WA_MAX_PER_HARI + '/hari)');
+      kosongkanAntrean(429, 'Daily limit exceeded');
       break;
     }
 
     if (messageSentThisHour >= WA_MAX_PER_JAM) {
       logger.warn('Anti-Spam Filter: Batas per jam tercapai (' + WA_MAX_PER_JAM + '/jam)');
+      kosongkanAntrean(429, 'Hourly limit exceeded. Anti-spam throttle active.');
       break;
     }
     
@@ -156,6 +170,7 @@ const processMessageQueue = async () => {
       // 1. Cek cache nomor tidak terdaftar untuk kurangi query ke server WA
       if (invalidNumbersCache.has(to)) {
         logger.warn(`Anti-Spam Filter: Nomor ${maskPhone(to)} terdeteksi tidak terdaftar (cached)`);
+        lastSentPerRecipient.delete(to);
         reject({ status: 422, error: 'Number not registered' });
         continue;
       }
@@ -165,6 +180,7 @@ const processMessageQueue = async () => {
       if (!result?.exists) {
         invalidNumbersCache.add(to);
         logger.warn(`Number ${maskPhone(to)} not registered on WhatsApp`);
+        lastSentPerRecipient.delete(to);
         reject({ status: 422, error: 'Number not registered' });
         continue;
       }
@@ -192,6 +208,7 @@ const processMessageQueue = async () => {
       resolve({ success: true });
     } catch (err) {
       logger.error(`Failed to send to ${maskPhone(to)}: ${err.message}`);
+      lastSentPerRecipient.delete(to);
       reject({ status: 500, error: err.message });
     }
     
@@ -242,6 +259,7 @@ const initializeBaileys = async () => {
         qrShown = true;
         logger.info(`Connected as ${sock.user?.id}`);
       } else if (connection === 'close') {
+        kosongkanAntrean(503, 'Gateway not connected');
         const statusCode = lastDisconnect?.error?.output?.statusCode;
         logger.warn(`Connection closed with status: ${statusCode}`);
         if (statusCode === DisconnectReason.loggedOut) {
@@ -316,11 +334,12 @@ app.post('/send', (req, res) => {
   resetDailyCounter();
   resetHourlyCounter();
   
-  if (messageSentToday >= WA_MAX_PER_HARI) {
+  // Antrean ikut dihitung: pesan yang belum terkirim sudah memakai kuota.
+  if (messageSentToday + messageQueue.length >= WA_MAX_PER_HARI) {
     return res.status(429).json({ error: 'Daily limit exceeded' });
   }
 
-  if (messageSentThisHour >= WA_MAX_PER_JAM) {
+  if (messageSentThisHour + messageQueue.length >= WA_MAX_PER_JAM) {
     return res.status(429).json({ error: 'Hourly limit exceeded. Anti-spam throttle active.' });
   }
   
@@ -342,6 +361,9 @@ app.post('/send', (req, res) => {
     }
   }
   
+  // Cooldown dicadangkan saat masuk antrean, supaya dua permintaan beruntun ke nomor sama tidak lolos bersamaan.
+  lastSentPerRecipient.set(normalizedTo, Date.now());
+
   const promise = new Promise((resolve, reject) => {
     messageQueue.push({ to: normalizedTo, message, resolve, reject });
   });

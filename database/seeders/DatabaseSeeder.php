@@ -21,7 +21,12 @@ class DatabaseSeeder extends Seeder
         if (Akun::where('email', 'admin@silab.test')->exists()) {
             return;
         }
-        Akun::create(['email' => 'admin@silab.test', 'password' => 'admin123', 'role' => 'laboran']);
+        // Production wajib ADMIN_PASSWORD; 'admin123' hanya untuk environment local.
+        $passwordAdmin = config('app.admin_password') ?: (app()->environment('local') ? 'admin123' : null);
+        if ($passwordAdmin === null) {
+            throw new \RuntimeException('ADMIN_PASSWORD wajib diisi di .env sebelum db:seed.');
+        }
+        Akun::create(['email' => 'admin@silab.test', 'password' => $passwordAdmin, 'role' => 'laboran', 'wajib_ganti_password' => true]);
         Laboran::create(['id_pegawai' => 'LAB0001', 'nama' => 'Administrator', 'email' => 'admin@silab.test', 'no_whatsapp' => null]);
     }
 }

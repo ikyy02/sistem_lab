@@ -130,12 +130,12 @@ class PeminjamanHttpTest extends TestCase
         $p = $this->ajukan([['id_katalog' => $k->id_katalog, 'jumlah' => 1]], $pemilik->email);
 
         $this->sebagai('mahasiswa', $pemilik);
-        $this->get(route('peminjaman.saya'))->assertOk()->assertSee(route('peminjaman.show', $p->id_peminjaman), false);
+        $this->get(route('peminjaman.riwayat'))->assertOk()->assertSee(route('peminjaman.show', $p->id_peminjaman), false);
         $this->get(route('peminjaman.show', $p->id_peminjaman))->assertOk();
 
         // mahasiswa lain: riwayat kosong, detail ditolak
         $this->sebagai('mahasiswa', $this->mahasiswa());
-        $this->get(route('peminjaman.saya'))->assertOk()->assertDontSee(route('peminjaman.show', $p->id_peminjaman), false);
+        $this->get(route('peminjaman.riwayat'))->assertOk()->assertDontSee(route('peminjaman.show', $p->id_peminjaman), false);
         $this->get(route('peminjaman.show', $p->id_peminjaman))->assertForbidden();
 
         // Peminjaman Mandiri: Dosen tidak boleh membuka detail; Laboran boleh
@@ -143,66 +143,6 @@ class PeminjamanHttpTest extends TestCase
         $this->sebagai('laboran', $this->laboran())->get(route('peminjaman.show', $p->id_peminjaman))->assertOk();
     }
 
-    // ------------------------------------------------------------------ pemisahan menu
-
-    public function test_peminjaman_saya_hanya_menunggu_dan_riwayat_hanya_sudah_diputus(): void
-    {
-        $this->sebagai('mahasiswa', $this->mahasiswa());
-        $this->sebagai('laboran', $this->laboran());
-
-        // Bersihkan transaksi menunggu/sudah diputus sebelumnya agar clean state
-        $lm = Peminjaman::whereIn('status', ['menunggu', 'disetujui', 'ditolak', 'selesai', 'dibatalkan'])
-            ->where('email_peminjam', 'x@test.id')->first();
-        if ($lm) { $lm->delete(); }
-
-        $k = $this->katalog('alat', 10);
-        $m = $this->mahasiswa();
-        $lab = $this->laboran();
-
-        // 1) Menunggu -> hanya muncul di Peminjaman Saya.
-        $menunggu = $this->ajukan([['id_katalog' => $k->id_katalog, 'jumlah' => 1]], $m->email);
-        $this->assertSame('menunggu', $menunggu->status);
-
-        $this->sebagai('mahasiswa', $m);
-        $this->get(route('peminjaman.riwayat'))->assertOk()
-            ->assertSee(route('peminjaman.show', $menunggu->id_peminjaman), false);
-
-        // 2) Disetujui -> pindah ke Riwayat, hilang dari Peminjaman Saya.
-        app(PeminjamanService::class)->setujui($menunggu->id_peminjaman, $lab->email);
-        $this->assertSame('disetujui', $menunggu->fresh()->status);
-
-        $this->get(route('peminjaman.saya'))->assertOk()
-            ->assertDontSee(route('peminjaman.show', $menunggu->id_peminjaman), false)
-            ->assertSee('Tidak ada pengajuan yang menunggu persetujuan');
-        $this->get(route('peminjaman.riwayat'))->assertOk()
-            ->assertSee(route('peminjaman.show', $menunggu->id_peminjaman), false)
-            ->assertDontSee('Belum ada riwayat peminjaman');
-
-        // 3) Ditolak juga masuk Riwayat, bukan Peminjaman Saya.
-        $menunggu->update(['status' => 'selesai']);
-        $ditolak = $this->ajukan([['id_katalog' => $k->id_katalog, 'jumlah' => 1]], $m->email);
-        app(PeminjamanService::class)->tolak($ditolak->id_peminjaman, $lab->email, 'uji');
-
-        $this->get(route('peminjaman.saya'))->assertOk()
-            ->assertDontSee(route('peminjaman.show', $ditolak->id_peminjaman), false);
-        $this->get(route('peminjaman.riwayat'))->assertOk()
-            ->assertSee(route('peminjaman.show', $ditolak->id_peminjaman), false);
-    }
-
-    public function test_halaman_saya_tidak_bisa_menampilkan_status_sudah_diputus(): void
-    {
-        $k = $this->katalog('alat', 10);
-        $m = $this->mahasiswa();
-        $p = $this->ajukan([['id_katalog' => $k->id_katalog, 'jumlah' => 1]], $m->email);
-        app(PeminjamanService::class)->setujui($p->id_peminjaman, $this->laboran()->email);
-
-        // Filter status di luar cakupan halaman diabaikan (tidak membocorkan data).
-        $this->sebagai('mahasiswa', $m)
-            ->get(route('peminjaman.saya', ['status' => 'disetujui']))
-            ->assertOk()
-            ->assertViewHas('status', null)
-            ->assertDontSee(route('peminjaman.show', $p->id_peminjaman), false);
-    }
 
     // ------------------------------------------------------------------ pembatasan role
 

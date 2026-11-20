@@ -87,7 +87,7 @@
             </a>
         </div>
         <div class="col-12 col-md-4">
-            <a href="{{ route('peminjaman.saya') }}" class="card-modern p-3 h-100 text-decoration-none d-block">
+            <a href="{{ route('peminjaman.riwayat') }}" class="card-modern p-3 h-100 text-decoration-none d-block">
                 <div class="d-flex align-items-center gap-3">
                     <div style="width:42px;height:42px;border-radius:8px;background:rgba(16,185,129,.1);color:#10b981;display:flex;align-items:center;justify-content:center;">
                         <i class="bi bi-calendar-check fs-5"></i>
@@ -115,7 +115,7 @@
                         <h3 class="font-display fw-semibold mb-0" style="font-size:1.05rem;">Pengajuan terbaru</h3>
                         <div style="font-size:.78rem;color:var(--text-muted);">Aktivitas pengajuan pembelajaran Anda</div>
                     </div>
-                    <a href="{{ route('peminjaman.saya') }}" class="btn btn-outline-silab btn-sm" style="font-size:.75rem;">Lihat Semua</a>
+                    <a href="{{ route('peminjaman.riwayat') }}" class="btn btn-outline-silab btn-sm" style="font-size:.75rem;">Lihat Semua</a>
                 </div>
                 @if($terbaru->isEmpty())
                     <div class="text-center py-4" style="color:var(--text-muted);font-size:.85rem;">

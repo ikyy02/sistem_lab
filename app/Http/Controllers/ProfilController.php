@@ -72,6 +72,17 @@ class ProfilController extends Controller
         return redirect()->route('profil.index')->with('success', 'Foto profil berhasil diperbarui.');
     }
 
+    // Hapus foto profil: kolom foto dikosongkan dulu, lalu file dihapus.
+    public function hapusFoto()
+    {
+        $akun = Akun::findOrFail(AuthService::user()['email']);
+        $lama = $akun->foto;
+        $akun->update(['foto' => null]);
+        GambarProfil::hapus($lama);
+
+        return redirect()->route('profil.index')->with('success', 'Foto profil berhasil dihapus.');
+    }
+
     // Ganti password: cek password lama, password baru minimal 8 karakter dan berbeda dari yang lama.
     public function password(Request $request)
     {
@@ -86,7 +97,7 @@ class ProfilController extends Controller
             'password_baru.different' => 'Password baru harus berbeda dari password lama.',
         ], ['password_lama' => 'Password lama', 'password_baru' => 'Password baru']);
 
-        if (! hash_equals((string) $akun->password, (string) $request->input('password_lama'))) {
+        if (! \App\Services\AuthService::cocokPassword($akun, (string) $request->input('password_lama'))) {
             return back()->withErrors(['password_lama' => 'Password lama salah.']);
         }
         $akun->update(['password' => $request->input('password_baru'), 'wajib_ganti_password' => false]);

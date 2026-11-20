@@ -34,6 +34,16 @@ class Notif
     }
 
     /**
+     * Semua akun Laboran/Admin.
+     *
+     * @return array<int, string>
+     */
+    public static function laboran(): array
+    {
+        return Akun::where('role', Role::LABORAN)->pluck('email')->all();
+    }
+
+    /**
      * Email penyetuju pengajuan: dosen penanggung jawab bila jenis "atas_dosen", selain itu semua akun Laboran.
      *
      * @return array<int, string>
@@ -44,7 +54,7 @@ class Notif
             return [$peminjaman->email_dosen];
         }
 
-        return Akun::where('role', Role::LABORAN)->pluck('email')->all();
+        return self::laboran();
     }
 
     /**

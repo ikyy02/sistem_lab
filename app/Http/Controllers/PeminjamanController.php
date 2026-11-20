@@ -192,21 +192,10 @@ class PeminjamanController extends Controller
     ];
 
     /**
-     * Status yang tampil di "Peminjaman Saya": pengajuan yang belum diproses.
-     */
-    public const STATUS_SAYA = ['menunggu'];
-
-    /**
      * Status yang tampil di "Riwayat Peminjaman": pengajuan milik sendiri
      * (menunggu, disetujui, selesai, ditolak, dibatalkan).
      */
     public const STATUS_RIWAYAT = ['menunggu', 'disetujui', 'selesai', 'ditolak', 'dibatalkan'];
-
-    /** Peminjaman Saya: pengajuan milik sendiri yang belum di-acc. */
-    public function saya(Request $request)
-    {
-        return $this->daftar($request, 'peminjaman.saya', 'peminjaman.saya', self::STATUS_SAYA);
-    }
 
     /** Riwayat Peminjaman: pengajuan milik sendiri yang sudah disetujui/selesai/ditolak/dibatalkan. */
     public function riwayat(Request $request)
@@ -216,7 +205,7 @@ class PeminjamanController extends Controller
 
     /**
      * Daftar transaksi milik pengguna login dengan filter status terbatas,
-     * pencarian, urutan, dan pagination. Dipakai Peminjaman Saya & Riwayat.
+     * pencarian, urutan, dan pagination. Dipakai Riwayat Peminjaman.
      */
     private function daftar(Request $request, string $namaRoute, string $view, array $statusBoleh)
     {

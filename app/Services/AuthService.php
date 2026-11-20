@@ -6,6 +6,7 @@ use App\Models\Akun;
 use App\Models\StaffProdi;
 use App\Support\Role;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 
 /**
  * Autentikasi email + password untuk 4 kategori pengguna.
@@ -16,8 +17,7 @@ class AuthService
     public function attempt(string $email, string $password): ?array
     {
         $akun = Akun::query()->where('email', trim($email))->first();
-        // Bandingkan password apa adanya (hashing belum diterapkan, ditunda); hash_equals menghindari timing attack.
-        if (! $akun || ! hash_equals((string) $akun->password, $password)) {
+        if (! $akun || ! self::cocokPassword($akun, $password)) {
             return null;
         }
         // Cari profil sesuai role (Mahasiswa/Dosen/Staff/Laboran) lewat email.
@@ -32,6 +32,23 @@ class AuthService
         }
 
         return ['role' => $akun->role, 'key' => (string) $profil->getKey(), 'nama' => $profil->nama, 'email' => $akun->email];
+    }
+
+    /**
+     * Cocokkan password dengan hash. Akun lama yang masih teks biasa dicocokkan sekali lalu langsung di-hash ulang.
+     */
+    public static function cocokPassword(Akun $akun, string $password): bool
+    {
+        $tersimpan = (string) $akun->getRawOriginal('password');
+        if (password_get_info($tersimpan)['algo'] !== null) {
+            return Hash::check($password, $tersimpan);
+        }
+        if (! hash_equals($tersimpan, $password)) {
+            return false;
+        }
+        $akun->update(['password' => $password]); // cast 'hashed' menyimpan dalam bentuk hash
+
+        return true;
     }
 
     /** id_prodi yang membatasi data pengguna: Staf Prodi = prodinya sendiri; role lain (Laboran) = null (tanpa batas). */

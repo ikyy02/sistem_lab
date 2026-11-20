@@ -240,6 +240,10 @@ class PeminjamanService
         if ($p->status === 'disetujui') {
             Notif::kirim([$p->email_peminjam], new PeminjamanDisetujui($p));
         }
+        // Setelah Dosen meneruskan, Laboran harus tahu ada pengajuan yang menunggu keputusan akhir.
+        if ($pemroses->role === 'dosen' && $p->diteruskanKeLaboran()) {
+            Notif::kirim(Notif::laboran(), new PengajuanBaru($p));
+        }
 
         return $p;
     }
@@ -286,31 +290,55 @@ class PeminjamanService
     public function evaluasiStatus(Peminjaman $p, ?CarbonInterface $sekarang = null): bool
     {
         $sekarang = $sekarang ? Carbon::instance($sekarang) : now();
-        $p->refresh();
-        if ($p->status !== 'disetujui') {
-            return false;
-        }
 
-        if ($p->ruangans()->exists()) {
-            return false;
-        }
-        // Alat yang belum kembali pasti berarti transaksi punya alat, jadi cek ini cukup (tanpa query "punya alat" terpisah).
-        if ($this->alatBelumKembali($p)) {
-            return false;
-        }
-        if ($sekarang->lt($p->tanggal_rencana_kembali)) {
-            // Belum lewat rencana kembali: tetap menunggu bila bahan saja; bila ada alat (semua sudah kembali) boleh selesai.
-            $punyaAlat = DB::table('peminjaman_details as d')->join('alat_bahans as k', 'k.id_katalog', '=', 'd.id_katalog')
-                ->where('d.id_peminjaman', $p->id_peminjaman)->where('k.jenis', 'alat')->exists();
-            if (! $punyaAlat) {
-                return false; // bahan saja: menunggu rencana kembali
+        // Transaksi + kunci baris: scheduler dan alur pengembalian tidak boleh mengubah status yang sama bersamaan.
+        // Notifikasi TIDAK dikirim di sini; pemanggil mengirimkannya setelah commit.
+        return DB::transaction(function () use ($p, $sekarang) {
+            $p = Peminjaman::whereKey($p->id_peminjaman)->lockForUpdate()->firstOrFail();
+            if ($p->status !== 'disetujui') {
+                return false;
             }
+            if ($p->ruangans()->exists()) {
+                return false;
+            }
+            // Alat yang belum kembali pasti berarti transaksi punya alat, jadi cek ini cukup (tanpa query "punya alat" terpisah).
+            if ($this->alatBelumKembali($p)) {
+                return false;
+            }
+            if ($sekarang->lt($p->tanggal_rencana_kembali)) {
+                // Belum lewat rencana kembali: bahan saja menunggu; bila ada alat (semua sudah kembali) boleh selesai.
+                $punyaAlat = DB::table('peminjaman_details as d')->join('alat_bahans as k', 'k.id_katalog', '=', 'd.id_katalog')
+                    ->where('d.id_peminjaman', $p->id_peminjaman)->where('k.jenis', 'alat')->exists();
+                if (! $punyaAlat) {
+                    return false;
+                }
+            }
+
+            $p->update(['status' => 'selesai']);
+
+            return true;
+        });
+    }
+
+    /**
+     * Dari daftar id peminjaman, kembalikan id yang masih punya Alat belum seluruhnya dikembalikan (satu query).
+     *
+     * @param  array<int,int|string>  $ids
+     * @return array<int,int>
+     */
+    public function idDenganAlatBelumKembali(array $ids): array
+    {
+        if ($ids === []) {
+            return [];
         }
 
-        $p->update(['status' => 'selesai']);
-        Notif::peminjamanSelesai($p);
-
-        return true;
+        return DB::table('peminjaman_details as d')
+            ->join('alat_bahans as k', 'k.id_katalog', '=', 'd.id_katalog')
+            ->whereIn('d.id_peminjaman', $ids)->where('k.jenis', 'alat')
+            ->whereRaw('d.jumlah > COALESCE((SELECT SUM(pd.jumlah_dikembalikan) FROM pengembalian_details pd
+                        JOIN pengembalians pg ON pg.id_pengembalian = pd.id_pengembalian
+                        WHERE pd.id_detail_peminjaman = d.id_detail AND pg.id_peminjaman = d.id_peminjaman), 0)')
+            ->distinct()->pluck('d.id_peminjaman')->map(fn ($v) => (int) $v)->all();
     }
 
     /**
@@ -440,14 +468,21 @@ class PeminjamanService
     public function sinkronSelesai(?CarbonInterface $sekarang = null): int
     {
         $n = 0;
+        $berubah = [];
         // Peminjaman yang punya ruangan tidak pernah selesai otomatis (lihat evaluasiStatus), jadi disaring di database.
         // chunkById aman walau status berubah saat diproses karena memakai batas id, bukan offset.
         Peminjaman::where('status', 'disetujui')->whereDoesntHave('ruangans')
-            ->chunkById(200, function ($daftar) use (&$n, $sekarang) {
+            ->chunkById(200, function ($daftar) use (&$n, &$berubah, $sekarang) {
                 foreach ($daftar as $p) {
-                    $n += $this->evaluasiStatus($p, $sekarang) ? 1 : 0;
+                    if ($this->evaluasiStatus($p, $sekarang)) {
+                        $n++;
+                        $berubah[] = $p->id_peminjaman;
+                    }
                 }
             }, 'id_peminjaman');
+
+        // Notifikasi dikirim setelah status tersimpan (di luar transaksi); Notif menjaga agar tidak ganda.
+        Peminjaman::whereIn('id_peminjaman', $berubah)->get()->each(fn ($p) => Notif::peminjamanSelesai($p));
 
         return $n;
     }

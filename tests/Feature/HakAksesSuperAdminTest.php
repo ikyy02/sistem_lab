@@ -36,7 +36,6 @@ class HakAksesSuperAdminTest extends TestCase
             'pengajuan.index' => ['laboran', 'dosen'],
             'peminjaman.index' => ['dosen', 'mahasiswa'],
             'peminjaman.riwayat' => ['dosen', 'mahasiswa'],
-            'peminjaman.saya' => ['dosen', 'mahasiswa'],
             'pengembalian.index' => ['laboran'],
             'kelola-katalog.index' => ['laboran'],
             'kelola-user.index' => ['laboran'],

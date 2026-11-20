@@ -58,6 +58,12 @@
                             <i class="bi bi-{{ $fotoUrl ? 'camera' : 'plus-lg' }} me-1" aria-hidden="true"></i>{{ $fotoUrl ? 'Ganti Foto' : 'Tambah Foto' }}
                         </button>
                     </form>
+                    @if($fotoUrl)
+                    <form method="POST" action="{{ route('profil.foto.hapus') }}" class="profil-foto-actions" data-konfirmasi="Hapus foto profil ini?">
+                        @csrf
+                        <button type="submit" class="btn-foto-profil" style="color:#dc2626;"><i class="bi bi-trash me-1" aria-hidden="true"></i>Hapus Foto</button>
+                    </form>
+                    @endif
                     @error('foto')<div class="profil-error-msg">{{ $message }}</div>@enderror
                 </div>
             </div>

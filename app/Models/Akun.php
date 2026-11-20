@@ -20,7 +20,7 @@ class Akun extends Model
     protected $keyType = 'string';
     public $timestamps = false;
     protected $fillable = ['email', 'password', 'role', 'wajib_ganti_password', 'foto'];
-    protected $casts = ['wajib_ganti_password' => 'boolean'];
+    protected $casts = ['wajib_ganti_password' => 'boolean', 'password' => 'hashed'];
     protected $hidden = ['password'];
 
     // URL foto profil untuk ditampilkan di <img>; null bila belum mengunggah foto.

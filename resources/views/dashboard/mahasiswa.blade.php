@@ -311,7 +311,7 @@
     <section class="mhs-section-gap" aria-label="Statistik Ringkas">
         <div class="row g-3">
             <div class="{{ $colClass }}">
-                <a href="{{ route('peminjaman.saya') }}" class="mhs-stat-card">
+                <a href="{{ route('peminjaman.riwayat') }}" class="mhs-stat-card">
                     <div class="mhs-stat-val">{{ $ringkasan['menunggu'] }}</div>
                     <div class="mhs-stat-lbl">Menunggu persetujuan</div>
                 </a>

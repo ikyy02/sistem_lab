@@ -88,7 +88,6 @@ class MahasiswaMandiriTest extends TestCase
 
         $this->sebagai('mahasiswa', $m)->get(route('dashboard'))->assertOk()->assertSee('Ajukan Peminjaman');
         $this->get(route('peminjaman.index'))->assertOk();
-        $this->get(route('peminjaman.saya'))->assertOk();
         $this->get(route('peminjaman.riwayat'))->assertOk();
     }
 

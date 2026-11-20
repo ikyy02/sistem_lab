@@ -54,7 +54,7 @@ class DosenSeeder extends Seeder
         foreach ($dosens as $d) {
             Akun::firstOrCreate(
                 ['email' => $d['email']],
-                ['password' => 'dosen123', 'role' => Role::DOSEN]
+                ['password' => app()->environment('local') ? 'dosen123' : Str::random(16), 'role' => Role::DOSEN]
             );
 
             Dosen::firstOrCreate(
