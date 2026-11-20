@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 
 @section('title', 'Beranda')
 @section('page-title', 'Beranda')
@@ -25,7 +25,7 @@
                     </div>
                     <div>
                         <div class="stat-num">{{ $menunggu }}</div>
-                        <div style="font-size:.8rem;color:var(--text-secondary);">Pengajuan menunggu persetujuan</div>
+                        <div style="font-size:.8rem;color:var(--text-primary);">Pengajuan menunggu persetujuan</div>
                     </div>
                     <i class="bi bi-chevron-right ms-auto" style="color:var(--text-muted);"></i>
                 </div>
@@ -39,7 +39,7 @@
                     </div>
                     <div>
                         <div class="stat-num">{{ $berlangsung }}</div>
-                        <div style="font-size:.8rem;color:var(--text-secondary);">Peminjaman sedang berlangsung</div>
+                        <div style="font-size:.8rem;color:var(--text-primary);">Peminjaman sedang berlangsung</div>
                     </div>
                     <i class="bi bi-chevron-right ms-auto" style="color:var(--text-muted);"></i>
                 </div>
@@ -80,7 +80,7 @@
                     </div>
                     <div>
                         <div class="stat-num">{{ $menunggu ?? 0 }}</div>
-                        <div style="font-size:.8rem;color:var(--text-secondary);">Perlu Persetujuan</div>
+                        <div style="font-size:.8rem;color:var(--text-primary);">Perlu Persetujuan</div>
                     </div>
                     <i class="bi bi-chevron-right ms-auto" style="color:var(--text-muted);"></i>
                 </div>
@@ -94,7 +94,7 @@
                     </div>
                     <div>
                         <div class="stat-num">{{ $disetujui }}</div>
-                        <div style="font-size:.8rem;color:var(--text-secondary);">Peminjaman Disetujui</div>
+                        <div style="font-size:.8rem;color:var(--text-primary);">Peminjaman Disetujui</div>
                     </div>
                     <i class="bi bi-chevron-right ms-auto" style="color:var(--text-muted);"></i>
                 </div>

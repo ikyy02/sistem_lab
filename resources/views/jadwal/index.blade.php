@@ -16,11 +16,23 @@
         <a href="{{ route('jadwal.periode.index') }}" class="btn btn-outline-silab d-flex align-items-center gap-2">
             <i class="bi bi-calendar-range" aria-hidden="true"></i> Periode Jadwal
         </a>
+        @if(\App\Services\AuthService::batasProdi() !== null)
+        <button type="button" class="btn btn-outline-silab d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#jadwalImportModal">
+            <i class="bi bi-file-earmark-excel" aria-hidden="true"></i> Import Excel
+        </button>
+        @endif
         <a href="{{ route('jadwal.create') }}" class="btn btn-primary d-flex align-items-center gap-2">
             <i class="bi bi-plus-lg" aria-hidden="true"></i> Tambah Jadwal
         </a>
     </div>
 </div>
+
+@if(session('jadwal_import_report'))
+    <div class="alert alert-danger mb-3" role="alert">
+        <strong>Impor dibatalkan.</strong> Ada {{ session('jadwal_import_report.error_count') }} baris bermasalah; tidak ada jadwal yang disimpan.
+        <ul class="mb-0 mt-2">@foreach(session('jadwal_import_report.errors', []) as $issue)<li>Baris {{ $issue['row'] }}: {{ implode(' ', $issue['messages']) }}</li>@endforeach</ul>
+    </div>
+@endif
 
 @if(! $berjalan)
     <div class="alert alert-warning mb-3" role="alert">Belum ada periode berjalan. <a href="{{ route('jadwal.periode.index') }}" class="alert-link">Atur periode jadwal</a> agar jadwal baru tercatat pada periode yang berlaku.</div>
@@ -154,5 +166,9 @@
         {{ $data->links('pagination.silab') }}
     </div>
 </div>
+
+@if(\App\Services\AuthService::batasProdi() !== null)
+    @include('jadwal._import_modal')
+@endif
 
 @endsection

@@ -176,7 +176,7 @@
     }
     .mhs-stat-lbl {
         font-size: 13px;
-        color: #64748B;
+        color: #0F172A;
         font-weight: 500;
     }
     /* Daftar pengajuan */

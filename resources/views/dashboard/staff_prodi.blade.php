@@ -45,7 +45,7 @@
                         </div>
                         <div class="min-w-0">
                             <div class="stat-num">{{ number_format($k['nilai']) }}</div>
-                            <div style="font-size:.8rem;color:var(--text-secondary);">{{ $k['label'] }}</div>
+                            <div style="font-size:.8rem;color:var(--text-primary);">{{ $k['label'] }}</div>
                         </div>
                     </div>
                     <i class="bi bi-chevron-right text-muted" style="font-size:.85rem;"></i>

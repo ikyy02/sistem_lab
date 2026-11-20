@@ -420,13 +420,16 @@
         display: flex;
         align-items: center;
         gap: 10px;
-        background: none;
-        border: 1px solid transparent;
+        min-height: 52px;
+        background: transparent;
+        border: 1px solid var(--border);
         border-radius: var(--radius-md);
-        padding: 4px 8px;
+        padding: 6px 10px;
         cursor: pointer;
+        transition: background-color 150ms ease, border-color 150ms ease;
     }
-    .topbar-user:hover {
+    .topbar-user:hover,
+    .topbar-user[aria-expanded="true"] {
         background: var(--bg-subtle);
         border-color: var(--border);
     }
@@ -658,9 +661,9 @@
     }
     .btn-del {
         height: var(--control-h-sm);
-        background: transparent;
+        background: var(--danger-soft);
         color: var(--danger);
-        border: 1px solid transparent;
+        border: 1px solid rgba(220,38,38,.32);
         font-size: 13px;
         padding: 0 8px;
         border-radius: var(--radius-md);

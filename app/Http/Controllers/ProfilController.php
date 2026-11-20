@@ -3,14 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\Akun;
-use App\Services\AkunService;
 use App\Services\AuthService;
 use App\Support\GambarProfil;
 use App\Support\Role;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
-use Illuminate\Validation\Rule;
 
 /** Profil Saya: lihat/ubah profil sendiri dan ubah password (password disimpan apa adanya, sesuai project). */
 class ProfilController extends Controller
@@ -33,41 +31,22 @@ class ProfilController extends Controller
         ]);
     }
 
-    // Ubah profil sendiri (nama, email, WhatsApp) lewat AkunService agar akun dan profil ikut berubah.
-    public function update(Request $request, AkunService $akun)
+    // Pengguna hanya dapat mengubah nomor WhatsApp; identitas akun diubah melalui pengelola akun.
+    public function update(Request $request)
     {
         $me = AuthService::user();
         $profil = $this->profil($me);
-        $input = [
-            'nama' => trim(preg_replace('/\s+/u', ' ', (string) $request->input('nama'))),
-            'email' => mb_strtolower(trim((string) $request->input('email'))),
-            'no_whatsapp' => preg_replace('/[\s\-]+/', '', (string) $request->input('no_whatsapp')) ?: null,
-        ];
-        $email = ['bail', 'required', 'email', 'max:50', Rule::unique('akuns', 'email')->ignore($profil->email, 'email')];
-        if ($me['role'] === Role::MAHASISWA) {
-            $email[] = 'regex:' . \App\Http\Requests\MahasiswaRequest::EMAIL_REGEX;
-        }
-        $v = Validator::make($input, [
-            'nama' => ['bail', 'required', 'string', 'min:2', 'max:100'],
-            'email' => $email,
+        $input = ['no_whatsapp' => preg_replace('/[\s\-]+/', '', (string) $request->input('no_whatsapp')) ?: null];
+        $data = Validator::make($input, [
             'no_whatsapp' => ['nullable', 'string', 'max:20', 'regex:' . \App\Support\UserKonfigurasi::WA_REGEX],
         ], [
-            'required' => ':attribute wajib diisi.', 'min' => ':attribute minimal :min karakter.', 'max' => ':attribute maksimal :max karakter.',
-            'email' => 'Format email tidak valid.', 'email.unique' => 'Email sudah terdaftar di sistem.',
-            'email.regex' => 'Email mahasiswa harus menggunakan domain @mhs.politala.ac.id.',
             'no_whatsapp.regex' => 'Nomor WhatsApp tidak valid. Gunakan format 08xxxxxxxxxx.',
-        ], ['nama' => 'Nama', 'email' => 'Email', 'no_whatsapp' => 'Nomor WhatsApp']);
-        if ($v->fails()) {
-            return back()->withErrors($v)->withInput();
-        }
+            'no_whatsapp.max' => 'Nomor WhatsApp maksimal 20 karakter.',
+        ], ['no_whatsapp' => 'Nomor WhatsApp'])->validate();
+        $profil->update($data);
 
-        $profil = $akun->ubah($profil, $me['role'], $v->validated(), null);
-        // Perbarui identitas di sesi karena nama/email bisa berubah.
-        session()->put('silab_user', ['key' => (string) $profil->getKey(), 'nama' => $profil->nama, 'email' => $profil->email] + $me);
-
-        return redirect()->route('profil.index')->with('success', 'Profil berhasil diperbarui.');
+        return redirect()->route('profil.index')->with('success', 'Nomor WhatsApp berhasil diperbarui.');
     }
-
     // Tambah/ganti foto profil: file disimpan di disk 'public' dengan nama acak, namanya dicatat pada tabel akuns.
     public function foto(Request $request)
     {
@@ -91,18 +70,6 @@ class ProfilController extends Controller
         GambarProfil::hapus($lama);
 
         return redirect()->route('profil.index')->with('success', 'Foto profil berhasil diperbarui.');
-    }
-
-    // Hapus foto profil: file di storage dihapus dan kolom foto dikosongkan.
-    public function hapusFoto()
-    {
-        $akun = Akun::findOrFail(AuthService::user()['email']);
-        if ($akun->foto) {
-            GambarProfil::hapus($akun->foto);
-            $akun->update(['foto' => null]);
-        }
-
-        return redirect()->route('profil.index')->with('success', 'Foto profil berhasil dihapus.');
     }
 
     // Ganti password: cek password lama, password baru minimal 8 karakter dan berbeda dari yang lama.

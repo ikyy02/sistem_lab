@@ -18,7 +18,7 @@
             @foreach($report['errors'] as $e)
                 <tr>
                     <td class="ps-4 fw-semibold" style="color:#be123c;">{{ $e['row'] }}</td>
-                    <td>{{ ($e['nama'] ?? '') !== '' ? $e['nama'] : '—' }}</td>
+                    <td>{{ ($e['nama'] ?? '') !== '' ? $e['nama'] : '' }}</td>
                     <td><ul class="mb-0 ps-3">@foreach($e['messages'] as $m)<li>{{ $m }}</li>@endforeach</ul></td>
                 </tr>
             @endforeach

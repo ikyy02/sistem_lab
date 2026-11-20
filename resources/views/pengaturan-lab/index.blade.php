@@ -38,7 +38,7 @@
             </select>
         </div>
         <div class="col-6 col-lg-4 d-flex gap-2">
-            <button type="submit" class="btn btn-outline-silab flex-grow-1">Terapkan</button>
+            <button type="submit" class="btn btn-primary flex-grow-1">Terapkan</button>
             <a href="{{ route('pengaturan-lab.index', ['tab' => 'satuan']) }}" class="btn btn-outline-silab" title="Reset filter" aria-label="Reset filter"><i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i></a>
         </div>
     </div>

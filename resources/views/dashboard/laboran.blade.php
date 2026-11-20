@@ -8,7 +8,7 @@
 <style>
     .dash-stat { display: block; height: 100%; padding: 16px; color: var(--text-primary); text-decoration: none; transition: border-color 150ms var(--ease-standard), background-color 150ms var(--ease-standard); }
     .dash-stat:hover { border-color: var(--border-strong); background: var(--bg-subtle); color: var(--text-primary); }
-    .dash-stat .k { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: var(--fs-sm); color: var(--text-secondary); }
+    .dash-stat .k { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: var(--fs-sm); color: var(--text-primary); }
     .dash-stat .n { font-size: 28px; font-weight: 600; line-height: 1.2; margin-top: 4px; font-variant-numeric: tabular-nums; }
     .dash-stat .n.perlu { color: var(--brand); }
     .dash-stat .n.bahaya { color: var(--danger-text); }

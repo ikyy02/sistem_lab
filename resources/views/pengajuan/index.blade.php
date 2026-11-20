@@ -6,19 +6,79 @@
     ? 'Setujui atau tolak pengajuan Kuliah/Praktikum yang ditujukan kepada Anda.'
     : 'Periksa, setujui, atau tolak pengajuan peminjaman oleh mahasiswa dan dosen.')
 
+@push('styles')
+<style>
+    .pengajuan-summary { display:flex; align-items:center; gap:.75rem; border:1px solid var(--border); background:var(--bg-surface); }
+    .pengajuan-summary-icon { display:inline-flex; width:2.5rem; height:2.5rem; flex:0 0 2.5rem; align-items:center; justify-content:center; border-radius:var(--radius-md); background:var(--bg-subtle); color:var(--primary); }
+    .pengajuan-page {
+        height: calc(100vh - var(--header-height) - 48px);
+        height: calc(100dvh - var(--header-height) - 48px);
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        overflow: hidden;
+    }
+    .pengajuan-page > .pengajuan-summary,
+    .pengajuan-page > .pengajuan-filters { flex: 0 0 auto; margin-bottom: 0 !important; }
+    .pengajuan-page > .pengajuan-summary { padding: 10px 14px !important; }
+    .pengajuan-page > .pengajuan-filters { padding: 12px !important; }
+    .pengajuan-page > .pengajuan-card { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+    .pengajuan-page .table-responsive { flex: 1 1 auto; min-height: 0; overflow-x: hidden; overflow-y: auto; }
+    .pengajuan-table { width: 100%; table-layout: fixed; }
+    .pengajuan-table th:nth-child(1), .pengajuan-table td:nth-child(1) { width: 4.5%; }
+    .pengajuan-table th:nth-child(2), .pengajuan-table td:nth-child(2) { width: 12%; }
+    .pengajuan-table th:nth-child(3), .pengajuan-table td:nth-child(3) { width: 15%; }
+    .pengajuan-table th:nth-child(4), .pengajuan-table td:nth-child(4) { width: 19%; }
+    .pengajuan-table th:nth-child(5), .pengajuan-table td:nth-child(5) { width: 7%; }
+    .pengajuan-table th:nth-child(6), .pengajuan-table td:nth-child(6) { width: 14%; }
+    .pengajuan-table th:nth-child(7), .pengajuan-table td:nth-child(7) { width: 13%; }
+    .pengajuan-table th:nth-child(8), .pengajuan-table td:nth-child(8) { width: 15.5%; }
+    .pengajuan-table td { overflow-wrap: anywhere; }
+    .pengajuan-table td:nth-child(4) .text-truncate { max-width: 100% !important; }
+    .pengajuan-table .jumlah-cell,
+    .pengajuan-table .jumlah-heading {
+        padding-left: 10px !important;
+        padding-right: 10px !important;
+        text-align: center;
+        white-space: nowrap;
+    }
+    .pengajuan-table .jumlah-cell { vertical-align: middle; font-variant-numeric: tabular-nums; }
+    .pengajuan-table .aksi-control {
+        width: 100px !important;
+        min-width: 100px;
+        max-width: 100px;
+        height: 44px;
+        min-height: 44px;
+        flex: 0 0 100px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        box-sizing: border-box;
+        white-space: nowrap;
+    }
+    .pengajuan-table .btn-tolak { border:1px solid rgba(220,38,38,.32); background:var(--danger-soft); color:var(--danger); white-space:nowrap; }
+    .pengajuan-table .btn-tolak:hover, .pengajuan-table .btn-tolak:focus-visible { border-color:var(--danger); background:var(--danger); color:#fff; }
+</style>
+@endpush
+
 @section('content')
+<div class="pengajuan-page">
 @php
     $me = \App\Services\AuthService::user();
     $sebagaiDosen = $me['role'] === \App\Support\Role::DOSEN;
 @endphp
 
-<p class="mb-3" style="font-size:var(--fs-base);color:var(--text-muted);">
+<div class="pengajuan-summary card-modern p-3 mb-3">
+    <span class="pengajuan-summary-icon" aria-hidden="true"><i class="bi bi-info-circle"></i></span>
+    <p class="mb-0" style="font-size:var(--fs-base);color:var(--text-muted);">
     @if($sebagaiDosen)
         {{ $jumlahMenunggu }} pengajuan menunggu keputusan Anda. Yang Anda setujui diteruskan ke Laboran untuk keputusan akhir.
     @else
         {{ $jumlahMenunggu }} pengajuan menunggu persetujuan. Persetujuan memotong stok; penolakan tidak.
     @endif
-</p>
+    </p>
+</div>
 
 @if($errors->any())
     <div class="alert alert-danger mb-3" role="alert">
@@ -28,7 +88,7 @@
     </div>
 @endif
 
-<form method="GET" action="{{ route('pengajuan.index') }}" class="card-modern p-3 mb-3">
+<form method="GET" action="{{ route('pengajuan.index') }}" class="card-modern p-3 mb-3 pengajuan-filters">
     <div class="row g-2 align-items-end">
         <div class="col-6 col-lg-3">
             <label class="form-label" for="status">Status</label>
@@ -54,20 +114,20 @@
     </div>
 </form>
 
-<div class="card-modern overflow-hidden">
+<div class="card-modern overflow-hidden pengajuan-card">
     <div class="table-responsive">
-        <table class="table table-silab mb-0">
+        <table class="table table-silab mb-0 pengajuan-table">
 <caption class="visually-hidden">{{ trim($__env->yieldContent('page-title')) }}</caption>
             <thead>
                 <tr>
-                    <th scope="col" class="ps-4" style="width:56px;">No</th>
-                    <th scope="col" style="width:150px;">Pengajuan</th>
-                    <th scope="col" style="width:230px;">Peminjam</th>
+                    <th scope="col" class="ps-4">No</th>
+                    <th scope="col" >Pengajuan</th>
+                    <th scope="col" >Peminjam</th>
                     <th scope="col">Barang / Ruangan</th>
-                    <th scope="col" style="width:80px;">Jumlah</th>
-                    <th scope="col" style="width:160px;">Peminjaman</th>
-                    <th scope="col" style="width:170px;">Status</th>
-                    <th scope="col" class="text-end pe-4" style="width:230px;">Aksi</th>
+                    <th scope="col" class="jumlah-heading">Jumlah</th>
+                    <th scope="col" >Peminjaman</th>
+                    <th scope="col" >Status</th>
+                    <th scope="col" class="text-end pe-4" >Aksi</th>
                 </tr>
             </thead>
             <tbody>
@@ -84,7 +144,7 @@
                         <span class="d-inline-block text-truncate align-middle" style="max-width:300px;" title="{{ $p->ringkasan }}">{{ $p->ringkasan }}</span>
                         @if($p->keterangan)<div style="font-size:var(--fs-base);color:var(--text-muted);text-truncate;" title="{{ $p->keterangan }}">{{ $p->keterangan }}</div>@endif
                     </td>
-                    <td>{{ $p->jumlah_barang }}</td>
+                    <td class="jumlah-cell">{{ $p->jumlah_barang }}</td>
                     <td style="font-size:var(--fs-base);">
                         {{ $p->tanggal_peminjaman?->format('d/m/Y') }}<br>
                         s/d {{ $p->tanggal_rencana_kembali?->format('d/m/Y H:i') }}
@@ -106,18 +166,18 @@
                                 <form action="{{ route('pengajuan.setujui', $p->id_peminjaman) }}" method="POST" class="d-inline"
                                       data-konfirmasi="Setujui pengajuan peminjaman #{{ $p->id_peminjaman }} oleh {{ $p->nama_peminjam }}? {{ $sebagaiDosen ? 'Pengajuan akan diteruskan ke Laboran untuk keputusan akhir.' : 'Stok barang akan dipotong sesuai jumlah yang diajukan.' }}">
                                     @csrf
-                                    <button type="submit" class="btn btn-edit d-flex align-items-center gap-1" style="padding:.3rem .65rem;font-size:var(--fs-base);">
+                                    <button type="submit" class="btn btn-edit aksi-control d-flex align-items-center gap-1" style="padding:.3rem .65rem;font-size:var(--fs-base);">
                                         <i class="bi bi-check-lg" aria-hidden="true"></i> Setujui
                                     </button>
                                 </form>
-                                <button type="button" class="btn btn-del d-flex align-items-center gap-1" style="padding:.3rem .65rem;font-size:var(--fs-base);"
+                                <button type="button" class="btn btn-del btn-tolak aksi-control d-flex align-items-center gap-1" style="padding:.3rem .65rem;font-size:var(--fs-base);"
                                         data-bs-toggle="modal" data-bs-target="#tolakModal"
                                         data-url="{{ route('pengajuan.tolak', $p->id_peminjaman) }}"
                                         data-info="#{{ $p->id_peminjaman }} — {{ $p->nama_peminjam }}">
                                     <i class="bi bi-x-lg" aria-hidden="true"></i> Tolak
                                 </button>
                             @endif
-                            <a href="{{ route('peminjaman.show', $p->id_peminjaman) }}" class="btn btn-outline-silab d-flex align-items-center gap-1" style="padding:.3rem .65rem;font-size:var(--fs-base);">
+                            <a href="{{ route('peminjaman.show', $p->id_peminjaman) }}" class="btn btn-outline-silab aksi-control d-flex align-items-center gap-1" style="padding:.3rem .65rem;font-size:var(--fs-base);">
                                 <i class="bi bi-eye" aria-hidden="true"></i> Detail
                             </a>
                         </div>
@@ -146,6 +206,7 @@
     @endif
 </div>
 
+</div>
 {{-- Modal penolakan --}}
 <div class="modal fade" id="tolakModal" aria-labelledby="tolakModal-judul" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">

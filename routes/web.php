@@ -62,9 +62,8 @@ Route::middleware(['silab.auth', 'silab.password'])->group(function () {
     Route::put('profil', [ProfilController::class, 'update'])->name('profil.update');
     Route::put('profil/password', [ProfilController::class, 'password'])->name('profil.password');
 
-    // Foto profil: tambah/ganti dan hapus (semua role; file disimpan pada akun sendiri).
+    // Foto profil: tambah atau ganti untuk semua role.
     Route::post('profil/foto', [ProfilController::class, 'foto'])->name('profil.foto');
-    Route::post('profil/foto/hapus', [ProfilController::class, 'hapusFoto'])->name('profil.foto.hapus');
 
     // Staf Prodi dan Laboran/Admin (Super Admin)
     Route::middleware('silab.role:' . Role::STAFF . ',' . Role::LABORAN)->group(function () {
@@ -92,6 +91,8 @@ Route::middleware(['silab.auth', 'silab.password'])->group(function () {
         Route::put('jadwal/periode/{id}', [PeriodeJadwalController::class, 'update'])->whereNumber('id')->name('jadwal.periode.update');
 
         Route::get('jadwal', [JadwalController::class, 'index'])->name('jadwal.index');
+        Route::get('jadwal/template', [JadwalController::class, 'template'])->name('jadwal.template');
+        Route::post('jadwal/import', [JadwalController::class, 'import'])->name('jadwal.import');
         Route::get('jadwal/create', [JadwalController::class, 'create'])->name('jadwal.create');
         Route::post('jadwal', [JadwalController::class, 'store'])->name('jadwal.store');
         Route::get('jadwal/{jadwal}', [JadwalController::class, 'show'])->whereNumber('jadwal')->name('jadwal.show');
@@ -105,8 +106,10 @@ Route::middleware(['silab.auth', 'silab.password'])->group(function () {
         Route::get('peminjaman', [PeminjamanController::class, 'index'])->name('peminjaman.index');
         Route::post('peminjaman', [PeminjamanController::class, 'store'])->middleware('throttle:10,1')->name('peminjaman.store');
         Route::get('peminjaman/riwayat', [PeminjamanController::class, 'riwayat'])->name('peminjaman.riwayat');
-        Route::get('peminjaman/saya', [PeminjamanController::class, 'saya'])->name('peminjaman.saya');
     });
+
+    // Mahasiswa dapat melihat pengajuan yang masih menunggu. Dosen memakai Riwayat Peminjaman.
+    Route::middleware('silab.role:' . Role::MAHASISWA)->get('peminjaman/saya', [PeminjamanController::class, 'saya'])->name('peminjaman.saya');
 
     // Detail transaksi: pemilik pengajuan, Dosen, dan Laboran/Admin (dicek ulang di controller)
     Route::get('peminjaman/{id}', [PeminjamanController::class, 'show'])->whereNumber('id')->name('peminjaman.show');
@@ -172,3 +175,4 @@ Route::middleware(['silab.auth', 'silab.password'])->group(function () {
         Route::post('mahasiswa/import', [MahasiswaController::class, 'import'])->name('mahasiswa.import');
     });
 });
+

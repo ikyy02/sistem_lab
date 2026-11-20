@@ -10,9 +10,12 @@ use App\Models\MataKuliah;
 use App\Models\PeriodeJadwal;
 use App\Services\AuthService;
 use App\Services\JadwalService;
+use App\Services\JadwalImportService;
+use App\Support\ExcelFile;
 use App\Support\Options;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
+use RuntimeException;
 
 /**
  * Kelola Jadwal Perkuliahan (khusus Staf Prodi): daftar, tambah, lihat, ubah, hapus.
@@ -82,6 +85,34 @@ class JadwalController extends Controller
         ]);
     }
 
+    public function template(JadwalImportService $service)
+    {
+        $prodi = AuthService::batasProdi();
+        abort_if($prodi === null, 403);
+        [$writer, $name] = $service->template($prodi);
+
+        return response()->streamDownload(fn () => $writer->save('php://output'), $name, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ]);
+    }
+
+    public function import(Request $request, JadwalImportService $service, JadwalService $jadwalService)
+    {
+        $prodi = AuthService::batasProdi();
+        abort_if($prodi === null, 403);
+        $request->validate(['file' => ExcelFile::rules(2048)], ExcelFile::messages(2048));
+        $back = redirect()->route('jadwal.index');
+
+        try {
+            $result = $service->import($request->file('file'), $prodi, $jadwalService);
+        } catch (RuntimeException $e) {
+            return $back->with('error', $e->getMessage())->with('open_jadwal_import', true);
+        }
+
+        return $result['success']
+            ? $back->with('success', $result['inserted'] . ' jadwal berhasil diimpor.')
+            : $back->with('jadwal_import_report', $result)->with('open_jadwal_import', true);
+    }
     public function create()
     {
         return view('jadwal.create', $this->form());

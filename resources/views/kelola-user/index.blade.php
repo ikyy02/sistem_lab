@@ -57,7 +57,7 @@
             </select>
         </div>
         <div class="col-6 col-lg-2 d-flex gap-2">
-            <button type="submit" class="btn btn-outline-silab flex-grow-1">Terapkan</button>
+            <button type="submit" class="btn btn-primary flex-grow-1">Terapkan</button>
             <a href="{{ route('kelola-user.index', ['kategori' => $kategori]) }}" class="btn btn-outline-silab" title="Reset filter" aria-label="Reset filter"><i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i></a>
         </div>
     </div>
@@ -105,7 +105,7 @@
                             @elseif($col === 'nim')
                                 <span class="fw-semibold" style="color:var(--primary)">{{ $item->nim }}</span>
                             @else
-                                {{ $item->{$col} ?? '—' }}
+                                {{ $item->{$col} ?? '' }}
                             @endif
                         </td>
                     @endforeach

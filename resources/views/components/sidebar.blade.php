@@ -6,15 +6,11 @@
 
     // Badge counters
     $badgePersetujuan = 0;
-    $badgePeminjamanSaya = 0;
     try {
         if ($role === \App\Support\Role::DOSEN || $role === \App\Support\Role::LABORAN) {
             $badgePersetujuan = \App\Models\Peminjaman::where('status', 'menunggu')->count();
         }
-        if ($role === \App\Support\Role::DOSEN) {
-            $badgePeminjamanSaya = \App\Models\Peminjaman::where('email_peminjam', $me['email'] ?? '')
-                ->where('status', 'menunggu')->count();
-        }
+
     } catch (\Throwable $e) {
         // Fallback gracefully if database table is unavailable
     }
@@ -22,13 +18,19 @@
     // Single menu configuration array filtered by role
     $menuConfig = [
         \App\Support\Role::MAHASISWA => [
-            '' => [
+            'Menu Utama' => [
                 ['label' => 'Dashboard', 'icon' => 'bi-speedometer2', 'route' => 'dashboard'],
-                ['label' => 'Katalog & Ajukan', 'icon' => 'bi-collection', 'route' => 'peminjaman.index'],
+                ['label' => 'Katalog Lab', 'icon' => 'bi-collection', 'route' => 'katalog'],
+            ],
+            'Peminjaman' => [
+                ['label' => 'Ajukan Peminjaman', 'icon' => 'bi-plus-circle', 'route' => 'peminjaman.index'],
                 ['label' => 'Riwayat Peminjaman', 'icon' => 'bi-clock-history', 'route' => 'peminjaman.riwayat'],
-                ['label' => 'Jadwal Praktikum', 'icon' => 'bi-calendar3', 'route' => 'jadwal-praktikum.index'],
+            ],
+            'Informasi' => [
                 ['label' => 'SOP & Panduan', 'icon' => 'bi-file-earmark-text', 'route' => 'sop.index'],
                 ['label' => 'Notifikasi', 'icon' => 'bi-bell', 'route' => 'notifikasi.index'],
+            ],
+            'Akun' => [
                 ['label' => 'Profil', 'icon' => 'bi-person', 'route' => 'profil.index'],
             ],
         ],
@@ -36,7 +38,6 @@
             'Menu Utama' => [
                 ['label' => 'Dashboard', 'icon' => 'bi-speedometer2', 'route' => 'dashboard'],
                 ['label' => 'Peminjaman', 'icon' => 'bi-plus-circle', 'route' => 'peminjaman.index'],
-                ['label' => 'Peminjaman Saya', 'icon' => 'bi-card-checklist', 'route' => 'peminjaman.saya', 'badge' => $badgePeminjamanSaya],
                 ['label' => 'Riwayat Peminjaman', 'icon' => 'bi-clock-history', 'route' => 'peminjaman.riwayat'],
                 ['label' => 'Persetujuan', 'icon' => 'bi-clipboard-check', 'route' => 'pengajuan.index', 'badge' => $badgePersetujuan],
                 ['label' => 'Jadwal Praktikum', 'icon' => 'bi-calendar3', 'route' => 'jadwal-praktikum.index'],
@@ -75,7 +76,6 @@
             ],
         ],
     ];
-
     $currentRoleGroups = $menuConfig[$role] ?? ($menuConfig[\App\Support\Role::MAHASISWA] ?? []);
 @endphp
 

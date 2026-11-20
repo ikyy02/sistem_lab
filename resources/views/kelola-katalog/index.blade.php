@@ -15,7 +15,16 @@
     $sortLabels = collect($config['columns'])->filter(fn ($c) => $c[1])->map(fn ($c) => $c[0]);
     $modalQuery = request()->only(['search', 'sort', 'direction', 'per_page', 'page', 'kategori']);
     $fieldNames = array_column($fields, 'name');
-    $colspan = count($config['columns']) + 3;
+    $hiddenColumns = ['satuans.id_satuan', 'ruangans.id_ruangan'];
+    $displayColumns = array_diff_key($config['columns'], array_flip($hiddenColumns));
+    if (!$isRoom && isset($displayColumns['ruangans.nama_ruangan'])) {
+        $roomColumn = $displayColumns['ruangans.nama_ruangan'];
+        unset($displayColumns['ruangans.nama_ruangan']);
+        $displayColumns = array_slice($displayColumns, 0, 4, true)
+            + ['ruangans.nama_ruangan' => $roomColumn]
+            + array_slice($displayColumns, 4, null, true);
+    }
+    $colspan = count($displayColumns) + 3;
 @endphp
 
 <p class="mb-3" style="font-size:var(--fs-base);color:var(--text-muted);">
@@ -76,7 +85,7 @@
                             </td>
 
                             <td>
-                                {{ $e['nama'] !== '' ? $e['nama'] : '—' }}
+                                {{ $e['nama'] }}
                             </td>
 
                             <td>
@@ -189,8 +198,8 @@
 
                     <th scope="col" class="col-gambar" style="width:84px;">Gambar</th>
 
-                    @foreach($config['columns'] as $col => [$text, $sortable])
-                        <th scope="col" class="col-{{ $col }}">
+                    @foreach($displayColumns as $col => [$text, $sortable])
+                        <th scope="col" class="col-{{ str_replace('.', '-', $col) }}">
                             @if($sortable)
                                 @php
                                     $next = ($sort === $col && $direction === 'asc')
@@ -267,9 +276,12 @@
                                 @endif
                             </td>
 
-                        @foreach($config['columns'] as $col => $meta)
-                            <td class="col-{{ $col }}">
-                                @if(in_array($col, ['nama', 'nama_ruangan'], true))
+                        @foreach($displayColumns as $col => $meta)
+                            <td class="col-{{ str_replace('.', '-', $col) }}">
+                                @if($col === 'ruangans.nama_ruangan')
+                                    <span class="fw-semibold">{{ $item->nama_ruangan ?? '' }}</span>
+
+                                @elseif(in_array($col, ['nama', 'nama_ruangan'], true))
                                     <span class="fw-semibold">
                                         {{ $item->{$col} }}
                                     </span>
@@ -280,40 +292,19 @@
                                 @elseif($col === 'keterangan')
                                     @php
                                         $ket = trim((string) $item->keterangan);
-
-                                        if (! $isRoom) {
-                                            $lokasi = trim((string) ($item->nama_ruangan ?? ''));
-
-                                            $teksLokasi = $lokasi !== ''
-                                                ? 'Disimpan di ' . $lokasi . '.'
-                                                : 'Lokasi penyimpanan belum ditentukan.';
-
-                                            $ket = trim(
-                                                $teksLokasi . ' ' .
-                                                (
-                                                    $ket !== ''
-                                                        ? (
-                                                            preg_match('/[.!?]$/u', $ket)
-                                                                ? $ket
-                                                                : $ket . '.'
-                                                        )
-                                                        : ''
-                                                )
-                                            );
-                                        }
                                     @endphp
 
                                     <span
                                         class="d-block text-truncate"
                                         style="color:var(--text-muted);"
                                         title="{{ $ket }}">
-                                        {{ $ket !== '' ? $ket : '—' }}
+                                        {{ $ket }}
                                     </span>
 
                                 @else
                                     {{ $item->{$col} !== '' && $item->{$col} !== null
                                         ? $item->{$col}
-                                        : '—' }}
+                                        : '' }}
                                 @endif
                             </td>
                         @endforeach
@@ -398,6 +389,7 @@
     .tbl-katalog {
         table-layout: fixed;
         width: 100%;
+        min-width: 1280px;
     }
 
     .tbl-katalog th,
@@ -426,6 +418,18 @@
 
     .tbl-katalog .col-harga {
         width: 15%;
+    }
+
+    .tbl-katalog .col-keterangan {
+        width: 300px;
+        min-width: 300px;
+        padding-left: 24px !important;
+        padding-right: 24px !important;
+    }
+
+    .tbl-katalog .col-ruangans-nama_ruangan {
+        width: 190px;
+        min-width: 190px;
     }
 
     .tbl-katalog .col-aksi {
