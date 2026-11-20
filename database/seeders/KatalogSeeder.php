@@ -39,7 +39,7 @@ class KatalogSeeder extends Seeder
                 'stok' => 5,
                 'harga' => 3200000,
                 'id_ruangan' => $labJaringan->id_ruangan,
-                'gambar' => 'portfolio-6.jpg',
+                'gambar' => 'switch-cisco-catalyst.jpg',
                 'keterangan' => 'Switch manageable untuk praktikum routing & switching.',
             ],
             [
@@ -49,7 +49,7 @@ class KatalogSeeder extends Seeder
                 'stok' => 8,
                 'harga' => 850000,
                 'id_ruangan' => $labJaringan->id_ruangan,
-                'gambar' => 'portfolio-6.jpg',
+                'gambar' => 'router-mikrotik-rb750.jpg',
                 'keterangan' => 'Router board 5-port Gigabit Ethernet untuk praktikum jaringan komputer.',
             ],
             [
@@ -59,7 +59,7 @@ class KatalogSeeder extends Seeder
                 'stok' => 12,
                 'harga' => 125000,
                 'id_ruangan' => $labJaringan->id_ruangan,
-                'gambar' => 'portfolio-6.jpg',
+                'gambar' => 'crimping-tool-rj45.jpg',
                 'keterangan' => 'Tang crimping kabel UTP Cat5e dan Cat6.',
             ],
             [
@@ -69,7 +69,7 @@ class KatalogSeeder extends Seeder
                 'stok' => 8,
                 'harga' => 95000,
                 'id_ruangan' => $labJaringan->id_ruangan,
-                'gambar' => 'portfolio-6.jpg',
+                'gambar' => 'lan-cable-tester.jpg',
                 'keterangan' => 'Tester pin kabel jaringan RJ45 dan RJ11.',
             ],
             [
@@ -79,7 +79,7 @@ class KatalogSeeder extends Seeder
                 'stok' => 6,
                 'harga' => 350000,
                 'id_ruangan' => $labJaringan->id_ruangan,
-                'gambar' => 'portfolio-6.jpg',
+                'gambar' => 'multimeter-digital.jpg',
                 'keterangan' => 'Pengukur tegangan, arus, dan hambatan digital.',
             ],
             [
@@ -89,7 +89,7 @@ class KatalogSeeder extends Seeder
                 'stok' => 3,
                 'harga' => 5400000,
                 'id_ruangan' => $labSteve->id_ruangan,
-                'gambar' => 'sj.jpg',
+                'gambar' => 'proyektor-epson.jpg',
                 'keterangan' => 'Proyektor HDMI/VGA untuk presentasi praktikum multimedia.',
             ],
             [
@@ -99,7 +99,7 @@ class KatalogSeeder extends Seeder
                 'stok' => 10,
                 'harga' => 650000,
                 'id_ruangan' => $labSteve->id_ruangan,
-                'gambar' => 'sj.jpg',
+                'gambar' => 'drawing-tablet.jpg',
                 'keterangan' => 'Pen tablet grafis untuk desain UI/UX dan multimedia interaktif.',
             ],
             [
@@ -109,7 +109,7 @@ class KatalogSeeder extends Seeder
                 'stok' => 5,
                 'harga' => 280000,
                 'id_ruangan' => $labGates->id_ruangan,
-                'gambar' => 'bg.jpg',
+                'gambar' => 'barcode-scanner-usb.jpg',
                 'keterangan' => 'Pemindai barcode 1D/2D untuk praktikum sistem informasi & kasir.',
             ],
 
@@ -121,7 +121,7 @@ class KatalogSeeder extends Seeder
                 'stok' => 300,
                 'harga' => 8500,
                 'id_ruangan' => $labJaringan->id_ruangan,
-                'gambar' => 'portfolio-6.jpg',
+                'gambar' => 'kabel-utp-cat6.jpg',
                 'keterangan' => 'Kabel jaringan Cat6 unshielded twisted pair.',
             ],
             [
@@ -131,7 +131,7 @@ class KatalogSeeder extends Seeder
                 'stok' => 200,
                 'harga' => 2500,
                 'id_ruangan' => $labJaringan->id_ruangan,
-                'gambar' => 'portfolio-6.jpg',
+                'gambar' => 'konektor-rj45.jpg',
                 'keterangan' => 'Modular plug konektor RJ45 Cat6 berlapis emas.',
             ],
             [
@@ -141,7 +141,7 @@ class KatalogSeeder extends Seeder
                 'stok' => 15,
                 'harga' => 45000,
                 'id_ruangan' => $labBasis->id_ruangan,
-                'gambar' => 'portfolio-8.jpg',
+                'gambar' => 'contact-cleaner.jpg',
                 'keterangan' => 'Cairan semprot pembersih komponen elektronik dan soket RAM/Motherboard.',
             ],
             [
@@ -151,13 +151,13 @@ class KatalogSeeder extends Seeder
                 'stok' => 20,
                 'harga' => 35000,
                 'id_ruangan' => $labBasis->id_ruangan,
-                'gambar' => 'portfolio-8.jpg',
+                'gambar' => 'thermal-paste.jpg',
                 'keterangan' => 'Pasta pendingin konduktivitas tinggi untuk heatsink prosesor.',
             ],
         ];
 
         foreach ($items as $item) {
-            AlatBahan::firstOrCreate(
+            AlatBahan::updateOrCreate(
                 ['nama' => $item['nama']],
                 $item
             );
