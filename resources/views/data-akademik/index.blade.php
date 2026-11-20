@@ -111,7 +111,6 @@
                         <th style="width:150px;">NUPTK/NIDN</th>
                         <th>Nama Dosen</th>
                         <th>Prodi</th>
-                        <th style="width:150px;">No. Telepon</th>
                         <th style="width:100px;">Status</th>
                     @endif
                     @unless($isDosen)<th class="text-end pe-4">Aksi</th>@endunless
@@ -145,7 +144,6 @@
                             <span class="fw-semibold">{{ $item->nama }}</span>
                         </td>
                         <td>{{ $item->nama_prodi ?? '—' }}</td>
-                        <td>{{ $item->no_whatsapp ?? '—' }}</td>
                         <td>
                             @if(($item->status ?? 'aktif') === 'nonaktif')
                                 <span class="badge-status badge-status-bad" style="font-size:.8rem;">Nonaktif</span>

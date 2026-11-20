@@ -171,7 +171,6 @@
                     <tr>
                         <th class="ps-4">Barang</th>
                         <th style="width:90px;">Jenis</th>
-                        <th style="width:90px;">Stok Saat Ini</th>
                         <th style="width:110px;">Dipinjam</th>
                         <th style="width:130px;">Dikembalikan</th>
                         <th class="pe-4" style="width:90px;">Sisa</th>
@@ -186,7 +185,6 @@
                     <tr>
                         <td class="ps-4 fw-semibold">{{ $d->katalog?->nama ?? '—' }}</td>
                         <td>{{ $d->katalog?->jenis === 'alat' ? 'Alat' : 'Bahan' }}</td>
-                        <td>{{ $d->katalog?->stok }}</td>
                         <td>{{ $d->jumlah }}</td>
                         <td>{{ $kembali }}</td>
                         <td class="pe-4">{{ $sisa }}</td>
@@ -208,8 +206,7 @@
             <thead>
                 <tr>
                     <th class="ps-4">Ruangan</th>
-                    <th style="width:160px;">Mulai</th>
-                    <th style="width:160px;">Selesai</th>
+                    <th style="width:200px;">Waktu</th>
                     <th class="pe-4">Keterangan</th>
                 </tr>
             </thead>
@@ -217,8 +214,7 @@
             @foreach($p->ruangans as $r)
                 <tr>
                     <td class="ps-4 fw-semibold">{{ $r->ruangan?->nama_ruangan ?? '—' }}</td>
-                    <td>{{ $r->tanggal_mulai?->format('d/m/Y H:i') }}</td>
-                    <td>{{ $r->tanggal_selesai?->format('d/m/Y H:i') }}</td>
+                    <td>{{ $r->tanggal_mulai?->format('d/m/Y H:i') }} s/d {{ $r->tanggal_selesai?->format('d/m/Y H:i') }}</td>
                     <td class="pe-4">{{ $r->keterangan ?? '—' }}</td>
                 </tr>
             @endforeach

@@ -53,7 +53,6 @@
         border-top: 2px solid var(--border);
         border-radius: 8px;
         padding: 14px 16px;
-        box-shadow: 0 1px 2px rgba(16,24,40,.05);
         height: 100%;
     }
     .summary-card.active-top {
@@ -91,7 +90,6 @@
         background: var(--bg-surface);
         border: 1px solid var(--border);
         border-radius: 8px;
-        box-shadow: 0 1px 2px rgba(16,24,40,.05);
     }
     .admin-card-header {
         background: var(--bg-surface);
@@ -681,26 +679,16 @@
                 </div>
 
                 <div style="font-size:13px; font-weight:600; color:var(--text-primary); margin-bottom:6px;">
-                    Matriks Keputusan Awal (X) dan Matriks Normalisasi (R)
+                    Matriks Keputusan: Nilai Preferensi Alternatif
                 </div>
                 <div class="table-responsive">
                     <table class="table-admin" style="font-size:12px;">
                         <thead>
                             <tr class="text-center">
-                                <th rowspan="2" style="width:35px;">No</th>
-                                <th rowspan="2" class="text-start">Alternatif (Nama Barang)</th>
-                                <th colspan="3">Matriks Awal (X)</th>
-                                <th colspan="3">Matriks Normalisasi (R)</th>
-                                <th rowspan="2" style="width:100px;">Nilai V</th>
-                                <th rowspan="2" style="width:50px;">Rank</th>
-                            </tr>
-                            <tr class="text-center">
-                                <th>C1: Stok</th>
-                                <th>C2: Pinjam</th>
-                                <th>C3: Harga</th>
-                                <th>R1 (W1={{ $w1 }})</th>
-                                <th>R2 (W2={{ $w2 }})</th>
-                                <th>R3 (W3={{ $w3 }})</th>
+                                <th style="width:40px;">No</th>
+                                <th class="text-start">Alternatif (Nama Barang)</th>
+                                <th style="width:100px;">Nilai V</th>
+                                <th style="width:60px;">Rank</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -708,12 +696,6 @@
                                 <tr>
                                     <td class="text-center" style="color:var(--text-muted);">{{ $idx + 1 }}</td>
                                     <td style="font-weight:500;">{{ $it['nama'] }}</td>
-                                    <td class="text-end" style="color:var(--text-secondary);">{{ $it['stok'] }}</td>
-                                    <td class="text-center" style="color:var(--text-secondary);">{{ $it['jumlah_peminjaman'] }}</td>
-                                    <td class="text-end" style="color:var(--text-secondary);">Rp {{ number_format($it['harga'], 0, ',', '.') }}</td>
-                                    <td class="text-end" style="font-family:monospace; color:var(--text-primary);">{{ number_format($it['r'][0], 4) }}</td>
-                                    <td class="text-end" style="font-family:monospace; color:var(--text-primary);">{{ number_format($it['r'][1], 4) }}</td>
-                                    <td class="text-end" style="font-family:monospace; color:var(--text-primary);">{{ number_format($it['r'][2], 4) }}</td>
                                     <td class="text-end" style="font-family:monospace; font-weight:600; color:var(--accent);">{{ number_format($it['nilai'], 4) }}</td>
                                     <td class="text-center">{{ $it['ranking'] }}</td>
                                 </tr>

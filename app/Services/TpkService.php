@@ -61,26 +61,16 @@ class TpkService
             $query->where('jenis', $jenis);
         }
 
-        $items = $query->get(['id_katalog', 'nama', 'jenis', 'id_satuan', 'id_ruangan', 'stok', 'harga', 'per_unit', 'harga_total', 'unit_dasar_harga'])->map(function ($k) use ($pinjam) {
-            // Konversi satuan asli -> unit (SRS D.2) hanya untuk penilaian SAW; stok dan harga tampilan tetap apa adanya.
-            $perUnit = (float) $k->per_unit;
-            $dasar = (float) $k->unit_dasar_harga;
-            $stokUnit = $perUnit > 0 ? (float) $k->stok / $perUnit : (float) $k->stok;
-            $hargaUnit = ($dasar > 0 && (float) $k->harga_total > 0) ? (float) $k->harga_total / $dasar : (float) $k->harga;
-
-            return [
-                'id_katalog' => $k->id_katalog,
-                'nama' => $k->nama,
-                'jenis' => $k->jenis,
-                'nama_satuan' => $k->satuan->nama_satuan ?? '-',
-                'nama_ruangan' => $k->ruangan->nama_ruangan ?? '-',
-                'stok' => (float) $k->stok,
-                'jumlah_peminjaman' => (int) ($pinjam[$k->id_katalog] ?? 0),
-                'harga' => (float) $k->harga,
-                'stok_skor' => $stokUnit,
-                'harga_skor' => $hargaUnit,
-            ];
-        })->all();
+        $items = $query->get(['id_katalog', 'nama', 'jenis', 'id_satuan', 'id_ruangan', 'stok', 'harga'])->map(fn ($k) => [
+            'id_katalog' => $k->id_katalog,
+            'nama' => $k->nama,
+            'jenis' => $k->jenis,
+            'nama_satuan' => $k->satuan->nama_satuan ?? '-',
+            'nama_ruangan' => $k->ruangan->nama_ruangan ?? '-',
+            'stok' => (float) $k->stok,
+            'jumlah_peminjaman' => (int) ($pinjam[$k->id_katalog] ?? 0),
+            'harga' => (float) $k->harga,
+        ])->all();
 
         if ($items === []) {
             return [
@@ -97,15 +87,15 @@ class TpkService
             ];
         }
 
-        $minStok = min(array_column($items, 'stok_skor'));
-        $minHarga = min(array_column($items, 'harga_skor'));
+        $minStok = min(array_column($items, 'stok'));
+        $minHarga = min(array_column($items, 'harga'));
         $maxPinjam = max(array_column($items, 'jumlah_peminjaman'));
 
         foreach ($items as &$it) {
             // Cost: Min/Xij (Xij sama dengan minimum → 1, sehingga nilai 0 tidak membagi nol). Benefit: Xij/Max (Max = 0 → 0).
-            $r1 = $it['stok_skor'] == $minStok ? 1.0 : $minStok / $it['stok_skor'];
+            $r1 = $it['stok'] == $minStok ? 1.0 : $minStok / $it['stok'];
             $r2 = $maxPinjam > 0 ? $it['jumlah_peminjaman'] / $maxPinjam : 0.0;
-            $r3 = $it['harga_skor'] == $minHarga ? 1.0 : $minHarga / $it['harga_skor'];
+            $r3 = $it['harga'] == $minHarga ? 1.0 : $minHarga / $it['harga'];
             $it['r'] = [$r1, $r2, $r3];
             $it['nilai'] = $bobot[0] * $r1 + $bobot[1] * $r2 + $bobot[2] * $r3;
         }

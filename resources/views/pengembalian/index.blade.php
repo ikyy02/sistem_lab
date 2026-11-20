@@ -85,9 +85,7 @@
                             <tr>
                                 <th scope="col" class="ps-0">Barang</th>
                                 <th scope="col" style="width:80px;">Jenis</th>
-                                <th scope="col" style="width:90px;">Dipinjam</th>
-                                <th scope="col" style="width:110px;">Dikembalikan</th>
-                                <th scope="col" style="width:80px;">Sisa</th>
+                                <th scope="col" style="width:150px;">Dipinjam / Kembali / Sisa</th>
                                 @if($adaInput)
                                     <th scope="col" style="width:120px;">Jumlah</th>
                                     <th scope="col" style="width:130px;">Kondisi</th>
@@ -105,13 +103,10 @@
                             <tr>
                                 <td class="ps-0 fw-semibold">{{ $d->katalog?->nama ?? '—' }}</td>
                                 <td>{{ $isAlat ? 'Alat' : 'Bahan' }}</td>
-                                <td>{{ $d->jumlah }}</td>
-                                <td>{{ $kembaliD }}</td>
                                 <td>
+                                    {{ $d->jumlah }} / {{ $kembaliD }} / {{ $sisaD }}
                                     @if($sisaD === 0)
                                         <span class="badge-status" style="background:#ecfdf3;color:var(--success-text);">Lengkap</span>
-                                    @else
-                                        {{ $sisaD }}
                                     @endif
                                 </td>
                                 @if($adaInput)

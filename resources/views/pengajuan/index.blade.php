@@ -121,11 +121,10 @@
             <thead>
                 <tr>
                     <th scope="col" class="ps-4">No</th>
-                    <th scope="col" >Pengajuan</th>
+                    <th scope="col">Tanggal</th>
                     <th scope="col" >Peminjam</th>
                     <th scope="col">Barang / Ruangan</th>
                     <th scope="col" class="jumlah-heading">Jumlah</th>
-                    <th scope="col" >Peminjaman</th>
                     <th scope="col" >Status</th>
                     <th scope="col" class="text-end pe-4" >Aksi</th>
                 </tr>
@@ -135,7 +134,10 @@
             @forelse($data as $i => $p)
                 <tr>
                     <td class="ps-4 text-muted">{{ $data->firstItem() + $i }}</td>
-                    <td style="font-size:var(--fs-base);">{{ $p->tanggal_pengajuan?->format('d/m/Y H:i') }}</td>
+                    <td style="font-size:var(--fs-base);">
+                        <div>Ajukan: {{ $p->tanggal_pengajuan?->format('d/m/Y H:i') }}</div>
+                        <div style="color:var(--text-muted);">Pinjam: {{ $p->tanggal_peminjaman?->format('d/m/Y') }} s/d {{ $p->tanggal_rencana_kembali?->format('d/m/Y H:i') }}</div>
+                    </td>
                     <td>
                         <div class="fw-semibold">{{ $p->nama_peminjam }}</div>
                         <div style="font-size:var(--fs-base);color:var(--text-muted);">{{ $p->identitas_peminjam }} · {{ $p->label_jenis }}</div>
@@ -144,11 +146,7 @@
                         <span class="d-inline-block text-truncate align-middle" style="max-width:300px;" title="{{ $p->ringkasan }}">{{ $p->ringkasan }}</span>
                         @if($p->keterangan)<div style="font-size:var(--fs-base);color:var(--text-muted);text-truncate;" title="{{ $p->keterangan }}">{{ $p->keterangan }}</div>@endif
                     </td>
-                    <td class="jumlah-cell">{{ $p->jumlah_barang }}</td>
-                    <td style="font-size:var(--fs-base);">
-                        {{ $p->tanggal_peminjaman?->format('d/m/Y') }}<br>
-                        s/d {{ $p->tanggal_rencana_kembali?->format('d/m/Y H:i') }}
-                    </td>
+                    <td class="jumlah-cell">{{ $p->jumlah_barang ?: '—' }}</td>
                     <td>
                         @include('peminjaman._status', ['status' => $p->status, 'terlambat' => $p->terlambat])
                         @if($p->menungguDosen())
@@ -167,25 +165,25 @@
                                       data-konfirmasi="Setujui pengajuan peminjaman #{{ $p->id_peminjaman }} oleh {{ $p->nama_peminjam }}? {{ $sebagaiDosen ? 'Pengajuan akan diteruskan ke Laboran untuk keputusan akhir.' : 'Stok barang akan dipotong sesuai jumlah yang diajukan.' }}">
                                     @csrf
                                     <button type="submit" class="btn btn-edit aksi-control d-flex align-items-center gap-1" style="padding:.3rem .65rem;font-size:var(--fs-base);">
-                                        <i class="bi bi-check-lg" aria-hidden="true"></i> Setujui
+                                        <i class="bi bi-check-lg" aria-hidden="true"></i><span class="visually-hidden">Setujui</span>
                                     </button>
                                 </form>
                                 <button type="button" class="btn btn-del btn-tolak aksi-control d-flex align-items-center gap-1" style="padding:.3rem .65rem;font-size:var(--fs-base);"
                                         data-bs-toggle="modal" data-bs-target="#tolakModal"
                                         data-url="{{ route('pengajuan.tolak', $p->id_peminjaman) }}"
                                         data-info="#{{ $p->id_peminjaman }} — {{ $p->nama_peminjam }}">
-                                    <i class="bi bi-x-lg" aria-hidden="true"></i> Tolak
+                                    <i class="bi bi-x-lg" aria-hidden="true"></i><span class="visually-hidden">Tolak</span>
                                 </button>
                             @endif
                             <a href="{{ route('peminjaman.show', $p->id_peminjaman) }}" class="btn btn-outline-silab aksi-control d-flex align-items-center gap-1" style="padding:.3rem .65rem;font-size:var(--fs-base);">
-                                <i class="bi bi-eye" aria-hidden="true"></i> Detail
+                                <i class="bi bi-eye" aria-hidden="true"></i><span class="visually-hidden">Detail</span>
                             </a>
                         </div>
                     </td>
                 </tr>
             @empty
                 <tr>
-                    <td colspan="8">
+                    <td colspan="7">
                         <div class="text-center py-5" style="color:var(--text-muted);">
                             <i class="bi bi-inbox fs-1 d-block mb-2" aria-hidden="true" style="color:#c9bdb4;"></i>
                             <div class="fw-semibold mb-1" style="font-size:var(--fs-base);color:var(--text-primary);">Tidak ada pengajuan</div>
@@ -229,7 +227,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-outline-silab" data-bs-dismiss="modal">Batal</button>
-                <button type="submit" class="btn btn-del d-flex align-items-center gap-2"><i class="bi bi-x-lg" aria-hidden="true"></i> Tolak Pengajuan</button>
+                <button type="submit" class="btn btn-del d-flex align-items-center gap-2"><i class="bi bi-x-lg" aria-hidden="true"></i><span class="visually-hidden">Tolak</span> Pengajuan</button>
             </div>
         </form>
     </div>
