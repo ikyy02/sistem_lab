@@ -22,7 +22,9 @@
                     </tr>
                     <tr>
                         <td style="padding:16px 28px;border-top:1px solid #e4e4e7;font-size:12px;line-height:1.5;color:#64748b;">
-                            Pesan otomatis dari SIARKA, Laboratorium Jurusan Komputer dan Bisnis.
+                            Pesan otomatis dari <strong>SIARKA</strong>, Laboratorium Jurusan Komputer dan Bisnis.<br>
+                            <a href="mailto:noreply@siarka.dev" style="color:#94a3b8;text-decoration:none;">noreply@siarka.dev</a>
+                            &nbsp;&mdash;&nbsp;Jangan balas email ini.
                         </td>
                     </tr>
                 </table>

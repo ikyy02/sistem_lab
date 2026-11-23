@@ -12,7 +12,7 @@ use Illuminate\Console\Command;
 
 class WaKirimTerlambat extends Command
 {
-    protected $signature = 'wa:kirim-terlambat {--dry-run}';
+    protected $signature = 'wa:kirim-terlambat {--dry-run} {--force : Abaikan pembatasan jam operasional untuk pengujian}';
 
     protected $description = 'Kirim pengingat WhatsApp untuk peminjaman yang terlambat.';
 
@@ -30,7 +30,7 @@ class WaKirimTerlambat extends Command
         $sekarang = now();
 
         // Validasi jam operasional
-        if (! $this->dalamJam($sekarang, $jamMulai, $jamSelesai)) {
+        if (! $this->option('force') && ! $this->dalamJam($sekarang, $jamMulai, $jamSelesai)) {
             $this->info("Diluar jam operasional ({$jamMulai}-{$jamSelesai}). Berhenti.");
 
             return 0;
