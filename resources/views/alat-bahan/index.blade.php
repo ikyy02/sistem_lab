@@ -60,7 +60,7 @@
             <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
                 <div class="card-modern h-100 overflow-hidden d-flex flex-column">
                     <div style="height:150px;background:var(--body-bg);display:flex;align-items:center;justify-content:center;border-bottom:1px solid var(--border-color);">
-                        @if(! $room && $item->gambar_url)
+                        @if($item->gambar_url)
                             <img src="{{ $item->gambar_url }}" alt="{{ $nama }}" style="width:100%;height:100%;object-fit:cover;cursor:zoom-in;" loading="lazy" tabindex="0" role="button" aria-label="Perbesar gambar {{ $nama }}" onclick="previewImage(this.src, this.alt)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
                         @else
                             <i class="bi {{ $room ? $jenisIcon['ruangan'] : ($jenisIcon[$item->jenis] ?? 'bi-box') }}" style="font-size:2.2rem;color:var(--muted-blue);"></i>

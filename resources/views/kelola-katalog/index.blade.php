@@ -195,7 +195,7 @@
             <thead>
                 <tr>
                     <th scope="col" class="ps-4 col-no" style="width:56px;">No</th>
-
+                    <th scope="col" class="col-gambar" style="width:84px;">Gambar</th>
 
                     @foreach($displayColumns as $col => [$text, $sortable])
                         <th scope="col" class="col-{{ str_replace('.', '-', $col) }}">
@@ -255,7 +255,24 @@
                         <td class="ps-4 text-muted col-no">
                             {{ $data->firstItem() + $loop->index }}
                         </td>
-
+                        <td class="col-gambar">
+                            @if($item->gambar_url)
+                                <img
+                                    src="{{ $item->gambar_url }}"
+                                    alt="{{ $item->nama ?? $item->nama_ruangan }}"
+                                    class="thumb"
+                                    loading="lazy"
+                                    width="56" height="56"
+                                    tabindex="0" role="button" aria-label="Perbesar gambar {{ $item->nama ?? $item->nama_ruangan }}"
+                                    title="Klik untuk memperbesar"
+                                    onclick="previewImage(this.src, this.alt)"
+                                    onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
+                            @else
+                                <span class="thumb-empty">
+                                    <i class="bi bi-image" aria-hidden="true"></i>
+                                </span>
+                            @endif
+                        </td>
 
                         @foreach($displayColumns as $col => $meta)
                             <td class="col-{{ str_replace('.', '-', $col) }}">
