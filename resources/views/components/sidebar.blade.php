@@ -21,12 +21,8 @@
             'Menu Utama' => [
                 ['label' => 'Dashboard', 'icon' => 'bi-speedometer2', 'route' => 'dashboard'],
                 ['label' => 'Katalog Lab', 'icon' => 'bi-collection', 'route' => 'katalog'],
-            ],
-            'Peminjaman' => [
                 ['label' => 'Ajukan Peminjaman', 'icon' => 'bi-plus-circle', 'route' => 'peminjaman.index'],
                 ['label' => 'Riwayat Peminjaman', 'icon' => 'bi-clock-history', 'route' => 'peminjaman.riwayat'],
-            ],
-            'Informasi' => [
                 ['label' => 'SOP & Panduan', 'icon' => 'bi-file-earmark-text', 'route' => 'sop.index'],
                 ['label' => 'Notifikasi', 'icon' => 'bi-bell', 'route' => 'notifikasi.index'],
             ],
@@ -48,14 +44,8 @@
                 ['label' => 'Persetujuan Peminjaman', 'icon' => 'bi-clipboard-check', 'route' => 'pengajuan.index', 'badge' => $badgePersetujuan],
                 ['label' => 'Kelola Peminjaman', 'icon' => 'bi-arrow-down-left-square', 'route' => 'pengembalian.index'],
                 ['label' => 'Pengadaan TPK', 'icon' => 'bi-calculator', 'route' => 'pengadaan-tpk.index'],
-            ],
-            'Data Master' => [
                 ['label' => 'Kelola Katalog', 'icon' => 'bi-boxes', 'route' => 'kelola-katalog.index'],
-            ],
-            'Pengguna' => [
                 ['label' => 'Kelola Data User', 'icon' => 'bi-people', 'route' => 'kelola-user.index'],
-            ],
-            'Lainnya' => [
                 ['label' => 'Pengaturan Laboratorium', 'icon' => 'bi-sliders', 'route' => 'pengaturan-lab.index'],
             ],
         ],

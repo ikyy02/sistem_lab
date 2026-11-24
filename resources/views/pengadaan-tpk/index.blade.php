@@ -462,24 +462,49 @@
                         <div class="p-3 rounded-2" style="background:var(--bg-subtle); border:1px solid var(--border);">
                             <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
                                 <div>
-                                    <div style="font-size:13px; font-weight:600; color:var(--text-primary);">Perbandingan Berpasangan Kriteria (Skala Saaty)</div>
-                                    <div style="font-size:11px; color:var(--text-muted);">Tentukan tingkat kepentingan antar-kriteria. Bobot SAW dihitung otomatis dari AHP.</div>
+                                    <div style="font-size:13px; font-weight:600; color:var(--text-primary);"><i class="bi bi-sliders me-1"></i> Perbandingan Berpasangan Kriteria (Skala Saaty)</div>
+                                    <div style="font-size:11px; color:var(--text-muted);">Pilih tingkat perbandingan kepentingan antar-kriteria. Bobot SAW dihitung otomatis berdasarkan AHP.</div>
                                 </div>
-                                <span style="font-size:11px; color:var(--text-secondary);">Nilai di luar skala dikembalikan ke 1</span>
+                                <span class="badge bg-light text-secondary border" style="font-size:11px; font-weight:normal;">Skala 1–9 Saaty</span>
                             </div>
+                            @php
+                                $skalaLabels = [
+                                    '1/9' => '1/9 — Kriteria kanan mutlak lebih penting (ekstrem)',
+                                    '1/8' => '1/8 — Kriteria kanan sangat kuat lebih penting',
+                                    '1/7' => '1/7 — Kriteria kanan sangat jelas lebih penting',
+                                    '1/6' => '1/6 — Kriteria kanan lebih penting menuju sangat jelas',
+                                    '1/5' => '1/5 — Kriteria kanan lebih penting',
+                                    '1/4' => '1/4 — Kriteria kanan sedikit lebih penting menuju kuat',
+                                    '1/3' => '1/3 — Kriteria kanan sedikit lebih penting',
+                                    '1/2' => '1/2 — Kriteria kanan mendekati sedikit lebih penting',
+                                    '1'   => '1 — Sama penting (imbang / netral)',
+                                    '2'   => '2 — Kriteria kiri mendekati sedikit lebih penting',
+                                    '3'   => '3 — Kriteria kiri sedikit lebih penting',
+                                    '4'   => '4 — Kriteria kiri sedikit lebih penting menuju kuat',
+                                    '5'   => '5 — Kriteria kiri lebih penting',
+                                    '6'   => '6 — Kriteria kiri lebih penting menuju sangat jelas',
+                                    '7'   => '7 — Kriteria kiri sangat jelas lebih penting',
+                                    '8'   => '8 — Kriteria kiri sangat kuat lebih penting',
+                                    '9'   => '9 — Kriteria kiri mutlak lebih penting (ekstrem)',
+                                ];
+                            @endphp
                             <div class="row g-3">
                                 @foreach([
-                                    'a12' => 'C1 Stok dibanding C2 Peminjaman',
-                                    'a13' => 'C1 Stok dibanding C3 Harga',
-                                    'a23' => 'C2 Peminjaman dibanding C3 Harga',
-                                ] as $key => $label)
+                                    'a12' => ['label' => 'C1 (Stok) vs C2 (Peminjaman)', 'hint' => 'Stok barang dibanding frekuensi peminjaman'],
+                                    'a13' => ['label' => 'C1 (Stok) vs C3 (Harga)', 'hint' => 'Stok barang dibanding harga satuan'],
+                                    'a23' => ['label' => 'C2 (Peminjaman) vs C3 (Harga)', 'hint' => 'Frekuensi peminjaman dibanding harga satuan'],
+                                ] as $key => $info)
                                     <div class="col-12 col-md-4">
-                                        <label class="form-label" for="{{ $key }}">{{ $label }}</label>
+                                        <label class="form-label mb-1 fw-semibold" for="{{ $key }}" style="font-size:12px;">{{ $info['label'] }}</label>
                                         <select name="{{ $key }}" id="{{ $key }}" class="form-select form-select-sm">
                                             @foreach($skala as $nilai)
-                                                <option value="{{ $nilai }}" {{ $pair[$key] === $nilai ? 'selected' : '' }}>{{ $nilai }}</option>
+                                                @php $valStr = (string)$nilai; @endphp
+                                                <option value="{{ $valStr }}" {{ (string)$pair[$key] === $valStr ? 'selected' : '' }}>
+                                                    {{ $skalaLabels[$valStr] ?? $valStr }}
+                                                </option>
                                             @endforeach
                                         </select>
+                                        <div style="font-size:11px; color:var(--text-muted); margin-top:3px;">{{ $info['hint'] }}</div>
                                     </div>
                                 @endforeach
                             </div>
@@ -488,7 +513,7 @@
                     <div class="col-12">
                         <div class="p-3 rounded-2" style="background:var(--bg-surface); border:1px solid var(--border);">
                             <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
-                                <strong style="font-size:13px;">Hasil Analisis AHP</strong>
+                                <strong style="font-size:13px;"><i class="bi bi-pie-chart me-1"></i> Ringkasan Bobot AHP & Rasio Konsistensi</strong>
                                 @if($ahp['konsisten'])
                                     <span class="badge bg-success">Konsisten</span>
                                 @else
@@ -498,39 +523,41 @@
                             <div class="row g-2">
                                 <div class="col-12 col-md-3">
                                     <div style="font-size:11px; color:var(--text-muted);">Consistency Index (CI)</div>
-                                    <strong>{{ number_format($ahp['ci'], 4, ',', '.') }}</strong>
+                                    <strong style="font-size:14px;">{{ number_format($ahp['ci'], 4, ',', '.') }}</strong>
                                     <span style="font-size:11px; color:var(--text-secondary);">(RI 0,58)</span>
                                 </div>
                                 <div class="col-12 col-md-3">
                                     <div style="font-size:11px; color:var(--text-muted);">Consistency Ratio (CR)</div>
-                                    <strong>{{ number_format($ahp['cr'], 4, ',', '.') }}</strong>
-                                    <span style="font-size:11px; color:var(--text-secondary);">(batas 0,10)</span>
+                                    <strong style="font-size:14px; color:{{ $ahp['konsisten'] ? 'var(--text-primary)' : 'var(--danger)' }};">{{ number_format($ahp['cr'], 4, ',', '.') }}</strong>
+                                    <span style="font-size:11px; color:var(--text-secondary);">(Maks 0,10)</span>
                                 </div>
-                                @foreach(['C1 Stok', 'C2 Peminjaman', 'C3 Harga'] as $i => $namaKriteria)
+                                @foreach(['C1 Stok (Cost)', 'C2 Peminjaman (Benefit)', 'C3 Harga (Cost)'] as $i => $namaKriteria)
                                     <div class="col-12 col-md-2">
-                                        <div style="font-size:11px; color:var(--text-muted);">Bobot {{ $namaKriteria }}</div>
-                                        <strong>{{ number_format($ahp['bobot'][$i], 4, ',', '.') }}</strong>
+                                        <div style="font-size:11px; color:var(--text-muted);">Bobot W{{ $i + 1 }} {{ $namaKriteria }}</div>
+                                        <strong style="font-size:14px; color:var(--accent);">{{ number_format($ahp['bobot'][$i], 4, ',', '.') }}</strong>
                                         <span style="font-size:11px; color:var(--text-secondary);">({{ number_format($ahp['bobot'][$i] * 100, 2, ',', '.') }}%)</span>
                                     </div>
                                 @endforeach
                             </div>
                             @unless($ahp['konsisten'])
                                 <div class="alert alert-warning mt-3 mb-0" role="alert" style="font-size:12px;">
-                                    Matriks perbandingan belum konsisten (CR lebih dari 0,10). Perbaiki perbandingan kriteria untuk menghasilkan ranking SAW resmi. Ranking, cetak, dan export tidak tersedia selama matriks belum konsisten.
+                                    <i class="bi bi-info-circle me-1"></i> Matriks perbandingan belum konsisten (CR lebih dari 0,10). Silakan ubah nilai perbandingan kriteria agar rasio konsistensi &le; 0,10 sehingga ranking SAW resmi dapat dihitung dan dicetak.
                                 </div>
                             @endunless
                         </div>
                     </div>
-                    {{-- Tombol Submit --}}
+                    {{-- Tombol Aksi Formulir --}}
                     <div class="col-12">
-                        <button type="submit" id="btn-terapkan-tpk" class="btn-admin-primary">
-                            <span>Hitung AHP–SAW</span>
-                        </button>
-                    </div>
-                    <div class="col-12 col-md-4 text-md-end">
-                        <a href="{{ route('pengadaan-tpk.index') }}" style="font-size:12px; color:var(--text-secondary); text-decoration:none;">
-                            Reset Perbandingan
-                        </a>
+                        <div class="d-flex flex-wrap align-items-center gap-2 pt-1">
+                            <button type="submit" id="btn-terapkan-tpk" class="btn-admin-primary d-inline-flex align-items-center gap-2">
+                                <i class="bi bi-calculator"></i>
+                                <span>Hitung AHP–SAW</span>
+                            </button>
+                            <a href="{{ route('pengadaan-tpk.index') }}" class="btn-admin-secondary d-inline-flex align-items-center gap-2">
+                                <i class="bi bi-arrow-counterclockwise"></i>
+                                <span>Reset Perbandingan</span>
+                            </a>
+                        </div>
                     </div>
                 </div>
             </form>
@@ -543,16 +570,23 @@
         {{-- Navigation Tabs --}}
         <div class="admin-tabs" id="tpkTabs" role="tablist">
             <button class="admin-tab-btn active" id="tab-rekomendasi" data-bs-toggle="tab" data-bs-target="#content-rekomendasi" type="button" role="tab">
+                <i class="bi bi-award me-1"></i>
                 <span>Rekomendasi Prioritas</span>
                 <span style="font-size:11px; padding:1px 6px; border-radius:4px; background:var(--bg-subtle); color:var(--text-secondary);">
                     {{ count($filteredItems) }}
                 </span>
             </button>
+            <button class="admin-tab-btn" id="tab-langkah" data-bs-toggle="tab" data-bs-target="#content-langkah" type="button" role="tab">
+                <i class="bi bi-diagram-3 me-1"></i>
+                <span>Langkah Perhitungan Lengkap (AHP & SAW)</span>
+            </button>
             <button class="admin-tab-btn" id="tab-matriks" data-bs-toggle="tab" data-bs-target="#content-matriks" type="button" role="tab">
+                <i class="bi bi-table me-1"></i>
                 <span>Matriks Keputusan & Normalisasi (R)</span>
             </button>
             <button class="admin-tab-btn" id="tab-teori" data-bs-toggle="tab" data-bs-target="#content-teori" type="button" role="tab">
-                <span>Metodologi (AHP & SAW)</span>
+                <i class="bi bi-journal-text me-1"></i>
+                <span>Metodologi & Teori</span>
             </button>
         </div>
 
@@ -647,6 +681,353 @@
                     </div>
                     <div>
                         Metode Perhitungan: Simple Additive Weighting (SAW)
+                    </div>
+                </div>
+            </div>
+
+            {{-- TAB: LANGKAH PERHITUNGAN LENGKAP (AHP & SAW) --}}
+            <div class="tab-pane fade p-3" id="content-langkah" role="tabpanel">
+                <div class="mb-3">
+                    <div class="d-flex align-items-center justify-content-between mb-1">
+                        <h6 class="mb-0 fw-bold" style="font-size:14px; color:var(--text-primary);">
+                            <i class="bi bi-calculator me-1 text-primary"></i> Transparansi Langkah Perhitungan SPK (AHP & SAW)
+                        </h6>
+                        <span class="badge bg-light text-secondary border" style="font-size:11px;">Langkah 1 s/d 6</span>
+                    </div>
+                    <p style="font-size:12px; color:var(--text-secondary); margin-bottom:0;">
+                        Berikut adalah penjabaran sistematis seluruh proses perhitungan matematis mulai dari penentuan bobot kriteria berpasangan (AHP), uji rasio konsistensi, hingga matriks keputusan dan normalisasi terbobot (SAW).
+                    </p>
+                </div>
+
+                {{-- SECTION 1: METODE AHP (LANGKAH 1 - 3) --}}
+                <div class="card mb-4 border" style="background:var(--bg-surface); border-radius:8px;">
+                    <div class="card-header bg-light py-2 px-3 border-bottom d-flex align-items-center justify-content-between">
+                        <span class="fw-semibold text-primary" style="font-size:13px;">
+                            <i class="bi bi-1-circle-fill me-1"></i> FASE 1: Analytic Hierarchy Process (AHP) — Pembobotan & Uji Konsistensi
+                        </span>
+                        <span class="badge bg-primary-subtle text-primary border" style="font-size:10px;">Kriteria C1, C2, C3</span>
+                    </div>
+                    <div class="card-body p-3">
+                        <div class="row g-4">
+                            {{-- LANGKAH 1: Matriks Perbandingan Berpasangan --}}
+                            <div class="col-12 col-xl-6">
+                                <div class="p-3 rounded-2 h-100" style="background:var(--bg-subtle); border:1px solid var(--border);">
+                                    <div class="d-flex align-items-center justify-content-between mb-2">
+                                        <strong style="font-size:12px; color:var(--text-primary);">
+                                            Langkah 1: Matriks Perbandingan Berpasangan (A)
+                                        </strong>
+                                        <span class="badge bg-light text-muted border" style="font-size:10px;">Ukuran 3 &times; 3</span>
+                                    </div>
+                                    <p style="font-size:11px; color:var(--text-secondary); margin-bottom:8px;">
+                                        Menyusun matriks bujur sangkar <em>A</em> berordo <em>n &times; n</em> (3 &times; 3) di mana diagonal utama bernilai 1 dan elemen bawah merupakan kebalikan elemen atas (<em>a<sub>ji</sub> = 1 / a<sub>ij</sub></em>).
+                                    </p>
+                                    <div class="table-responsive">
+                                        <table class="table table-sm table-bordered mb-2 text-center" style="font-size:11px; background:#fff;">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th class="text-start">Kriteria</th>
+                                                    <th>C1 (Stok)</th>
+                                                    <th>C2 (Pinjam)</th>
+                                                    <th>C3 (Harga)</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @php
+                                                    $namaKrit = ['C1 (Stok)', 'C2 (Pinjam)', 'C3 (Harga)'];
+                                                @endphp
+                                                @for($i = 0; $i < 3; $i++)
+                                                    <tr>
+                                                        <td class="text-start fw-semibold bg-light">{{ $namaKrit[$i] }}</td>
+                                                        @for($j = 0; $j < 3; $j++)
+                                                            <td style="font-family:monospace; {{ $i === $j ? 'background:var(--bg-subtle); font-weight:bold;' : '' }}">
+                                                                {{ number_format($ahp['matriks'][$i][$j], 4, ',', '.') }}
+                                                            </td>
+                                                        @endfor
+                                                    </tr>
+                                                @endfor
+                                            </tbody>
+                                            <tfoot class="table-light fw-bold">
+                                                <tr>
+                                                    <td class="text-start">Jumlah Kolom (&Sigma;)</td>
+                                                    @for($j = 0; $j < 3; $j++)
+                                                        <td style="font-family:monospace; color:var(--accent);">
+                                                            {{ number_format($ahp['jumlah_kolom'][$j], 4, ',', '.') }}
+                                                        </td>
+                                                    @endfor
+                                                </tr>
+                                            </tfoot>
+                                        </table>
+                                    </div>
+                                    <div style="font-size:10px; color:var(--text-muted);">
+                                        * Rumus Jumlah Kolom: &Sigma; Kolom <em>j</em> = &sum;<sub>i=1</sub><sup>n</sup> <em>a<sub>ij</sub></em>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {{-- LANGKAH 2: Matriks Normalisasi & Vektor Bobot Prioritas (W) --}}
+                            <div class="col-12 col-xl-6">
+                                <div class="p-3 rounded-2 h-100" style="background:var(--bg-subtle); border:1px solid var(--border);">
+                                    <div class="d-flex align-items-center justify-content-between mb-2">
+                                        <strong style="font-size:12px; color:var(--text-primary);">
+                                            Langkah 2: Matriks Normalisasi & Bobot Prioritas (W)
+                                        </strong>
+                                        <span class="badge bg-light text-muted border" style="font-size:10px;">Eigen Vektor (W)</span>
+                                    </div>
+                                    <p style="font-size:11px; color:var(--text-secondary); margin-bottom:8px;">
+                                        Membagi tiap elemen kolom dengan jumlah kolomnya (<em>a<sub>ij_norm</sub> = a<sub>ij</sub> / &Sigma; Kolom<sub>j</sub></em>), lalu merata-ratakan tiap baris untuk mendapatkan vektor bobot (<em>W</em>).
+                                    </p>
+                                    <div class="table-responsive">
+                                        <table class="table table-sm table-bordered mb-2 text-center" style="font-size:11px; background:#fff;">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th class="text-start">Kriteria</th>
+                                                    <th>C1</th>
+                                                    <th>C2</th>
+                                                    <th>C3</th>
+                                                    <th class="bg-primary-subtle text-primary">Bobot (W)</th>
+                                                    <th class="bg-primary-subtle text-primary">%</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @for($i = 0; $i < 3; $i++)
+                                                    <tr>
+                                                        <td class="text-start fw-semibold bg-light">{{ $namaKrit[$i] }}</td>
+                                                        @for($j = 0; $j < 3; $j++)
+                                                            <td style="font-family:monospace;">
+                                                                {{ number_format($ahp['normal'][$i][$j], 4, ',', '.') }}
+                                                            </td>
+                                                        @endfor
+                                                        <td class="fw-bold" style="font-family:monospace; color:var(--accent); background:#f8f9ff;">
+                                                            {{ number_format($ahp['bobot'][$i], 4, ',', '.') }}
+                                                        </td>
+                                                        <td class="fw-bold text-secondary" style="font-size:10px; background:#f8f9ff;">
+                                                            {{ number_format($ahp['bobot'][$i] * 100, 2, ',', '.') }}%
+                                                        </td>
+                                                    </tr>
+                                                @endfor
+                                            </tbody>
+                                            <tfoot class="table-light fw-bold">
+                                                <tr>
+                                                    <td colspan="4" class="text-start">Total Penjumlahan Bobot (&Sigma; W)</td>
+                                                    <td style="font-family:monospace; color:var(--accent);">1,0000</td>
+                                                    <td>100%</td>
+                                                </tr>
+                                            </tfoot>
+                                        </table>
+                                    </div>
+                                    <div style="font-size:10px; color:var(--text-muted);">
+                                        * Bobot Kriteria <em>W<sub>i</sub></em> = (&sum;<sub>j=1</sub><sup>n</sup> <em>a<sub>ij_norm</sub></em>) / <em>n</em>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {{-- LANGKAH 3: Uji Konsistensi (Lambda Max, CI, CR) --}}
+                            <div class="col-12">
+                                <div class="p-3 rounded-2" style="background:var(--bg-surface); border:1px solid var(--border);">
+                                    <div class="d-flex align-items-center justify-content-between mb-2">
+                                        <strong style="font-size:12px; color:var(--text-primary);">
+                                            Langkah 3: Uji Konsistensi Logika Preferensi (&lambda;<sub>max</sub>, CI, CR)
+                                        </strong>
+                                        <span class="badge {{ $ahp['konsisten'] ? 'bg-success' : 'bg-danger' }}">
+                                            {{ $ahp['konsisten'] ? 'KONSISTEN (VALID)' : 'TIDAK KONSISTEN' }}
+                                        </span>
+                                    </div>
+                                    <div class="row g-3">
+                                        <div class="col-12 col-md-4">
+                                            <div class="p-2 rounded border bg-light h-100">
+                                                <div class="fw-semibold text-secondary" style="font-size:11px;">1. Perkalian Matriks (A &times; W)</div>
+                                                <div style="font-size:11px; margin-top:4px; font-family:monospace;">
+                                                    &bull; (A&times;W)<sub>1</sub> = {{ number_format($ahp['aw'][0], 4, ',', '.') }}<br>
+                                                    &bull; (A&times;W)<sub>2</sub> = {{ number_format($ahp['aw'][1], 4, ',', '.') }}<br>
+                                                    &bull; (A&times;W)<sub>3</sub> = {{ number_format($ahp['aw'][2], 4, ',', '.') }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-12 col-md-4">
+                                            <div class="p-2 rounded border bg-light h-100">
+                                                <div class="fw-semibold text-secondary" style="font-size:11px;">2. Nilai Eigen Maksimum (&lambda;<sub>max</sub>)</div>
+                                                <div style="font-size:11px; margin-top:4px;">
+                                                    &lambda;<sub>max</sub> = &Sigma; [(A&times;W)<sub>i</sub> / W<sub>i</sub>] / <em>n</em><br>
+                                                    <strong class="text-primary" style="font-size:13px; font-family:monospace;">
+                                                        &lambda;<sub>max</sub> = {{ number_format($ahp['lambda_max'], 4, ',', '.') }}
+                                                    </strong>
+                                                </div>
+                                                <div style="font-size:10px; color:var(--text-muted); margin-top:2px;">(Nilai acuan untuk n = 3 adalah mendekati 3,0000)</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-12 col-md-4">
+                                            <div class="p-2 rounded border bg-light h-100">
+                                                <div class="fw-semibold text-secondary" style="font-size:11px;">3. Indeks & Rasio Konsistensi</div>
+                                                <div style="font-size:11px; margin-top:4px;">
+                                                    CI = (&lambda;<sub>max</sub> &minus; n) / (n &minus; 1) = <strong>{{ number_format($ahp['ci'], 4, ',', '.') }}</strong><br>
+                                                    CR = CI / RI (0,58) = <strong style="color:{{ $ahp['konsisten'] ? 'var(--success)' : 'var(--danger)' }}; font-size:13px; font-family:monospace;">{{ number_format($ahp['cr'], 4, ',', '.') }}</strong>
+                                                </div>
+                                                <div style="font-size:10px; color:var(--text-secondary); margin-top:2px;">
+                                                    Syarat Konsistensi: <strong>CR &le; 0,10</strong> (10%).
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- SECTION 2: METODE SAW (LANGKAH 4 - 6) --}}
+                <div class="card mb-3 border" style="background:var(--bg-surface); border-radius:8px;">
+                    <div class="card-header bg-light py-2 px-3 border-bottom d-flex align-items-center justify-content-between">
+                        <span class="fw-semibold text-primary" style="font-size:13px;">
+                            <i class="bi bi-2-circle-fill me-1"></i> FASE 2: Simple Additive Weighting (SAW) — Penilaian Alternatif
+                        </span>
+                        <span class="badge bg-primary-subtle text-primary border" style="font-size:10px;">{{ count($filteredItems) }} Alternatif Katalog</span>
+                    </div>
+                    <div class="card-body p-3">
+                        <div class="row g-4">
+                            {{-- LANGKAH 4: Matriks Keputusan Awal Alternatif (X) --}}
+                            <div class="col-12">
+                                <div class="p-3 rounded-2" style="background:var(--bg-subtle); border:1px solid var(--border);">
+                                    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
+                                        <div>
+                                            <strong style="font-size:12px; color:var(--text-primary);">
+                                                Langkah 4: Matriks Keputusan Alternatif (X) & Titik Acuan Ekstrem
+                                            </strong>
+                                            <div style="font-size:11px; color:var(--text-secondary);">
+                                                Menghimpun nilai atribut mentah (<em>X<sub>ij</sub></em>) untuk setiap alternatif barang pada masing-masing kriteria.
+                                            </div>
+                                        </div>
+                                        <div class="d-flex gap-2">
+                                            <span class="badge bg-light text-secondary border" style="font-size:10px;">C1 Min: {{ $stats['min_stok'] ?? 0 }}</span>
+                                            <span class="badge bg-light text-secondary border" style="font-size:10px;">C2 Max: {{ $stats['max_pinjam'] ?? 0 }}</span>
+                                            <span class="badge bg-light text-secondary border" style="font-size:10px;">C3 Min: Rp {{ number_format($stats['min_harga'] ?? 0, 0, ',', '.') }}</span>
+                                        </div>
+                                    </div>
+                                    <div class="table-responsive" style="max-height:280px; overflow-y:auto;">
+                                        <table class="table table-sm table-admin mb-0" style="font-size:11px;">
+                                            <thead class="table-light sticky-top">
+                                                <tr class="text-center">
+                                                    <th style="width:40px;">No</th>
+                                                    <th class="text-start">Alternatif (Nama Barang)</th>
+                                                    <th style="width:110px;">Kategori</th>
+                                                    <th class="text-end" style="width:130px;">C1: Stok (Cost)</th>
+                                                    <th class="text-end" style="width:140px;">C2: Pinjam (Benefit)</th>
+                                                    <th class="text-end" style="width:150px;">C3: Harga (Cost)</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach($filteredItems as $idx => $it)
+                                                    <tr>
+                                                        <td class="text-center text-muted">{{ $idx + 1 }}</td>
+                                                        <td class="fw-semibold">{{ $it['nama'] }}</td>
+                                                        <td class="text-center">{{ ucfirst($it['jenis']) }}</td>
+                                                        <td class="text-end" style="font-family:monospace;">{{ $it['stok'] }} {{ $it['nama_satuan'] ?? '' }}</td>
+                                                        <td class="text-end" style="font-family:monospace;">{{ $it['jumlah_peminjaman'] }} kali</td>
+                                                        <td class="text-end" style="font-family:monospace;">Rp {{ number_format($it['harga'], 0, ',', '.') }}</td>
+                                                    </tr>
+                                                @endforeach
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {{-- LANGKAH 5: Matriks Normalisasi (R) --}}
+                            <div class="col-12">
+                                <div class="p-3 rounded-2" style="background:var(--bg-subtle); border:1px solid var(--border);">
+                                    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
+                                        <div>
+                                            <strong style="font-size:12px; color:var(--text-primary);">
+                                                Langkah 5: Matriks Normalisasi Ternormalisasi (R)
+                                            </strong>
+                                            <div style="font-size:11px; color:var(--text-secondary);">
+                                                Rumus normalisasi: <strong>Cost (C1 & C3)</strong> = <em>Min(X<sub>j</sub>) / X<sub>ij</sub></em> | <strong>Benefit (C2)</strong> = <em>X<sub>ij</sub> / Max(X<sub>j</sub>)</em>.
+                                            </div>
+                                        </div>
+                                        <span class="badge bg-light text-muted border" style="font-size:10px;">Skala interval 0,0000 – 1,0000</span>
+                                    </div>
+                                    <div class="table-responsive" style="max-height:280px; overflow-y:auto;">
+                                        <table class="table table-sm table-admin mb-0" style="font-size:11px;">
+                                            <thead class="table-light sticky-top">
+                                                <tr class="text-center">
+                                                    <th style="width:40px;">No</th>
+                                                    <th class="text-start">Alternatif (Nama Barang)</th>
+                                                    <th class="text-end" style="width:140px;">R1: Normalisasi Stok</th>
+                                                    <th class="text-end" style="width:140px;">R2: Normalisasi Pinjam</th>
+                                                    <th class="text-end" style="width:140px;">R3: Normalisasi Harga</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach($filteredItems as $idx => $it)
+                                                    <tr>
+                                                        <td class="text-center text-muted">{{ $idx + 1 }}</td>
+                                                        <td class="fw-semibold">{{ $it['nama'] }}</td>
+                                                        <td class="text-end" style="font-family:monospace; color:var(--text-secondary);">{{ number_format($it['r'][0], 4, ',', '.') }}</td>
+                                                        <td class="text-end" style="font-family:monospace; color:var(--text-secondary);">{{ number_format($it['r'][1], 4, ',', '.') }}</td>
+                                                        <td class="text-end" style="font-family:monospace; color:var(--text-secondary);">{{ number_format($it['r'][2], 4, ',', '.') }}</td>
+                                                    </tr>
+                                                @endforeach
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {{-- LANGKAH 6: Perhitungan Nilai Preferensi (V) & Perangkingan --}}
+                            <div class="col-12">
+                                <div class="p-3 rounded-2" style="background:var(--bg-subtle); border:1px solid var(--border);">
+                                    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
+                                        <div>
+                                            <strong style="font-size:12px; color:var(--text-primary);">
+                                                Langkah 6: Perhitungan Nilai Preferensi (V) & Perangkingan Akhir
+                                            </strong>
+                                            <div style="font-size:11px; color:var(--text-secondary);">
+                                                Formula: <strong>V<sub>i</sub> = (W<sub>1</sub> &times; R<sub>i1</sub>) + (W<sub>2</sub> &times; R<sub>i2</sub>) + (W<sub>3</sub> &times; R<sub>i3</sub>)</strong> dengan W = [{{ number_format($ahp['bobot'][0], 4, ',', '.') }}; {{ number_format($ahp['bobot'][1], 4, ',', '.') }}; {{ number_format($ahp['bobot'][2], 4, ',', '.') }}].
+                                            </div>
+                                        </div>
+                                        <span class="badge bg-primary text-white" style="font-size:10px;">Nilai V tertinggi = Prioritas #1</span>
+                                    </div>
+                                    <div class="table-responsive" style="max-height:300px; overflow-y:auto;">
+                                        <table class="table table-sm table-admin mb-0" style="font-size:11px;">
+                                            <thead class="table-light sticky-top">
+                                                <tr class="text-center">
+                                                    <th style="width:50px;">Rank</th>
+                                                    <th class="text-start">Alternatif (Nama Barang)</th>
+                                                    <th class="text-end" style="width:130px;">W1 &times; R1</th>
+                                                    <th class="text-end" style="width:130px;">W2 &times; R2</th>
+                                                    <th class="text-end" style="width:130px;">W3 &times; R3</th>
+                                                    <th class="text-end bg-primary-subtle text-primary" style="width:120px;">Nilai Preferensi (V)</th>
+                                                    <th class="text-center" style="width:110px;">Status</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach($filteredItems as $idx => $it)
+                                                    @php
+                                                        $v1 = $ahp['bobot'][0] * $it['r'][0];
+                                                        $v2 = $ahp['bobot'][1] * $it['r'][1];
+                                                        $v3 = $ahp['bobot'][2] * $it['r'][2];
+                                                    @endphp
+                                                    <tr>
+                                                        <td class="text-center fw-bold">{{ $it['ranking'] }}</td>
+                                                        <td class="fw-semibold">{{ $it['nama'] }}</td>
+                                                        <td class="text-end text-muted" style="font-family:monospace;">{{ number_format($v1, 4, ',', '.') }}</td>
+                                                        <td class="text-end text-muted" style="font-family:monospace;">{{ number_format($v2, 4, ',', '.') }}</td>
+                                                        <td class="text-end text-muted" style="font-family:monospace;">{{ number_format($v3, 4, ',', '.') }}</td>
+                                                        <td class="text-end fw-bold" style="font-family:monospace; color:var(--accent); background:#f8f9ff;">
+                                                            {{ number_format($it['nilai'], 4, ',', '.') }}
+                                                        </td>
+                                                        <td class="text-center">
+                                                            <span class="badge {{ $it['ranking'] <= 3 ? 'bg-success' : 'bg-light text-secondary border' }}" style="font-size:10px;">
+                                                                {{ $it['prioritas_label'] }}
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                @endforeach
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

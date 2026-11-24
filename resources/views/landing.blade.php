@@ -2470,27 +2470,6 @@
             </div>
         </div>
     </section>
-
-    {{-- ==========================================================================
-         B.9 CTA SATU BLOK BIRU TUA
-         ========================================================================== --}}
-    <section class="cta-section">
-        <div class="container">
-            <div class="cta-box reveal">
-                <div class="cta-text-wrap">
-                    <h2 class="cta-title">Siap Memanfaatkan Fasilitas Laboratorium?</h2>
-                    <p class="cta-desc">Masuk ke SIARKA untuk memeriksa jadwal praktikum yang sedang berjalan, inventaris katalog alat, atau ajukan permohonan ruangan secara mandiri.</p>
-                </div>
-                <div class="cta-actions">
-                    <a href="{{ route('login') }}" class="btn-cta-white">
-                        Masuk SIARKA
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
-                    </a>
-                    <a href="#katalog" class="btn-cta-outline">Jelajahi Lab</a>
-                </div>
-            </div>
-        </div>
-    </section>
 </main>
 
 {{-- ==========================================================================
