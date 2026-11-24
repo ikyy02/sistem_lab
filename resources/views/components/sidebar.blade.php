@@ -4,13 +4,21 @@
     $roleLabel = \App\Support\Role::LABELS[$role] ?? 'Pengguna';
     $initial = mb_strtoupper(mb_substr($me['nama'] ?? 'U', 0, 1));
 
+    // Role subtext mapping for user footer card
+    $roleSubtitles = [
+        \App\Support\Role::LABORAN => 'Admin laboratorium',
+        \App\Support\Role::DOSEN => 'Dosen pengampu',
+        \App\Support\Role::MAHASISWA => 'Mahasiswa',
+        \App\Support\Role::STAFF => 'Staf prodi',
+    ];
+    $roleSubtitle = $roleSubtitles[$role] ?? $roleLabel;
+
     // Badge counters
     $badgePersetujuan = 0;
     try {
         if ($role === \App\Support\Role::DOSEN || $role === \App\Support\Role::LABORAN) {
             $badgePersetujuan = \App\Models\Peminjaman::where('status', 'menunggu')->count();
         }
-
     } catch (\Throwable $e) {
         // Fallback gracefully if database table is unavailable
     }
@@ -42,7 +50,7 @@
             'Operasional' => [
                 ['label' => 'Dashboard', 'icon' => 'bi-speedometer2', 'route' => 'dashboard'],
                 ['label' => 'Persetujuan Peminjaman', 'icon' => 'bi-clipboard-check', 'route' => 'pengajuan.index', 'badge' => $badgePersetujuan],
-                ['label' => 'Kelola Peminjaman', 'icon' => 'bi-arrow-down-left-square', 'route' => 'pengembalian.index'],
+                ['label' => 'Kelola Peminjaman', 'icon' => 'bi-box-seam', 'route' => 'pengembalian.index'],
                 ['label' => 'Pengadaan TPK', 'icon' => 'bi-calculator', 'route' => 'pengadaan-tpk.index'],
                 ['label' => 'Kelola Katalog', 'icon' => 'bi-boxes', 'route' => 'kelola-katalog.index'],
                 ['label' => 'Kelola Data User', 'icon' => 'bi-people', 'route' => 'kelola-user.index'],
@@ -62,10 +70,12 @@
 @endphp
 
 <aside id="sidebar" class="siarka-sidebar">
-    {{-- Header Sidebar: Logo + Subjudul --}}
+    {{-- Header Sidebar: Logo Kotak Putih + Nama + Tombol Collapse --}}
     <div class="sidebar-top">
         <a href="{{ url('/') }}" class="sidebar-brand-box" title="SIARKA — Kembali ke Beranda">
-            <img src="{{ asset('images/siarka-ikon.svg') }}" alt="Logo SIARKA" class="sidebar-logo" width="32" height="32">
+            <div class="sidebar-logo-wrap">
+                <img src="{{ asset('images/siarka-ikon.svg') }}" alt="Logo SIARKA" class="sidebar-logo" width="22" height="22">
+            </div>
             <div class="sidebar-brand-info">
                 <span class="sidebar-app-name">SIARKA</span>
                 <span class="sidebar-app-sub">Lab Komputer & Bisnis</span>
@@ -109,4 +119,23 @@
             </div>
         @endforeach
     </nav>
+
+    {{-- Footer Sidebar: Card Pengguna Aktif & Tombol Logout --}}
+    <div class="sidebar-user-footer">
+        <div class="sidebar-user-card">
+            <div class="sidebar-user-avatar">
+                {{ $initial }}
+            </div>
+            <div class="sidebar-user-info">
+                <span class="sidebar-user-name" title="{{ $me['nama'] ?? 'Pengguna' }}">{{ $me['nama'] ?? 'Pengguna' }}</span>
+                <span class="sidebar-user-role">{{ $roleSubtitle }}</span>
+            </div>
+            <form action="{{ route('logout') }}" method="POST" class="sidebar-user-logout-form m-0 p-0">
+                @csrf
+                <button type="submit" class="sidebar-user-logout-btn" title="Keluar dari Akun" aria-label="Keluar">
+                    <i class="bi bi-box-arrow-right"></i>
+                </button>
+            </form>
+        </div>
+    </div>
 </aside>
