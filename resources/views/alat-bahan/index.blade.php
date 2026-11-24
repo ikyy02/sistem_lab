@@ -23,20 +23,20 @@
         </div>
         <div class="col-6 col-lg-2">
             <label class="form-label" for="jenisSelect">Jenis</label>
-            <select id="jenisSelect" name="jenis" class="form-select">
+            <select id="jenisSelect" name="jenis" class="form-select" onchange="this.form.submit()">
                 <option value="" @selected(! $jenis)>Semua Jenis</option>
                 @foreach($jenisLabel as $key => $text)<option value="{{ $key }}" @selected($jenis === $key)>{{ $text }}</option>@endforeach
             </select>
         </div>
         <div class="col-6 col-lg-2">
             <label class="form-label" for="sort">Urutkan</label>
-            <select id="sort" name="sort" class="form-select">
+            <select id="sort" name="sort" class="form-select" onchange="this.form.submit()">
                 @foreach($sortLabel as $key => $text)<option value="{{ $key }}" @selected($sort === $key)>{{ $text }}</option>@endforeach
             </select>
         </div>
         <div class="col-6 col-lg-1">
             <label class="form-label" for="per_page">Tampil</label>
-            <select id="per_page" name="per_page" class="form-select">
+            <select id="per_page" name="per_page" class="form-select" onchange="this.form.submit()">
                 @foreach($perPageOptions as $n)<option value="{{ $n }}" @selected($perPage === $n)>{{ $n }}</option>@endforeach
             </select>
         </div>

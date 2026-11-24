@@ -48,16 +48,6 @@ class RuanganSeeder extends Seeder
             'keterangan' => 'Laboratorium Rekayasa Perangkat Lunak Lanjut (Lantai 3)',
             'gambar' => 'kt2.jpg',
         ],
-        [
-            'nama_ruangan' => 'Lab Jaringan',
-            'keterangan' => 'Laboratorium Infrastruktur Jaringan & Server (Lantai 2)',
-            'gambar' => 'portfolio-6.jpg',
-        ],
-        [
-            'nama_ruangan' => 'Lab Basis Data',
-            'keterangan' => 'Laboratorium Pengolahan Data & Basis Data Terdistribusi (Lantai 1)',
-            'gambar' => 'portfolio-8.jpg',
-        ],
     ];
 
     public function run(): void
