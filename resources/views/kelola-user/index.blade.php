@@ -231,15 +231,20 @@
             const item = edit ? JSON.parse(btn.dataset.item) : {};
             userFields.forEach(n => {
                 const el = document.getElementById('f_' + n);
-                const v = String(item[n] ?? '');
-                el.value = v;
+                if (el) {
+                    el.value = String(item[n] ?? '');
+                }
             });
-            document.getElementById('f_password').value = '';
+            const pwEl = document.getElementById('f_password');
+            if (pwEl) pwEl.value = '';
             form.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
             form.querySelectorAll('.invalid-feedback').forEach(el => el.remove());
         }
 
-        bootstrap.Modal.getOrCreateInstance(document.getElementById('userModal')).show();
+        const modalEl = document.getElementById('userModal');
+        if (modalEl) {
+            bootstrap.Modal.getOrCreateInstance(modalEl).show();
+        }
     }
 
     @if($openModal)

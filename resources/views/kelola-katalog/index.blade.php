@@ -544,20 +544,23 @@
             );
         }
 
-        bootstrap.Modal
-            .getOrCreateInstance(document.getElementById('itemModal'))
-            .show();
+        const modalEl = document.getElementById('itemModal');
+        if (modalEl) {
+            bootstrap.Modal.getOrCreateInstance(modalEl).show();
+        }
     }
 
     // Pratinjau gambar yang baru dipilih sebelum disimpan.
-    document.getElementById('f_gambar').addEventListener('change', function () {
-        const prev = document.getElementById('gambarPreview');
-
-        if (this.files[0]) {
-            prev.src = URL.createObjectURL(this.files[0]);
-            prev.style.display = '';
-        }
-    });
+    const fGambar = document.getElementById('f_gambar');
+    if (fGambar) {
+        fGambar.addEventListener('change', function () {
+            const prev = document.getElementById('gambarPreview');
+            if (this.files[0] && prev) {
+                prev.src = URL.createObjectURL(this.files[0]);
+                prev.style.display = '';
+            }
+        });
+    }
 
     document.addEventListener('DOMContentLoaded', function () {
         @if(session('open_modal'))
