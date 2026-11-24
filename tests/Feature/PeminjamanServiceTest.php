@@ -334,7 +334,7 @@ class PeminjamanServiceTest extends TestCase
         $this->gagal(fn () => $this->svc->kembalikan($menunggu->id_peminjaman, $lab->email, $row($menunggu)), 'status');
 
         $ditolak = $this->ajukanBarang($this->mahasiswa()->email, [$alat->id_katalog => 1]);
-        $this->svc->tolak($ditolak->id_peminjaman, $lab->email);
+        $this->svc->tolak($ditolak->id_peminjaman, $lab->email, 'Ditolak');
         $this->gagal(fn () => $this->svc->kembalikan($ditolak->id_peminjaman, $lab->email, $row($ditolak)), 'status');
 
         [$p] = $this->disetujui([$alat->id_katalog => 2]);
@@ -500,7 +500,7 @@ class PeminjamanServiceTest extends TestCase
         $lab = $this->laboran();
         $m = $this->mahasiswa()->email;
         $a = $this->ajukanRuangan($m, $r, '2030-01-08 08:00', '2030-01-08 10:00');
-        $this->svc->tolak($a->id_peminjaman, $lab->email);
+        $this->svc->tolak($a->id_peminjaman, $lab->email, 'Ditolak');
         $b = $this->ajukanRuangan($m, $r, '2030-01-08 08:00', '2030-01-08 10:00');
         $this->ajukanRuangan($this->mahasiswa()->email, $r, '2030-01-08 08:30', '2030-01-08 09:30'); // menunggu
         $this->assertSame('disetujui', $this->svc->setujui($b->id_peminjaman, $lab->email)->status);

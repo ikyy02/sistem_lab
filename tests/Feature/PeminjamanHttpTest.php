@@ -176,7 +176,7 @@ class PeminjamanHttpTest extends TestCase
         $this->sebagai('mahasiswa', $this->mahasiswa())->get(route('peminjaman.index'))->assertOk()
             ->assertSee('name="jenis_peminjaman"', false)->assertSee('Jadwal berlaku untuk semua', false)
             ->assertDontSee('Riwayat Peminjaman</a>', false)->assertDontSee('[tanggal_mulai]', false)
-            ->assertSee('id="btnAjukan"', false)->assertSee('disabled', false)->assertSee('Tambahkan minimal satu ruangan untuk mengaktifkan tombol Ajukan Peminjaman.');
+            ->assertSee('id="btnAjukan"', false)->assertSee('disabled', false)->assertSee('Tambahkan minimal satu ruangan, alat, atau bahan untuk mengaktifkan tombol Ajukan Peminjaman.');
         $this->sebagai('dosen', $this->dosen())->get(route('peminjaman.index'))->assertOk()
             ->assertDontSee('name="jenis_peminjaman"', false)->assertDontSee('name="email_dosen"', false);
     }

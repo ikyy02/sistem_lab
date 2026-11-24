@@ -45,6 +45,60 @@ class PengaturanOperasional extends Model
     }
 
     /**
+     * Cek apakah suatu tanggal merupakan hari operasional (bukan akhir pekan/hari nonoperasional dan bukan libur kalender).
+     */
+    public function isHariOperasional(CarbonInterface $tanggal): bool
+    {
+        $namaHari = self::NAMA_HARI[(int) $tanggal->format('w')];
+        if (! in_array($namaHari, $this->hariAktif(), true)) {
+            return false;
+        }
+
+        if (HariLibur::isLibur($tanggal)) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Menghitung jumlah hari operasional yang disentuh/dilewati oleh rentang tanggal.
+     */
+    public function hitungHariOperasional(CarbonInterface $mulai, CarbonInterface $selesai): int
+    {
+        $cur = $mulai->copy()->startOfDay();
+        $end = $selesai->copy()->startOfDay();
+        $hariOp = 0;
+
+        while ($cur->lte($end)) {
+            if ($this->isHariOperasional($cur)) {
+                $hariOp++;
+            }
+            $cur->addDay();
+        }
+
+        return $hariOp;
+    }
+
+    /**
+     * Cek apakah rentang tanggal menyentuh hari nonoperasional (akhir pekan, libur nasional, cuti bersama, libur khusus).
+     */
+    public function menyentuhHariNonoperasional(CarbonInterface $mulai, CarbonInterface $selesai): bool
+    {
+        $cur = $mulai->copy()->startOfDay();
+        $end = $selesai->copy()->startOfDay();
+
+        while ($cur->lte($end)) {
+            if (! $this->isHariOperasional($cur)) {
+                return true;
+            }
+            $cur->addDay();
+        }
+
+        return false;
+    }
+
+    /**
      * Waktu paling awal yang masih boleh dipilih: hari operasional pertama yang jamnya
      * masih buka dan waktu tersebut belum lewat. null bila tidak ditemukan dalam 60 hari.
      */
@@ -57,7 +111,7 @@ class PengaturanOperasional extends Model
         $hari = $sekarang->copy()->startOfDay();
 
         for ($i = 0; $i < 60; $i++, $hari->addDay()) {
-            if (! in_array(self::NAMA_HARI[(int) $hari->format('w')], $aturan['hari'], true)) {
+            if (! $this->isHariOperasional($hari)) {
                 continue;
             }
             $buka = $hari->copy()->setTime($jamBuka, $menitBuka, $detikBuka);
@@ -86,6 +140,9 @@ class PengaturanOperasional extends Model
         }
         if (! in_array(self::NAMA_HARI[(int) $mulai->format('w')], $aturan['hari'], true)) {
             return ['tanggal_peminjaman', 'Peminjaman hanya dapat dijadwalkan pada hari operasional laboratorium ('.implode(', ', $aturan['hari']).').'];
+        }
+        if (HariLibur::isLibur($mulai)) {
+            return ['tanggal_peminjaman', 'Peminjaman tidak dapat dijadwalkan pada hari libur / cuti bersama.'];
         }
         if ($mulai->format('H:i') < $aturan['jam_buka'] || $mulai->format('H:i') >= $aturan['jam_tutup']) {
             return ['tanggal_peminjaman', "Waktu mulai harus berada dalam jam operasional laboratorium ({$rentang})."];

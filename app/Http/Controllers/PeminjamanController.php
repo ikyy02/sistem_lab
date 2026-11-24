@@ -107,7 +107,7 @@ class PeminjamanController extends Controller
             'detail' => ['required_without:ruangan', 'nullable', 'array'],
             'detail.*.id_katalog' => ['required', 'integer', 'distinct', Rule::exists('alat_bahans', 'id_katalog')],
             'detail.*.jumlah' => ['required', 'integer', 'min:1'],
-            'ruangan' => ['nullable', 'array'],
+            'ruangan' => ['nullable', 'array', 'max:1'],
             'ruangan.*.id_ruangan' => ['required', 'integer', 'distinct', Rule::exists('ruangans', 'id_ruangan')],
         ], [
             'required' => ':attribute wajib diisi.',
@@ -117,6 +117,7 @@ class PeminjamanController extends Controller
             'distinct' => 'Satu katalog/ruangan hanya boleh dipilih sekali.',
             'exists' => 'Data :attribute tidak ditemukan.',
             'detail.*.jumlah.min' => 'Jumlah peminjaman minimal 1.',
+            'ruangan.max' => 'Maksimal :max ruangan yang dapat dipinjam dalam satu transaksi.',
             'max' => ':attribute maksimal :max karakter.',
         ], [
             'jenis_peminjaman' => 'Jenis peminjaman', 'email_dosen' => 'Dosen penanggung jawab',

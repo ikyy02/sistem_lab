@@ -61,8 +61,11 @@ class PeminjamanService
             } elseif ($jenis === 'atas_dosen') {
                 if (! $emailDosen) {
                     $err['email_dosen'] = 'Dosen penanggung jawab wajib dipilih.';
-                } elseif (! Akun::where('email', $emailDosen)->where('role', 'dosen')->exists()) {
-                    $err['email_dosen'] = 'Dosen harus berupa akun dengan role dosen.';
+                } else {
+                    $dosenObj = \App\Models\Dosen::where('email', $emailDosen)->first();
+                    if (! $dosenObj || $dosenObj->status !== 'aktif') {
+                        $err['email_dosen'] = 'Dosen penanggung jawab harus berupa akun dosen yang aktif.';
+                    }
                 }
             }
             if ($jenis === 'pribadi') {
@@ -92,6 +95,28 @@ class PeminjamanService
         $ruangan = array_values($data['ruangan'] ?? []);
         if ($barang === [] && $ruangan === []) {
             $err['detail'] = 'Pilih minimal satu ruangan, alat, atau bahan yang ingin dipinjam sebelum mengajukan peminjaman.';
+        }
+
+        if (count($ruangan) > 1) {
+            $err['ruangan'] = 'Maksimal 1 ruangan yang dapat dipinjam dalam satu transaksi pengajuan.';
+        }
+
+        // Aturan Penentuan Jenis Peminjaman Mahasiswa:
+        // Mahasiswa wajib 'atas_dosen' jika:
+        // 1. Durasi operasional > 1 hari, ATAU
+        // 2. Menyentuh hari nonoperasional (akhir pekan, libur nasional, cuti bersama, libur khusus) tanpa ruangan (hanya alat/bahan).
+        // Selain itu boleh mandiri ('pribadi') atau 'atas_dosen' sukarela.
+        if (! $roleDosen && $pinjam && $kembali) {
+            $operasional = PengaturanOperasional::ambil();
+            $durasiOperasional = $operasional->hitungHariOperasional($pinjam, $kembali);
+            $menyentuhNonOp = $operasional->menyentuhHariNonoperasional($pinjam, $kembali);
+            $tanpaRuangan = empty($ruangan);
+
+            $wajibAtasDosen = ($durasiOperasional > 1) || ($menyentuhNonOp && $tanpaRuangan);
+
+            if ($wajibAtasDosen && $jenis === 'pribadi') {
+                $err['jenis_peminjaman'] = 'Peminjaman lebih dari 1 hari operasional atau yang menyentuh hari nonoperasional (akhir pekan/libur) tanpa peminjaman ruangan wajib memilih Peminjaman dengan Penanggung Jawab Dosen.';
+            }
         }
 
         $ids = [];
@@ -242,7 +267,7 @@ class PeminjamanService
         }
         // Setelah Dosen meneruskan, Laboran harus tahu ada pengajuan yang menunggu keputusan akhir.
         if ($pemroses->role === 'dosen' && $p->diteruskanKeLaboran()) {
-            Notif::kirim(Notif::laboran(), new PengajuanBaru($p));
+            Notif::kirim(Notif::laboran(), new \App\Notifications\PengajuanDiteruskanKeLaboran($p));
         }
 
         return $p;
@@ -264,11 +289,16 @@ class PeminjamanService
                 $this->gagal(['email_pemroses' => 'Tidak dapat memproses pengajuan peminjaman yang diajukan sendiri.']);
             }
             $this->pastikanBerwenang($p, $pemroses);
+
+            if (empty($alasan)) {
+                $this->gagal(['alasan' => 'Alasan penolakan wajib diisi.']);
+            }
+
             $p->update([
                 'status' => 'ditolak',
                 'email_pemroses' => $pemroses->email,
                 'tanggal_persetujuan' => now(),
-                'alasan_ditolak' => $alasan ?: null,
+                'alasan_ditolak' => $alasan,
             ]);
 
             return $p;
@@ -605,22 +635,33 @@ class PeminjamanService
             return 'Ruangan bentrok dengan peminjaman lain yang sudah disetujui.';
         }
 
-        // 2) Jadwal kuliah aktif (mingguan). Peminjaman selalu satu hari operasional (cekSatuHari), jadi cukup satu tanggal.
-        $tgl = $mulai->copy()->startOfDay();
-        $namaHari = PengaturanOperasional::NAMA_HARI[$tgl->dayOfWeek];
-        if ($namaHari !== 'minggu') { // jadwal kuliah tidak ada pada hari minggu
-            [$tahun, $semester] = self::periodeAkademik($tgl);
-            $ada = Jadwal::where('id_ruangan', $r->id_ruangan)
-                ->where('status', 'aktif')->where('hari', $namaHari)
-                ->where('tahun_akademik', $tahun)->where('semester', $semester)
-                // Jadwal hanya berlaku pada tanggal di dalam periodenya.
-                ->where(fn ($q) => $q->whereNull('id_periode')->orWhereIn('id_periode', PeriodeJadwal::query()
-                    ->where('tanggal_mulai', '<=', $tgl->toDateString())->where('tanggal_berakhir', '>=', $tgl->toDateString())->select('id_periode')))
-                ->where('jam_mulai', '<', $selesai->format('H:i:s'))->where('jam_selesai', '>', $mulai->format('H:i:s'))
-                ->exists();
-            if ($ada) {
-                return 'Ruangan bentrok dengan jadwal kuliah aktif.';
+        // 2) Jadwal kuliah aktif (mingguan). Mendukung rentang satu hari maupun multi-tanggal.
+        $cur = $mulai->copy()->startOfDay();
+        $end = $selesai->copy()->startOfDay();
+        while ($cur->lte($end)) {
+            $namaHari = PengaturanOperasional::NAMA_HARI[$cur->dayOfWeek];
+            if ($namaHari !== 'minggu') {
+                [$tahun, $semester] = self::periodeAkademik($cur);
+                $jadwalHariIni = Jadwal::where('id_ruangan', $r->id_ruangan)
+                    ->where('status', 'aktif')
+                    ->where('hari', $namaHari)
+                    ->where('tahun_akademik', $tahun)
+                    ->where('semester', $semester)
+                    ->where(fn ($q) => $q->whereNull('id_periode')->orWhereIn('id_periode', PeriodeJadwal::query()
+                        ->where('tanggal_mulai', '<=', $cur->toDateString())
+                        ->where('tanggal_berakhir', '>=', $cur->toDateString())
+                        ->select('id_periode')))
+                    ->get();
+
+                foreach ($jadwalHariIni as $j) {
+                    $jMulai = Carbon::parse($cur->toDateString().' '.$j->jam_mulai);
+                    $jSelesai = Carbon::parse($cur->toDateString().' '.$j->jam_selesai);
+                    if ($jMulai->lt($selesai) && $jSelesai->gt($mulai)) {
+                        return 'Ruangan bentrok dengan jadwal kuliah aktif.';
+                    }
+                }
             }
+            $cur->addDay();
         }
 
         return null;

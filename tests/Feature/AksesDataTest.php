@@ -105,7 +105,7 @@ class AksesDataTest extends TestCase
         $this->sebagai('laboran', $this->laboran())->get(route('pengajuan.index', ['status' => 'semua']))->assertOk()
             ->assertSee('Zulkarnain Mandiri')->assertSee('Yusuf AtasDosen')->assertSee('Dosen Lain Bbb')
             ->assertViewHas('data', fn ($d) => $d->total() === 4)
-            ->assertViewHas('jumlahMenunggu', 4); // Laboran (Super Admin) dapat memutuskan semua yang menunggu, termasuk tahap Dosen
+            ->assertViewHas('jumlahMenunggu', 2); // Laboran menunggu tindakan: hanya yang mandiri/pembelajaran atau yang sudah disetujui Dosen
     }
 
     // ------------------------------------------------------------------ detail (ganti ID di URL)
@@ -140,8 +140,8 @@ class AksesDataTest extends TestCase
             ->assertViewHas('dapatMemproses', true);
         $this->sebagai('laboran', $this->laboran())->get(route('peminjaman.show', $s['mandiri']->id_peminjaman))
             ->assertViewHas('dapatMemproses', true);
-        // Laboran (Super Admin) dapat memproses Kuliah/Praktikum meski Dosen belum memutuskan
-        $this->get(route('peminjaman.show', $s['atasA']->id_peminjaman))->assertOk()->assertViewHas('dapatMemproses', true);
+        // Laboran tidak boleh memproses pengajuan atas_dosen sebelum disetujui Dosen
+        $this->get(route('peminjaman.show', $s['atasA']->id_peminjaman))->assertOk()->assertViewHas('dapatMemproses', false);
     }
 
     // ------------------------------------------------------------------ alur dua tahap (SRS D.8)
@@ -160,8 +160,8 @@ class AksesDataTest extends TestCase
         $this->sebagai('dosen', $s['dosenA'])->post(route('pengajuan.setujui', $id))->assertSessionHas('success');
         $this->assertSame('menunggu', $s['atasA']->fresh()->status);
         $this->assertSame(10, $stok());
-        $this->post(route('pengajuan.setujui', $id))->assertSessionHasErrors('status');
-        $this->post(route('pengajuan.tolak', $id), ['alasan' => 'x'])->assertSessionHasErrors('status');
+        $this->post(route('pengajuan.setujui', $id))->assertForbidden();
+        $this->post(route('pengajuan.tolak', $id), ['alasan' => 'x'])->assertForbidden();
 
         // Kini masuk antrean Laboran; keputusan akhir ada di tangan Laboran
         $this->sebagai('laboran', $lab)->get(route('pengajuan.index'))->assertOk()
@@ -181,14 +181,13 @@ class AksesDataTest extends TestCase
         $this->post(route('pengajuan.tolak', $id), ['alasan' => 'Bukan jadwal praktikum'])->assertSessionHas('success');
         $b = $s['atasB']->fresh();
         $this->assertSame(['ditolak', 'Bukan jadwal praktikum', $s['dosenB']->email], [$b->status, $b->alasan_ditolak, $b->email_pemroses]);
-        $this->sebagai('laboran', $this->laboran())->post(route('pengajuan.setujui', $id))->assertSessionHasErrors('status'); // sudah ditolak
+        $this->sebagai('laboran', $this->laboran())->post(route('pengajuan.setujui', $id))->assertForbidden(); // sudah ditolak dan tidak bisa diproses lagi
     }
 
-    public function test_laboran_super_admin_dapat_memutuskan_sebelum_dosen(): void
+    public function test_laboran_tidak_dapat_memutuskan_sebelum_dosen(): void
     {
         $s = $this->skenario();
-        $this->sebagai('laboran', $lab = $this->laboran())->post(route('pengajuan.setujui', $s['atasA']->id_peminjaman))->assertSessionHas('success');
-        $this->assertSame(['disetujui', $lab->email], [$s['atasA']->fresh()->status, $s['atasA']->fresh()->email_pemroses]);
+        $this->sebagai('laboran', $this->laboran())->post(route('pengajuan.setujui', $s['atasA']->id_peminjaman))->assertForbidden();
     }
 
     // ------------------------------------------------------------------ aksi backend
@@ -278,7 +277,7 @@ class AksesDataTest extends TestCase
 
         $this->sebagai('dosen', $s['dosenA'])->get(route('dashboard'))->assertOk()->assertViewHas('menunggu', 1);
         $this->sebagai('dosen', $this->dosen())->get(route('dashboard'))->assertOk()->assertViewHas('menunggu', 0);
-        $this->sebagai('laboran', $this->laboran())->get(route('dashboard'))->assertOk()->assertViewHas('menunggu', 4);
+        $this->sebagai('laboran', $this->laboran())->get(route('dashboard'))->assertOk()->assertViewHas('menunggu', 2);
     }
 
     public function test_riwayat_dan_dashboard_mahasiswa_hanya_milik_sendiri(): void

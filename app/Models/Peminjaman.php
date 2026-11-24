@@ -144,15 +144,21 @@ class Peminjaman extends Model
         };
     }
 
-    /** Yang menunggu TINDAKAN role itu sekarang: Dosen = tahap 1; Laboran = semua yang menunggu. */
-    // Scope: pengajuan yang menunggu tindakan role tersebut sekarang.
+    /** Yang menunggu TINDAKAN role itu sekarang: Dosen = tahap 1; Laboran = pribadi, pembelajaran, atau atas_dosen yang sudah disetujui dosen. */
     public function scopeMenungguTindakan($q, string $email, string $role)
     {
         $q = $q->dapatDiprosesOleh($email, $role)->where('status', 'menunggu');
 
         return match ($role) {
-            'laboran' => $q,
-            default => $q->whereNull('tanggal_persetujuan_dosen'),
+            'laboran' => $q->where(function ($sub) {
+                $sub->whereIn('jenis_peminjaman', ['pribadi', 'pembelajaran'])
+                    ->orWhere(function ($s) {
+                        $s->where('jenis_peminjaman', 'atas_dosen')
+                          ->whereNotNull('tanggal_persetujuan_dosen');
+                    });
+            }),
+            'dosen' => $q->whereNull('tanggal_persetujuan_dosen'),
+            default => $q->whereRaw('1 = 0'),
         };
     }
 
@@ -163,9 +169,19 @@ class Peminjaman extends Model
             return false;
         }
 
+        if ($this->status !== 'menunggu') {
+            return false;
+        }
+
         return match ($role) {
-            'laboran' => true, // Super Admin dapat memutuskan di tahap mana pun, termasuk menggantikan tahap Dosen
-            'dosen' => $this->jenis_peminjaman === 'atas_dosen' && $this->email_dosen === $email && $this->tanggal_persetujuan_dosen === null,
+            'laboran' => match ($this->jenis_peminjaman) {
+                'pribadi', 'pembelajaran' => true,
+                'atas_dosen' => $this->tanggal_persetujuan_dosen !== null,
+                default => false,
+            },
+            'dosen' => $this->jenis_peminjaman === 'atas_dosen'
+                && $this->email_dosen === $email
+                && $this->tanggal_persetujuan_dosen === null,
             default => false,
         };
     }

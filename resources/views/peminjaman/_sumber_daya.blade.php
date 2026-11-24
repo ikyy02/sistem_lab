@@ -8,8 +8,8 @@
     </div>
     <div class="pj-kategori">
         <div class="pj-kategori-head">
-            <h4>Ruangan</h4>
-            <button type="button" class="btn btn-outline-silab btn-sm d-inline-flex align-items-center gap-2" onclick="tambahRuangan()"><i class="bi bi-plus-lg" aria-hidden="true"></i> Tambah Ruangan</button>
+            <h4>Ruangan (Maksimal 1)</h4>
+            <button type="button" id="btnTambahRuangan" class="btn btn-outline-silab btn-sm d-inline-flex align-items-center gap-2" onclick="tambahRuangan()"><i class="bi bi-plus-lg" aria-hidden="true"></i> Tambah Ruangan</button>
         </div>
         <div class="table-responsive pj-tabel">
             <table class="table table-silab mb-0">

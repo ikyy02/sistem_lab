@@ -2,7 +2,7 @@
 
 @section('title', 'Ajukan Peminjaman')
 @section('page-title', 'Peminjaman')
-@section('page-subtitle', 'Ajukan peminjaman ruangan, alat, atau bahan laboratorium.')
+@section('page-subtitle', 'Ajukan peminjaman ruangan, alat, dan bahan laboratorium dalam satu formulir terpadu.')
 
 @section('content')
 @php
@@ -24,11 +24,7 @@
     $jsKatalog = $opsiKatalog->map(fn ($k) => ['id' => $k->id_katalog, 'nama' => $k->nama, 'jenis' => $k->jenis, 'stok' => $k->stok, 'satuan' => $k->nama_satuan])->values();
     $jsRuangan = $opsiRuangan->map(fn ($r) => ['id' => $r->id_ruangan, 'nama' => $r->nama_ruangan])->values();
 
-    $pesanItemPhp = match($tipeAktif ?? 'ruangan') {
-        'alat' => 'Pilih minimal satu alat yang ingin dipinjam sebelum mengajukan peminjaman.',
-        'bahan' => 'Pilih minimal satu bahan yang ingin dipinjam sebelum mengajukan peminjaman.',
-        default => 'Pilih minimal satu ruangan yang ingin dipinjam sebelum mengajukan peminjaman.',
-    };
+    $pesanItemPhp = 'Pilih minimal satu ruangan, alat, atau bahan yang ingin dipinjam sebelum mengajukan peminjaman.';
 @endphp
 
 @push('styles')
@@ -47,7 +43,7 @@
     .pj-kosong { text-align: center; padding: .9rem; font-size: .82rem; color: var(--text-muted); }
     .pj-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem; margin-top: 1rem; }
     .pj-hint { font-size: .8rem; color: var(--text-muted); flex: 1 1 260px; }
-    .pj-hint.siap { color: #15803d; }
+    .pj-hint.siap { color: #15803d; font-weight: 500; }
     #btnAjukan:disabled { cursor: not-allowed; opacity: .55; filter: grayscale(.25); }
     @media (max-width: 575.98px) {
         .pj-jumlah { width: 110px; }
@@ -69,64 +65,35 @@
 <div class="mb-3">
     <p class="mb-0" style="font-size:.83rem;color:var(--text-muted);">
         @if($roleDosen)
-            Peminjaman pembelajaran berlaku 1 hari dan hanya pada jam operasional laboratorium ({{ $jamBuka }} – {{ $jamTutup }}). Pengajuan akan berstatus <strong>Menunggu Persetujuan</strong>.
+            Peminjaman pembelajaran berlaku 1 hari dan hanya pada jam operasional laboratorium ({{ $jamBuka }} – {{ $jamTutup }}). Anda dapat meminjam ruangan, alat, dan bahan sekaligus dalam satu transaksi pengajuan. Pengajuan akan berstatus <strong>Menunggu Persetujuan</strong>.
         @else
-            Tentukan jadwal sekali (maksimal satu hari operasional, {{ $jamBuka }} – {{ $jamTutup }}), lalu pilih ruangan, alat, atau bahan yang dibutuhkan. Pengajuan akan berstatus <strong>Menunggu Persetujuan</strong>.
+            Tentukan jadwal sekali (maksimal satu hari operasional, {{ $jamBuka }} – {{ $jamTutup }}), lalu pilih kombinasi ruangan, alat, atau bahan yang dibutuhkan dalam satu formulir terpadu. Pengajuan akan berstatus <strong>Menunggu Persetujuan</strong>.
         @endif
     </p>
 </div>
 
-@php
-    $labelTipe = match($tipeAktif ?? 'ruangan') {
-        'alat' => 'alat',
-        'bahan' => 'bahan',
-        default => 'ruangan',
-    };
-@endphp
 @if($peminjamanAktif)
     <div class="alert alert-warning mb-3" role="alert">
-        Anda masih memiliki peminjaman {{ $labelTipe }} yang berjalan (status {{ $peminjamanAktif->label_status }}). Selesaikan atau batalkan
+        Anda masih memiliki peminjaman yang berjalan (status {{ $peminjamanAktif->label_status }}). Selesaikan atau batalkan
         <a href="{{ route('peminjaman.show', $peminjamanAktif->id_peminjaman) }}" class="alert-link">peminjaman #{{ $peminjamanAktif->id_peminjaman }}</a>
         sebelum mengajukan yang baru.
     </div>
 @endif
 
-{{-- Tab pilihan jenis peminjaman: Ruangan, Alat, Bahan --}}
-<div class="mb-3 d-flex flex-wrap gap-2">
-    <a href="{{ route('peminjaman.index', ['tipe' => 'ruangan']) }}"
-       class="btn {{ ($tipeAktif ?? 'ruangan') === 'ruangan' ? 'btn-primary' : 'btn-outline-secondary' }} d-inline-flex align-items-center gap-2">
-        <i class="bi bi-door-open"></i> Peminjaman Ruangan
-    </a>
-    <a href="{{ route('peminjaman.index', ['tipe' => 'alat']) }}"
-       class="btn {{ ($tipeAktif ?? 'ruangan') === 'alat' ? 'btn-primary' : 'btn-outline-secondary' }} d-inline-flex align-items-center gap-2">
-        <i class="bi bi-tools"></i> Peminjaman Alat
-    </a>
-    <a href="{{ route('peminjaman.index', ['tipe' => 'bahan']) }}"
-       class="btn {{ ($tipeAktif ?? 'ruangan') === 'bahan' ? 'btn-primary' : 'btn-outline-secondary' }} d-inline-flex align-items-center gap-2">
-        <i class="bi bi-box-seam"></i> Peminjaman Bahan
-    </a>
-</div>
-
 <form method="POST" action="{{ route('peminjaman.store') }}" id="formPinjam" data-no-lock novalidate>
     @csrf
     <input type="hidden" name="token_pengajuan" value="{{ old('token_pengajuan') ?: \Illuminate\Support\Str::uuid() }}">
-    <input type="hidden" name="tipe_peminjaman" value="{{ $tipeAktif ?? 'ruangan' }}">
+    <input type="hidden" name="tipe_peminjaman" value="campuran">
     {{-- Fieldset nonaktif mematikan semua isian dan tombol di dalamnya, termasuk yang dibuat JavaScript. --}}
     <fieldset @disabled($peminjamanAktif) class="border-0 p-0 m-0 min-w-0">
     @include($roleDosen ? 'peminjaman._form_dosen' : 'peminjaman._form_mahasiswa')
 
-    @if(($tipeAktif ?? 'ruangan') === 'ruangan')
-        @include('peminjaman._sumber_daya_ruangan')
-    @elseif(($tipeAktif ?? 'ruangan') === 'alat')
-        @include('peminjaman._sumber_daya_alat')
-    @else
-        @include('peminjaman._sumber_daya_bahan')
-    @endif
+    @include('peminjaman._sumber_daya')
 
     <div id="pesanForm" class="alert alert-danger py-2 mt-3 mb-0" role="alert" style="display:none;"></div>
 
     <div class="pj-bar">
-        <div class="pj-hint" id="hintAjukan" aria-live="polite">Tambahkan minimal satu {{ $labelTipe }} untuk mengaktifkan tombol Ajukan Peminjaman.</div>
+        <div class="pj-hint" id="hintAjukan" aria-live="polite">Tambahkan minimal satu ruangan, alat, atau bahan untuk mengaktifkan tombol Ajukan Peminjaman.</div>
         <div class="d-flex flex-wrap gap-2 justify-content-end">
             <button type="submit" id="btnAjukan" class="btn btn-primary d-inline-flex align-items-center justify-content-center gap-2" disabled>
                 <i class="bi bi-send" id="ikonAjukan"></i><span id="teksAjukan">Ajukan Peminjaman</span>
@@ -195,14 +162,9 @@
         return Number.isInteger(n) && n >= 1 && n <= maks;
     }
 
-    const TIPE_AKTIF = @json($tipeAktif ?? 'ruangan');
-
-    // Jumlah item yang benar-benar valid (placeholder dan baris belum lengkap tidak dihitung).
+    // Jumlah item yang benar-benar valid dari seluruh kategori (ruangan, alat, bahan)
     function jumlahItemValid() {
-        let selector = '#ruanganRows tr';
-        if (TIPE_AKTIF === 'alat') selector = '#alatRows tr';
-        else if (TIPE_AKTIF === 'bahan') selector = '#bahanRows tr';
-        return [...document.querySelectorAll(selector)].filter(barisValid).length;
+        return [...document.querySelectorAll('#ruanganRows tr, #alatRows tr, #bahanRows tr')].filter(barisValid).length;
     }
 
     // Satu-satunya tempat status form diperbarui: pesan kosong, pesan petunjuk, dan tombol.
@@ -211,19 +173,23 @@
             const wadah = el(e.dataset.kosongUntuk);
             if (wadah) e.style.display = wadah.children.length ? 'none' : '';
         });
+
+        // Kontrol tombol Tambah Ruangan (maksimal 1 ruangan)
+        const btnTambahR = el('btnTambahRuangan');
+        const countRuangan = document.querySelectorAll('#ruanganRows tr').length;
+        if (btnTambahR) {
+            btnTambahR.disabled = countRuangan >= 1;
+            btnTambahR.title = countRuangan >= 1 ? 'Maksimal 1 ruangan per transaksi' : '';
+        }
+
         const ada = jumlahItemValid() > 0;
         const pItem = el('pesanItem');
         if (pItem) pItem.style.display = ada ? 'none' : '';
         const hint = el('hintAjukan');
         hint.classList.toggle('siap', ada);
-        const teksKosong = TIPE_AKTIF === 'alat'
-            ? 'Tambahkan minimal satu alat untuk mengaktifkan tombol Ajukan Peminjaman.'
-            : (TIPE_AKTIF === 'bahan'
-                ? 'Tambahkan minimal satu bahan untuk mengaktifkan tombol Ajukan Peminjaman.'
-                : 'Tambahkan minimal satu ruangan untuk mengaktifkan tombol Ajukan Peminjaman.');
         hint.textContent = ada
             ? 'Item sudah dipilih. Periksa kembali jadwal lalu ajukan peminjaman.'
-            : teksKosong;
+            : 'Tambahkan minimal satu ruangan, alat, atau bahan untuk mengaktifkan tombol Ajukan Peminjaman.';
         el('btnAjukan').disabled = !ada || sedangKirim;
         el('btnAjukan').title = ada ? '' : PESAN_ITEM;
     }
@@ -238,10 +204,10 @@
         const sel = document.createElement('select');
         sel.name = 'detail[' + i + '][id_katalog]';
         sel.className = 'form-select';
-        sel.setAttribute('aria-label', 'Pilih ' + kategori);
-        sel.appendChild(opsiNilai('', 'Pilih ' + kategori + '...'));
+        sel.setAttribute('aria-label', 'Pilih ' + (kategori === 'alat' ? 'alat' : 'bahan'));
+        sel.appendChild(opsiNilai('', 'Pilih ' + (kategori === 'alat' ? 'alat' : 'bahan') + '...'));
         OPSI_KATALOG.filter(k => k.jenis === kategori).forEach(k => {
-            const o = opsiNilai(k.id, k.nama + ' — stok ' + k.stok);
+            const o = opsiNilai(k.id, k.nama + ' — stok ' + k.stok + ' (' + k.satuan + ')');
             o.dataset.stok = k.stok;
             if (String(data.id_katalog) === String(k.id)) o.selected = true;
             sel.appendChild(o);
@@ -333,7 +299,6 @@
     ['tanggal_peminjaman', 'tanggal_rencana_kembali'].forEach(id => el(id).addEventListener('input', aturBatasWaktu));
 
     // Mengembalikan daftar pesan kesalahan sisi klien (backend tetap memvalidasi ulang).
-    // Validasi sisi browser agar pengguna cepat tahu; server tetap memvalidasi ulang semuanya.
     function validasiForm() {
         const form = el('formPinjam');
         const galat = [];

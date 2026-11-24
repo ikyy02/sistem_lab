@@ -92,6 +92,7 @@ class PengajuanController extends Controller
     private function otorisasi(int $id): void
     {
         $me = AuthService::user();
-        abort_unless(Peminjaman::whereKey($id)->dapatDiprosesOleh($me['email'], $me['role'])->exists(), 403);
+        $peminjaman = Peminjaman::find($id);
+        abort_unless($peminjaman && $peminjaman->bisaDiprosesOleh($me['email'], $me['role']), 403);
     }
 }
