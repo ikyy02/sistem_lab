@@ -77,6 +77,7 @@ class PengadaanTpkController extends Controller
             fputcsv($handle, ['Sistem Informasi SIARKA - Metode AHP dan Simple Additive Weighting (SAW)']);
             fputcsv($handle, ['Bulan Periode', $params['bulan']]);
             fputcsv($handle, ['Filter Kategori', ucfirst($params['jenis'])]);
+            fputcsv($handle, ['Consistency Index (CI)', round($params['ahp']['ci'], 6)]);
             fputcsv($handle, ['Consistency Ratio (CR)', $params['ahp']['cr']]);
             fputcsv($handle, ['Bobot W1 (Stok) dari AHP', $params['w1']]);
             fputcsv($handle, ['Bobot W2 (Peminjaman) dari AHP', $params['w2']]);
@@ -147,35 +148,37 @@ class PengadaanTpkController extends Controller
         $sheet->setCellValue('B3', $params['bulan']);
         $sheet->setCellValue('A4', 'Filter Kategori');
         $sheet->setCellValue('B4', ucfirst($params['jenis']));
-        $sheet->setCellValue('A5', 'Consistency Ratio (CR)');
-        $sheet->setCellValue('B5', $params['ahp']['cr']);
-        $sheet->setCellValue('A6', 'Bobot W1 (Stok) dari AHP');
-        $sheet->setCellValue('B6', $params['w1']);
-        $sheet->setCellValue('A7', 'Bobot W2 (Peminjaman) dari AHP');
-        $sheet->setCellValue('B7', $params['w2']);
-        $sheet->setCellValue('A8', 'Bobot W3 (Harga) dari AHP');
-        $sheet->setCellValue('B8', $params['w3']);
+        $sheet->setCellValue('A5', 'Consistency Index (CI)');
+        $sheet->setCellValue('B5', round($params['ahp']['ci'], 6));
+        $sheet->setCellValue('A6', 'Consistency Ratio (CR)');
+        $sheet->setCellValue('B6', $params['ahp']['cr']);
+        $sheet->setCellValue('A7', 'Bobot W1 (Stok) dari AHP');
+        $sheet->setCellValue('B7', $params['w1']);
+        $sheet->setCellValue('A8', 'Bobot W2 (Peminjaman) dari AHP');
+        $sheet->setCellValue('B8', $params['w2']);
+        $sheet->setCellValue('A9', 'Bobot W3 (Harga) dari AHP');
+        $sheet->setCellValue('B9', $params['w3']);
 
         // Bold metadata
-        $sheet->getStyle('A1:A8')->getFont()->setBold(true);
+        $sheet->getStyle('A1:A9')->getFont()->setBold(true);
         $sheet->getStyle('A1')->getFont()->setSize(12);
 
-        // Kolom header data (baris 10)
+        // Kolom header data (baris 11)
         $columns = [
             'Peringkat', 'ID Katalog', 'Nama Barang', 'Jenis', 'Satuan', 'Ruangan',
             'Stok Saat Ini (C1)', 'Jumlah Peminjaman (C2)', 'Harga per Satuan (C3)',
             'Normalisasi R1', 'Normalisasi R2', 'Normalisasi R3',
             'Nilai Preferensi (V)', 'Status Prioritas',
         ];
-        $sheet->fromArray($columns, null, 'A10');
+        $sheet->fromArray($columns, null, 'A11');
         $lastCol = chr(64 + count($columns));
-        $sheet->getStyle("A10:{$lastCol}10")->getFont()->setBold(true);
-        $sheet->getStyle("A10:{$lastCol}10")->getFill()
+        $sheet->getStyle("A11:{$lastCol}11")->getFont()->setBold(true);
+        $sheet->getStyle("A11:{$lastCol}11")->getFill()
             ->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
             ->getStartColor()->setRGB('F1F3F5');
 
         // Data rows
-        $row = 11;
+        $row = 12;
         foreach ($hasil['items'] as $it) {
             $sheet->fromArray([
                 $it['ranking'],

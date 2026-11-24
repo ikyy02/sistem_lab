@@ -497,12 +497,17 @@
                             </div>
                             <div class="row g-2">
                                 <div class="col-12 col-md-3">
+                                    <div style="font-size:11px; color:var(--text-muted);">Consistency Index (CI)</div>
+                                    <strong>{{ number_format($ahp['ci'], 4, ',', '.') }}</strong>
+                                    <span style="font-size:11px; color:var(--text-secondary);">(RI 0,58)</span>
+                                </div>
+                                <div class="col-12 col-md-3">
                                     <div style="font-size:11px; color:var(--text-muted);">Consistency Ratio (CR)</div>
                                     <strong>{{ number_format($ahp['cr'], 4, ',', '.') }}</strong>
                                     <span style="font-size:11px; color:var(--text-secondary);">(batas 0,10)</span>
                                 </div>
                                 @foreach(['C1 Stok', 'C2 Peminjaman', 'C3 Harga'] as $i => $namaKriteria)
-                                    <div class="col-12 col-md-3">
+                                    <div class="col-12 col-md-2">
                                         <div style="font-size:11px; color:var(--text-muted);">Bobot {{ $namaKriteria }}</div>
                                         <strong>{{ number_format($ahp['bobot'][$i], 4, ',', '.') }}</strong>
                                         <span style="font-size:11px; color:var(--text-secondary);">({{ number_format($ahp['bobot'][$i] * 100, 2, ',', '.') }}%)</span>
@@ -679,16 +684,22 @@
                 </div>
 
                 <div style="font-size:13px; font-weight:600; color:var(--text-primary); margin-bottom:6px;">
-                    Matriks Keputusan: Nilai Preferensi Alternatif
+                    Matriks Keputusan: Nilai Preferensi Alternatif dan Normalisasi (R)
                 </div>
                 <div class="table-responsive">
                     <table class="table-admin" style="font-size:12px;">
                         <thead>
                             <tr class="text-center">
-                                <th style="width:40px;">No</th>
-                                <th class="text-start">Alternatif (Nama Barang)</th>
-                                <th style="width:100px;">Nilai V</th>
-                                <th style="width:60px;">Rank</th>
+                                <th rowspan="2" style="width:40px;">No</th>
+                                <th rowspan="2" class="text-start">Alternatif (Nama Barang)</th>
+                                <th colspan="3">Nilai Normalisasi (R)</th>
+                                <th rowspan="2" style="width:100px;">Nilai V</th>
+                                <th rowspan="2" style="width:60px;">Rank</th>
+                            </tr>
+                            <tr class="text-center">
+                                <th>R1 (Stok)</th>
+                                <th>R2 (Pinjam)</th>
+                                <th>R3 (Harga)</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -696,6 +707,9 @@
                                 <tr>
                                     <td class="text-center" style="color:var(--text-muted);">{{ $idx + 1 }}</td>
                                     <td style="font-weight:500;">{{ $it['nama'] }}</td>
+                                    <td class="text-end" style="font-family:monospace; color:var(--text-secondary);">{{ number_format($it['r'][0], 4) }}</td>
+                                    <td class="text-end" style="font-family:monospace; color:var(--text-secondary);">{{ number_format($it['r'][1], 4) }}</td>
+                                    <td class="text-end" style="font-family:monospace; color:var(--text-secondary);">{{ number_format($it['r'][2], 4) }}</td>
                                     <td class="text-end" style="font-family:monospace; font-weight:600; color:var(--accent);">{{ number_format($it['nilai'], 4) }}</td>
                                     <td class="text-center">{{ $it['ranking'] }}</td>
                                 </tr>
@@ -721,6 +735,11 @@
                                 <span style="font-size:11px; color:var(--text-secondary);">
                                     Digunakan untuk menguji konsistensi dan menetapkan bobot kepentingan kriteria berdasarkan pertimbangan kepentingan institusi.
                                 </span>
+                                <div style="font-family:monospace; font-size:11px; color:var(--accent); margin-top:4px; padding-top:4px; border-top:1px dashed var(--border);">
+                                    &bull; &lambda;<sub>max</sub> = {{ number_format($ahp['lambda_max'], 4, ',', '.') }}<br>
+                                    &bull; CI = (&lambda;<sub>max</sub> &minus; n) / (n &minus; 1) = {{ number_format($ahp['ci'], 4, ',', '.') }}<br>
+                                    &bull; CR = CI / RI (0,58) = {{ number_format($ahp['cr'], 4, ',', '.') }} ({{ $ahp['konsisten'] ? 'Konsisten' : 'Tidak Konsisten' }})
+                                </div>
                             </div>
                             <div class="p-2 rounded-1" style="background:var(--bg-surface); border:1px solid var(--border);">
                                 <strong style="font-size:12px; color:var(--text-primary); display:block; margin-bottom:2px;">2. Simple Additive Weighting (SAW)</strong>

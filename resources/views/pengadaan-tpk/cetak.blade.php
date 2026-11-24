@@ -136,6 +136,7 @@
             <td><strong>Bobot Penilaian (W)</strong></td>
             <td>:</td>
             <td colspan="4">
+                CI = {{ number_format($ahp['ci'], 4, ',', '.') }} &bull;
                 CR = {{ number_format($ahp['cr'], 4, ',', '.') }} &bull;
                 W1 (Stok - Cost) = {{ number_format($w1, 4, ',', '.') }} ({{ number_format($w1*100, 2, ',', '.') }}%) &bull;
                 W2 (Peminjaman - Benefit) = {{ number_format($w2, 4, ',', '.') }} ({{ number_format($w2*100, 2, ',', '.') }}%) &bull;
