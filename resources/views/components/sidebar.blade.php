@@ -30,9 +30,6 @@
                 ['label' => 'SOP & Panduan', 'icon' => 'bi-file-earmark-text', 'route' => 'sop.index'],
                 ['label' => 'Notifikasi', 'icon' => 'bi-bell', 'route' => 'notifikasi.index'],
             ],
-            'Akun' => [
-                ['label' => 'Profil', 'icon' => 'bi-person', 'route' => 'profil.index'],
-            ],
         ],
         \App\Support\Role::DOSEN => [
             'Menu Utama' => [
@@ -43,7 +40,6 @@
                 ['label' => 'Jadwal Praktikum', 'icon' => 'bi-calendar3', 'route' => 'jadwal-praktikum.index'],
                 ['label' => 'SOP & Panduan', 'icon' => 'bi-file-earmark-text', 'route' => 'sop.index'],
                 ['label' => 'Katalog Lab', 'icon' => 'bi-collection', 'route' => 'katalog'],
-                ['label' => 'Profil', 'icon' => 'bi-person', 'route' => 'profil.index'],
             ],
         ],
         \App\Support\Role::LABORAN => [
@@ -55,15 +51,12 @@
             ],
             'Data Master' => [
                 ['label' => 'Kelola Katalog', 'icon' => 'bi-boxes', 'route' => 'kelola-katalog.index'],
-                ['label' => 'Data Akademik', 'icon' => 'bi-mortarboard', 'route' => 'data-akademik.index'],
-                ['label' => 'Jadwal Perkuliahan', 'icon' => 'bi-calendar-week', 'route' => 'jadwal.index'],
             ],
             'Pengguna' => [
                 ['label' => 'Kelola Data User', 'icon' => 'bi-people', 'route' => 'kelola-user.index'],
             ],
             'Lainnya' => [
                 ['label' => 'Pengaturan Laboratorium', 'icon' => 'bi-sliders', 'route' => 'pengaturan-lab.index'],
-                ['label' => 'Profil', 'icon' => 'bi-person', 'route' => 'profil.index'],
             ],
         ],
         \App\Support\Role::STAFF => [
@@ -72,7 +65,6 @@
                 ['label' => 'Data Akademik', 'icon' => 'bi-mortarboard', 'route' => 'data-akademik.index'],
                 ['label' => 'Jadwal Perkuliahan', 'icon' => 'bi-calendar-week', 'route' => 'jadwal.index'],
                 ['label' => 'Katalog', 'icon' => 'bi-collection', 'route' => 'katalog'],
-                ['label' => 'Profil', 'icon' => 'bi-person', 'route' => 'profil.index'],
             ],
         ],
     ];
